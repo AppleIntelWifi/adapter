@@ -7,15 +7,40 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapter.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapter.hpp */; };
-		026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapter.cpp */; };
+		026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */; };
+		026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */; };
+		026E8CDD2356F2AD000BFD46 /* apple80211_ioctl.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */; };
+		026E8CDE2356F2AD000BFD46 /* apple80211_wps.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD82356F2AD000BFD46 /* apple80211_wps.h */; };
+		026E8CDF2356F2AD000BFD46 /* IO80211WorkLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */; };
+		026E8CE02356F2AD000BFD46 /* apple80211_var.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CDA2356F2AD000BFD46 /* apple80211_var.h */; };
+		026E8CE12356F2AD000BFD46 /* IO80211Interface.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */; };
+		026E8CE92356FD4D000BFD46 /* iwlwifi-7265-16.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 026E8CE42356FD4D000BFD46 /* iwlwifi-7265-16.ucode */; };
+		026E8CEA2356FD4D000BFD46 /* iwlwifi-8000C-16.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 026E8CE52356FD4D000BFD46 /* iwlwifi-8000C-16.ucode */; };
+		026E8CEB2356FD4D000BFD46 /* iwlwifi-7265D-16.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 026E8CE62356FD4D000BFD46 /* iwlwifi-7265D-16.ucode */; };
+		026E8CEC2356FD4D000BFD46 /* iwlwifi-3160-16.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 026E8CE72356FD4D000BFD46 /* iwlwifi-3160-16.ucode */; };
+		026E8CED2356FD4D000BFD46 /* iwlwifi-7260-16.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 026E8CE82356FD4D000BFD46 /* iwlwifi-7260-16.ucode */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapter.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleIntelWifiAdapter.kext; sourceTree = BUILT_PRODUCTS_DIR; };
-		026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppleIntelWifiAdapter.hpp; sourceTree = "<group>"; };
-		026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapter.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppleIntelWifiAdapter.cpp; sourceTree = "<group>"; };
+		0238D8A5235B4F4C00074654 /* IOEthernetController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IOEthernetController.h; sourceTree = "<group>"; };
+		0238D8A6235B4F6B00074654 /* IONetworkController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IONetworkController.h; sourceTree = "<group>"; };
+		0248A083235833CB00A85BA3 /* IO80211Controller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IO80211Controller.h; sourceTree = "<group>"; };
+		026C2F6F2359CA9600C832EF /* IO80211SkywalkInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IO80211SkywalkInterface.h; sourceTree = "<group>"; };
+		026C2F702359CB3300C832EF /* IOSkywalkEthernetInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IOSkywalkEthernetInterface.h; sourceTree = "<group>"; };
+		026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapterV2.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleIntelWifiAdapterV2.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppleIntelWifiAdapterV2.hpp; sourceTree = "<group>"; };
+		026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppleIntelWifiAdapterV2.cpp; sourceTree = "<group>"; };
 		026E8CD02356F0ED000BFD46 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_ioctl.h; sourceTree = "<group>"; };
+		026E8CD82356F2AD000BFD46 /* apple80211_wps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_wps.h; sourceTree = "<group>"; };
+		026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO80211WorkLoop.h; sourceTree = "<group>"; };
+		026E8CDA2356F2AD000BFD46 /* apple80211_var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_var.h; sourceTree = "<group>"; };
+		026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO80211Interface.h; sourceTree = "<group>"; };
+		026E8CE42356FD4D000BFD46 /* iwlwifi-7265-16.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-7265-16.ucode"; sourceTree = "<group>"; };
+		026E8CE52356FD4D000BFD46 /* iwlwifi-8000C-16.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8000C-16.ucode"; sourceTree = "<group>"; };
+		026E8CE62356FD4D000BFD46 /* iwlwifi-7265D-16.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-7265D-16.ucode"; sourceTree = "<group>"; };
+		026E8CE72356FD4D000BFD46 /* iwlwifi-3160-16.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-3160-16.ucode"; sourceTree = "<group>"; };
+		026E8CE82356FD4D000BFD46 /* iwlwifi-7260-16.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-7260-16.ucode"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,18 +54,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		026CE67F2357F7F70034342E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		026E8CBF2356F0ED000BFD46 = {
 			isa = PBXGroup;
 			children = (
 				026E8CCB2356F0ED000BFD46 /* AppleIntelWifiAdapter */,
 				026E8CCA2356F0ED000BFD46 /* Products */,
+				026CE67F2357F7F70034342E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
 		026E8CCA2356F0ED000BFD46 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapter.kext */,
+				026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapterV2.kext */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,11 +81,42 @@
 		026E8CCB2356F0ED000BFD46 /* AppleIntelWifiAdapter */ = {
 			isa = PBXGroup;
 			children = (
-				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapter.hpp */,
-				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapter.cpp */,
+				026E8CE32356FD4D000BFD46 /* firmware */,
+				026E8CD62356F2AD000BFD46 /* apple80211 */,
+				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */,
+				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */,
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
 			);
 			path = AppleIntelWifiAdapter;
+			sourceTree = "<group>";
+		};
+		026E8CD62356F2AD000BFD46 /* apple80211 */ = {
+			isa = PBXGroup;
+			children = (
+				026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */,
+				026E8CD82356F2AD000BFD46 /* apple80211_wps.h */,
+				026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */,
+				026E8CDA2356F2AD000BFD46 /* apple80211_var.h */,
+				026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */,
+				0248A083235833CB00A85BA3 /* IO80211Controller.h */,
+				026C2F6F2359CA9600C832EF /* IO80211SkywalkInterface.h */,
+				026C2F702359CB3300C832EF /* IOSkywalkEthernetInterface.h */,
+				0238D8A5235B4F4C00074654 /* IOEthernetController.h */,
+				0238D8A6235B4F6B00074654 /* IONetworkController.h */,
+			);
+			path = apple80211;
+			sourceTree = "<group>";
+		};
+		026E8CE32356FD4D000BFD46 /* firmware */ = {
+			isa = PBXGroup;
+			children = (
+				026E8CE42356FD4D000BFD46 /* iwlwifi-7265-16.ucode */,
+				026E8CE52356FD4D000BFD46 /* iwlwifi-8000C-16.ucode */,
+				026E8CE62356FD4D000BFD46 /* iwlwifi-7265D-16.ucode */,
+				026E8CE72356FD4D000BFD46 /* iwlwifi-3160-16.ucode */,
+				026E8CE82356FD4D000BFD46 /* iwlwifi-7260-16.ucode */,
+			);
+			path = firmware;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -62,7 +126,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapter.hpp in Headers */,
+				026E8CDF2356F2AD000BFD46 /* IO80211WorkLoop.h in Headers */,
+				026E8CE12356F2AD000BFD46 /* IO80211Interface.h in Headers */,
+				026E8CE02356F2AD000BFD46 /* apple80211_var.h in Headers */,
+				026E8CDD2356F2AD000BFD46 /* apple80211_ioctl.h in Headers */,
+				026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */,
+				026E8CDE2356F2AD000BFD46 /* apple80211_wps.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,7 +153,7 @@
 			);
 			name = AppleIntelWifiAdapter;
 			productName = AppleIntelWifiAdapter;
-			productReference = 026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapter.kext */;
+			productReference = 026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapterV2.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
 /* End PBXNativeTarget section */
@@ -124,6 +193,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				026E8CED2356FD4D000BFD46 /* iwlwifi-7260-16.ucode in Resources */,
+				026E8CE92356FD4D000BFD46 /* iwlwifi-7265-16.ucode in Resources */,
+				026E8CEC2356FD4D000BFD46 /* iwlwifi-3160-16.ucode in Resources */,
+				026E8CEB2356FD4D000BFD46 /* iwlwifi-7265D-16.ucode in Resources */,
+				026E8CEA2356FD4D000BFD46 /* iwlwifi-8000C-16.ucode in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,7 +208,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapter.cpp in Sources */,
+				026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,6 +265,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				KEEP_PRIVATE_EXTERNS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -243,6 +319,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				KEEP_PRIVATE_EXTERNS = NO;
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -253,15 +331,18 @@
 		026E8CD42356F0ED000BFD46 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				DEVELOPMENT_TEAM = YXX7XALBVX;
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
-				MODULE_NAME = com.zxystd.AppleIntelWifiAdapter;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULE_NAME = com.apple.AppleIntelWifiAdapterV2;
 				MODULE_VERSION = 1.0.0d1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.AppleIntelWifiAdapter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.AppleIntelWifiAdapterV2;
+				PRODUCT_NAME = AppleIntelWifiAdapterV2;
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Debug;
@@ -269,15 +350,18 @@
 		026E8CD52356F0ED000BFD46 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				DEVELOPMENT_TEAM = YXX7XALBVX;
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
-				MODULE_NAME = com.zxystd.AppleIntelWifiAdapter;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MODULE_NAME = com.apple.AppleIntelWifiAdapterV2;
 				MODULE_VERSION = 1.0.0d1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.AppleIntelWifiAdapter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.AppleIntelWifiAdapterV2;
+				PRODUCT_NAME = AppleIntelWifiAdapterV2;
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = kext;
 			};
 			name = Release;
