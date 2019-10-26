@@ -123,138 +123,400 @@ extern IOCTL_FUNC gSetHandlerTable[];
 #define uint UInt
 
 class IO80211Controller : public IOEthernetController {
-    OSDeclareAbstractStructors( IO80211Controller )
+    OSDeclareAbstractStructors(IO80211Controller)
+    
 public:
-    virtual IO80211SkywalkInterface* getInfraInterface(void);
-    virtual IO80211ScanManager* getPrimaryInterfaceScanManager(void);
-    virtual IO80211ControllerMonitor* getInterfaceMonitor(void);
-    virtual IOReturn updateReport(IOReportChannelList *,uint,void *,void *) override;
-    virtual IOReturn configureReport(IOReportChannelList *,uint,void *,void *) override;
-    virtual IOReturn addReporterLegend(IOService *,IOReporter *,char const*,char const*);
-    virtual IOReturn removeReporterFromLegend(IOService *,IOReporter *,char const*,char const*);
-    virtual IOReturn unlockIOReporterLegend(void);
-    virtual void lockIOReporterLegend(void);//怀疑对象，之前是返回int
-    virtual IOReturn logIOReportLogStreamSubscription(ulong long);
-    virtual IOReturn addIOReportLogStreamForProvider(IOService *,ulong long *);
-    virtual IOReturn addSubscriptionForThisReporterFetchedOnTimer(IOReporter *,char const*,char const*,IOService *);
-    virtual IOReturn addSubscriptionForProviderFetchedOnTimer(IOService *);
-    virtual void handleIOReporterTimer(IOTimerEventSource *);//怀疑对象，之前是返回int
-    virtual void setIOReportersStreamFlags(ulong long);//怀疑对象，之前是返回int
-    virtual void updateIOReportersStreamFrequency(void);//怀疑对象，之前是返回int
-    virtual void setIOReportersStreamLevel(CCStreamLogLevel);//怀疑对象，之前是返回int
-    virtual SInt32 apple80211SkywalkRequest(uint,int,IO80211SkywalkInterface *,void *);
-    virtual SInt32 apple80211VirtualRequest(uint,int,IO80211VirtualInterface *,void *);
-    virtual SInt32 disableVirtualInterface(IO80211VirtualInterface *);
-    virtual SInt32 enableVirtualInterface(IO80211VirtualInterface *);
-    virtual SInt32 setVirtualHardwareAddress(IO80211VirtualInterface *,ether_addr *);
-    virtual UInt32 getDataQueueDepth(OSObject *);
-    virtual void powerChangeGated(OSObject *,void *,void *,void *,void *);//怀疑对象，之前是返回int
-    virtual int copyOut(void const*,ulong long,ulong);
-    virtual int bpfOutputPacket(OSObject *,uint,mbuf_t);
-    virtual void requestPacketTx(void *,uint);//怀疑对象，之前是返回int
-    virtual int outputActionFrame(IO80211Interface *,mbuf_t);
-    virtual int outputRaw80211Packet(IO80211Interface *,mbuf_t);
-    virtual IOReturn getHardwareAddressForInterface(IO80211Interface *,IOEthernetAddress *);
-    virtual bool useAppleRSNSupplicant(IO80211VirtualInterface *);
-    virtual bool useAppleRSNSupplicant(IO80211Interface *);
-    virtual void dataLinkLayerAttachComplete(IO80211Interface *);//怀疑对象，之前是返回int
-    virtual IO80211VirtualInterface* createVirtualInterface(ether_addr *,uint);
-    virtual bool detachVirtualInterface(IO80211VirtualInterface *,bool);
-    virtual bool attachVirtualInterface(IO80211VirtualInterface **,ether_addr *,uint,bool);
-    virtual bool attachInterface(IOSkywalkInterface *,IOService *);
-    virtual void detachInterface(IONetworkInterface *,bool) override;
-    virtual bool attachInterface(IONetworkInterface **,bool) override;
-    virtual IOService* getProvider(void);
-    virtual SInt32 getASSOCIATE_RESULT(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,apple80211_assoc_result_data *);
-    virtual int errnoFromReturn(int) override;
-    virtual const char* stringFromReturn(int) override;
-    virtual SInt32 apple80211_ioctl_set(IO80211SkywalkInterface *,void *);
-    virtual SInt32 apple80211_ioctl_set(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,void *);
-    virtual SInt32 apple80211_ioctl_set(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,void *);
-    virtual SInt32 apple80211_ioctl_get(IO80211SkywalkInterface *,void *);
-    virtual SInt32 apple80211_ioctl_get(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,void *);
-    virtual SInt32 apple80211_ioctl_get(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,void *);
-    virtual IOReturn copyIn(ulong long,void *,ulong);
-    virtual void logIOCTL(apple80211req *);
-    virtual bool isIOCTLLoggingRestricted(apple80211req *);
-    virtual void inputMonitorPacket(mbuf_t,uint,void *,ulong);//怀疑对象，之前是返回int
-    virtual SInt32 apple80211_ioctl(IO80211SkywalkInterface *,ulong,void *);
-    virtual SInt32 apple80211_ioctl(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,ulong,void *);
-    virtual IONetworkInterface* createInterface(void) override;
-    virtual IOReturn getHardwareAddress(IOEthernetAddress *) override;
-    virtual IO80211SkywalkInterface* getPrimarySkywalkInterface(void);
-    virtual IO80211Interface* getNetworkInterface(void);
-    virtual IOWorkLoop* getWorkLoop(void);
-    virtual bool createWorkLoop(void) override;
-    virtual mbuf_flags_t inputPacket(mbuf_t);
-    virtual IOReturn outputStart(IONetworkInterface *,uint);
-    virtual IOReturn setChanNoiseFloorLTE(apple80211_stat_report *,int);
-    virtual IOReturn setChanNoiseFloor(apple80211_stat_report *,int);
-    virtual IOReturn setChanCCA(apple80211_stat_report *,int);
-    virtual IOReturn setChanExtendedCCA(apple80211_stat_report *,apple80211_cca_report *);
-    virtual bool setLTECoexstat(apple80211_stat_report *,apple80211_lteCoex_report *);
-    virtual bool setBTCoexstat(apple80211_stat_report *,apple80211_btCoex_report *);
-    virtual bool setAMPDUstat(apple80211_stat_report *,apple80211_ampdu_stat_report *,apple80211_channel *);
-    virtual UInt32 getCountryCode(apple80211_country_code_data *);
-    virtual IOReturn setCountryCode(apple80211_country_code_data *);
-    virtual bool getInfraExtendedStats(apple80211_extended_stats *);
-    virtual bool getChipCounterStats(apple80211_chip_stats *);
-    virtual bool setExtendedChipCounterStats(apple80211_stat_report *,void *);
-    virtual bool setChipCounterStats(apple80211_stat_report *,apple80211_chip_stats *,apple80211_channel *);
-    virtual bool setLeakyAPStats(apple80211_leaky_ap_event *);
-    virtual bool setFrameStats(apple80211_stat_report *,apple80211_frame_counters *,apple80211_channel *);
-    virtual bool setPowerStats(apple80211_stat_report *,apple80211_power_debug_sub_info *);
-    virtual bool getBeaconPeriod(apple80211_beacon_period_data *);
-    virtual SInt32 apple80211VirtualRequestIoctl(uint,int,IO80211VirtualInterface *,void *);
-    virtual bool getBSSIDData(OSObject *,apple80211_bssid_data *);
-    virtual bool getSSIDData(apple80211_ssid_data *);
-    virtual IOOutputQueue* getOutputQueue(void);
-    virtual bool inputInfraPacket(mbuf_t);
-    virtual void notifyHostapState(apple80211_hostap_state *);
-    virtual bool isAwdlAssistedDiscoveryEnabled(void);
-    virtual void joinDone(scanSource,joinStatus);//怀疑对象，之前是返回int
-    virtual void joinStarted(scanSource,joinStatus);//怀疑对象，之前是返回int
-    virtual void handleChannelSwitchAnnouncement(apple80211_channel_switch_announcement *);
-    virtual void scanDone(scanSource,int);
-    virtual void scanStarted(scanSource,apple80211_scan_data *);
-    virtual void printChannels(void);
-    virtual void updateInterfaceCoexRiskPct(ulong long);
-    virtual SInt32 getInfraChannel(apple80211_channel_data *);
-    virtual void calculateInterfacesAvaiability(void);//怀疑对象，之前是返回int
-    virtual void setChannelSequenceList(apple80211_awdl_sync_channel_sequence *);//怀疑对象，之前是返回int
-    virtual void setPrimaryInterfaceDatapathState(bool);
-    virtual UInt32 getPrimaryInterfaceLinkState(void);
-    virtual void setCurrentChannel(apple80211_channel *);//怀疑对象，之前是返回int
-    virtual void setHtCapability(ieee80211_ht_capability_ie *);//怀疑对象，之前是返回int
-    virtual UInt32 getHtCapability(void);//之前是IO80211Controller
-    virtual UInt32 getHtCapabilityLength(void);
-    virtual bool io80211isDebuggable(bool *);
-    virtual UInt32 selfDiagnosticsReport(int,char const*,uint);
-    virtual void logDebug(ulong long,char const*,...);//怀疑对象，之前是返回int
-    virtual void vlogDebug(ulong long,char const*,va_list);//怀疑对象，之前是返回char
-    virtual void logDebug(char const*,...);//怀疑对象，之前是返回int
-    virtual void releaseFlowQueue(IO80211FlowQueue *);//怀疑对象，之前是返回char
-    virtual IO80211FlowQueueLegacy* requestFlowQueue(FlowIdMetadata const*);
-    virtual bool calculateInterfacesCoex(void);
-    virtual void setInfraChannel(apple80211_channel *);//怀疑对象，之前是返回char
-    virtual bool configureInterface(IONetworkInterface *) override;
+    virtual IO80211SkywalkInterface* getInfraInterface(void)
+    {
+        return NULL;
+    };
+    virtual IO80211ScanManager* getPrimaryInterfaceScanManager(void)
+    {
+        return NULL;
+    };
+    virtual IO80211ControllerMonitor* getInterfaceMonitor(void)
+    {
+        return NULL;
+    };
+    virtual IOReturn updateReport(IOReportChannelList *,uint,void *,void *) override
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn configureReport(IOReportChannelList *,uint,void *,void *) override
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn addReporterLegend(IOService *,IOReporter *,char const*,char const*)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn removeReporterFromLegend(IOService *,IOReporter *,char const*,char const*)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn unlockIOReporterLegend(void)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void lockIOReporterLegend(void){};//怀疑对象，之前是返回int
+    virtual IOReturn logIOReportLogStreamSubscription(ulong long)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn addIOReportLogStreamForProvider(IOService *,ulong long *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn addSubscriptionForThisReporterFetchedOnTimer(IOReporter *,char const*,char const*,IOService *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn addSubscriptionForProviderFetchedOnTimer(IOService *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void handleIOReporterTimer(IOTimerEventSource *){};//怀疑对象，之前是返回int
+    virtual void setIOReportersStreamFlags(ulong long){};//怀疑对象，之前是返回int
+    virtual void updateIOReportersStreamFrequency(void){};//怀疑对象，之前是返回int
+    virtual void setIOReportersStreamLevel(CCStreamLogLevel){};//怀疑对象，之前是返回int
+    virtual SInt32 apple80211SkywalkRequest(uint,int,IO80211SkywalkInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211VirtualRequest(uint,int,IO80211VirtualInterface *,void *){ return EOPNOTSUPP; };
+    virtual SInt32 disableVirtualInterface(IO80211VirtualInterface *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 enableVirtualInterface(IO80211VirtualInterface *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 setVirtualHardwareAddress(IO80211VirtualInterface *,ether_addr *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual UInt32 getDataQueueDepth(OSObject *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void powerChangeGated(OSObject *,void *,void *,void *,void *){};//怀疑对象，之前是返回int
+    virtual int copyOut(void const*,ulong long,ulong)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual int bpfOutputPacket(OSObject *,uint,mbuf_t) { return ENXIO; };
+    virtual void requestPacketTx(void *,uint){};//怀疑对象，之前是返回int
+    virtual int outputActionFrame(IO80211Interface *,mbuf_t)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual int outputRaw80211Packet(IO80211Interface *,mbuf_t){ return ENXIO; };
+    virtual IOReturn getHardwareAddressForInterface(IO80211Interface *,IOEthernetAddress *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual bool useAppleRSNSupplicant(IO80211VirtualInterface *){ return true; };
+    virtual bool useAppleRSNSupplicant(IO80211Interface *){ return true; };
+    virtual void dataLinkLayerAttachComplete(IO80211Interface *){};//怀疑对象，之前是返回int
+    virtual IO80211VirtualInterface* createVirtualInterface(ether_addr *,uint)
+    {
+        return NULL;
+    };
+    virtual bool detachVirtualInterface(IO80211VirtualInterface *,bool)
+    {
+        return true;
+    };
+    virtual bool attachVirtualInterface(IO80211VirtualInterface **,ether_addr *,uint,bool)
+    {
+        return true;
+    };
+    virtual bool attachInterface(IOSkywalkInterface *,IOService *)
+    {
+        return true;
+    };
+    virtual void detachInterface(IONetworkInterface *,bool) override{};
+    virtual bool attachInterface(IONetworkInterface **,bool) override
+    {
+        return true;
+    };
+    virtual IOService* getProvider(void)
+    {
+        return NULL;
+    };
+    virtual SInt32 getASSOCIATE_RESULT(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,apple80211_assoc_result_data *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual int errnoFromReturn(int) override
+    {
+        return kIOReturnSuccess;
+    };
+    virtual const char* stringFromReturn(int) override
+    {
+        return "";
+    };
+    virtual SInt32 apple80211_ioctl_set(IO80211SkywalkInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl_set(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl_set(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl_get(IO80211SkywalkInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl_get(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl_get(IO80211Interface *,IO80211VirtualInterface *,IO80211SkywalkInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn copyIn(ulong long,void *,ulong)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void logIOCTL(apple80211req *){};
+    virtual bool isIOCTLLoggingRestricted(apple80211req *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void inputMonitorPacket(mbuf_t,uint,void *,ulong){};//怀疑对象，之前是返回int
+    virtual SInt32 apple80211_ioctl(IO80211SkywalkInterface *,ulong,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual SInt32 apple80211_ioctl(IO80211Interface *,IO80211VirtualInterface *,ifnet_t,ulong,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IONetworkInterface* createInterface(void) override
+    {
+        return NULL;
+    };
+    virtual IOReturn getHardwareAddress(IOEthernetAddress *) override
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IO80211SkywalkInterface* getPrimarySkywalkInterface(void)
+    {
+        return NULL;
+    };
+    virtual IO80211Interface* getNetworkInterface(void)
+    {
+        return NULL;
+    };
+    virtual IOWorkLoop* getWorkLoop(void)
+    {
+        return NULL;
+    };
+    virtual bool createWorkLoop(void) override
+    {
+        return true;
+    };
+    virtual mbuf_flags_t inputPacket(mbuf_t)
+    {
+        return 0;
+    };
+    virtual IOReturn outputStart(IONetworkInterface *,uint)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn setChanNoiseFloorLTE(apple80211_stat_report *,int)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn setChanNoiseFloor(apple80211_stat_report *,int)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn setChanCCA(apple80211_stat_report *,int)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn setChanExtendedCCA(apple80211_stat_report *,apple80211_cca_report *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual bool setLTECoexstat(apple80211_stat_report *,apple80211_lteCoex_report *)
+    {
+        return true;
+    };
+    virtual bool setBTCoexstat(apple80211_stat_report *,apple80211_btCoex_report *)
+    {
+        return true;
+    };
+    virtual bool setAMPDUstat(apple80211_stat_report *,apple80211_ampdu_stat_report *,apple80211_channel *)
+    {
+        return true;
+    };
+    virtual UInt32 getCountryCode(apple80211_country_code_data *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn setCountryCode(apple80211_country_code_data *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual bool getInfraExtendedStats(apple80211_extended_stats *)
+    {
+        return true;
+    };
+    virtual bool getChipCounterStats(apple80211_chip_stats *)
+    {
+        return true;
+    };
+    virtual bool setExtendedChipCounterStats(apple80211_stat_report *,void *)
+    {
+        return true;
+    };
+    virtual bool setChipCounterStats(apple80211_stat_report *,apple80211_chip_stats *,apple80211_channel *)
+    {
+        return true;
+    };
+    virtual bool setLeakyAPStats(apple80211_leaky_ap_event *)
+    {
+        return true;
+    };
+    virtual bool setFrameStats(apple80211_stat_report *,apple80211_frame_counters *,apple80211_channel *)
+    {
+        return true;
+    };
+    virtual bool setPowerStats(apple80211_stat_report *,apple80211_power_debug_sub_info *)
+    {
+        return true;
+    };
+    virtual bool getBeaconPeriod(apple80211_beacon_period_data *)
+    {
+        return true;
+    };
+    virtual SInt32 apple80211VirtualRequestIoctl(uint,int,IO80211VirtualInterface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual bool getBSSIDData(OSObject *,apple80211_bssid_data *)
+    {
+        return true;
+    };
+    virtual bool getSSIDData(apple80211_ssid_data *)
+    {
+        return true;
+    };
+    virtual IOOutputQueue* getOutputQueue(void)
+    {
+        return NULL;
+    };
+    virtual bool inputInfraPacket(mbuf_t)
+    {
+        return true;
+    };
+    virtual void notifyHostapState(apple80211_hostap_state *){};
+    virtual bool isAwdlAssistedDiscoveryEnabled(void)
+    {
+        return true;
+    };
+    virtual void joinDone(scanSource,joinStatus){};//怀疑对象，之前是返回int
+    virtual void joinStarted(scanSource,joinStatus){};//怀疑对象，之前是返回int
+    virtual void handleChannelSwitchAnnouncement(apple80211_channel_switch_announcement *){};
+    virtual void scanDone(scanSource,int){};
+    virtual void scanStarted(scanSource,apple80211_scan_data *){};
+    virtual void printChannels(void){};
+    virtual void updateInterfaceCoexRiskPct(ulong long){};
+    virtual SInt32 getInfraChannel(apple80211_channel_data *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void calculateInterfacesAvaiability(void){};//怀疑对象，之前是返回int
+    virtual void setChannelSequenceList(apple80211_awdl_sync_channel_sequence *){};//怀疑对象，之前是返回int
+    virtual void setPrimaryInterfaceDatapathState(bool){};
+    virtual UInt32 getPrimaryInterfaceLinkState(void)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void setCurrentChannel(apple80211_channel *){};//怀疑对象，之前是返回int
+    virtual void setHtCapability(ieee80211_ht_capability_ie *){};//怀疑对象，之前是返回int
+    virtual UInt32 getHtCapability(void)
+    {
+        return kIOReturnSuccess;
+    };//之前是IO80211Controller
+    virtual UInt32 getHtCapabilityLength(void)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual bool io80211isDebuggable(bool *)
+    {
+        return true;
+    };
+    virtual UInt32 selfDiagnosticsReport(int,char const*,uint)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void logDebug(ulong long,char const*,...){};//怀疑对象，之前是返回int
+    virtual void vlogDebug(ulong long,char const*,va_list){};//怀疑对象，之前是返回char
+    virtual void logDebug(char const*,...){};//怀疑对象，之前是返回int
+    virtual void releaseFlowQueue(IO80211FlowQueue *){};//怀疑对象，之前是返回char
+    virtual IO80211FlowQueueLegacy* requestFlowQueue(FlowIdMetadata const*)
+    {
+        return NULL;
+    };
+    virtual bool calculateInterfacesCoex(void)
+    {
+        return true;
+    };
+    virtual void setInfraChannel(apple80211_channel *){};//怀疑对象，之前是返回char
+    virtual bool configureInterface(IONetworkInterface *) override
+    {
+        return true;
+    };
     virtual IOReturn disable(IO80211SkywalkInterface *);
     virtual IOReturn enable(IO80211SkywalkInterface *);
     virtual IOReturn disable(IONetworkInterface *) override;
-    virtual void configureAntennae(void);
-    virtual SInt32 apple80211RequestIoctl(uint,int,IO80211Interface *,void *);
-    virtual UInt32 radioCountForInterface(IO80211Interface *);
-    virtual IOReturn enable(IONetworkInterface *) override;
-    virtual void releaseIOReporters(void);//怀疑对象，之前是返回int
-    virtual void stop(IOService *) override;
-    virtual void free(void) override;
-    virtual bool init(OSDictionary *) override;
-    virtual bool findAndAttachToFaultReporter(void);
-    virtual UInt32 setupControlPathLogging(void);
-    virtual IOReturn createIOReporters(IOService *);
-    virtual IOReturn powerChangeHandler(void *,void *,uint,IOService *,void *,ulong);
+    virtual void configureAntennae(void){};
+    virtual SInt32 apple80211RequestIoctl(uint,int,IO80211Interface *,void *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual UInt32 radioCountForInterface(IO80211Interface *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn enable(IONetworkInterface *) override
+    {
+        return kIOReturnSuccess;
+    };
+    virtual void releaseIOReporters(void){};//怀疑对象，之前是返回int
+    virtual void stop(IOService *) override{};
+    virtual void free(void) override{};
+    virtual bool init(OSDictionary *) override
+    {
+        return true;
+    };
+    virtual bool findAndAttachToFaultReporter(void)
+    {
+        return true;
+    };
+    virtual UInt32 setupControlPathLogging(void)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn createIOReporters(IOService *)
+    {
+        return kIOReturnSuccess;
+    };
+    virtual IOReturn powerChangeHandler(void *,void *,uint,IOService *,void *,ulong)
+    {
+        return kIOReturnSuccess;
+    };
     virtual bool start(IOService *) override;
-    
+        
     OSMetaClassDeclareReservedUnused( IO80211Controller,  0);
     OSMetaClassDeclareReservedUnused( IO80211Controller,  1);
     OSMetaClassDeclareReservedUnused( IO80211Controller,  2);
@@ -296,7 +558,7 @@ public:
     
 protected:
     static IORegistryPlane gIO80211Plane;
-    
+    static IORegistryEntry* kIO80211PlaneName;
     
 };
 

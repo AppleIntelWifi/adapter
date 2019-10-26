@@ -27,7 +27,6 @@ public:
 //    const OSString* newVendorString() const;
 //    const OSString* newModelString() const;
 //    IOReturn getHardwareAddressForInterface(IO80211Interface* netif, IOEthernetAddress* addr);
-    IOReturn getHardwareAddress(IOEthernetAddress* addrP) override;
 //    IOReturn enable(IONetworkInterface *netif);
 //    IOReturn disable(IONetworkInterface *netif);
 //    bool configureInterface(IONetworkInterface *netif);
@@ -37,15 +36,11 @@ public:
 //    SInt32 monitorModeSetEnabled(IO80211Interface*, bool, unsigned int) {
 //        return kIOReturnSuccess;
 //    }
-    bool createWorkLoop() override;
-    IOWorkLoop* getWorkLoop() override;
 //    UInt32 apple80211SkywalkRequest(uint,int, IO80211SkywalkInterface *,void *);
 //    SInt32 disableVirtualInterface(IO80211VirtualInterface*);
 //    SInt32 enableVirtualInterface(IO80211VirtualInterface*);
 //    UInt32 getDataQueueDepth(OSObject*) override;
 //    SInt32 setVirtualHardwareAddress(IO80211VirtualInterface*, ether_addr*);
-    IOService* getProvider(void) override;
-    IOOutputQueue* getOutputQueue(void) override;
     
 public:
 //    static AppleIntelWifiAdapterV2* gMetaClass;
