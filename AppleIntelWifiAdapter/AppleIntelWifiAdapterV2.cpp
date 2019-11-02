@@ -28,7 +28,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
         IOLog("Not pci device");
-        return NULL;
+        return NULL;	
     }
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
     UInt16 deviceID = pciDevice->configRead16(kIOPCIConfigDeviceID);
