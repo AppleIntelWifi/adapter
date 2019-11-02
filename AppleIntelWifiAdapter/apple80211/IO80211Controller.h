@@ -179,6 +179,7 @@ public:
     virtual void setIOReportersStreamFlags(ulong long){};//怀疑对象，之前是返回int
     virtual void updateIOReportersStreamFrequency(void){};//怀疑对象，之前是返回int
     virtual void setIOReportersStreamLevel(CCStreamLogLevel){};//怀疑对象，之前是返回int
+    virtual SInt32 apple80211Request(unsigned int, int, IO80211Interface*, void*) {return kIOReturnSuccess;};
     virtual SInt32 apple80211SkywalkRequest(uint,int,IO80211SkywalkInterface *,void *)
     {
         return kIOReturnSuccess;
@@ -533,28 +534,6 @@ public:
     OSMetaClassDeclareReservedUnused( IO80211Controller, 13);
     OSMetaClassDeclareReservedUnused( IO80211Controller, 14);
     OSMetaClassDeclareReservedUnused( IO80211Controller, 15);
-    
-    
-    
-//    virtual IOReturn outputStart(IONetworkInterface* interface,
-//                                 unsigned int options);
-//    virtual IO80211Interface * getNetworkInterface() ;
-//    virtual IOReturn getHardwareAddressForInterface(IO80211Interface*, IOEthernetAddress*) ;
-//    virtual SInt32 apple80211Request(unsigned int, int, IO80211Interface*, void*) = 0;
-//    virtual UInt32 apple80211SkywalkRequest(uint,int, IO80211SkywalkInterface *,void *);
-//    virtual SInt32 setVirtualHardwareAddress(IO80211VirtualInterface*, ether_addr*);
-//    virtual SInt32 enableVirtualInterface(IO80211VirtualInterface*);
-//    virtual SInt32 disableVirtualInterface(IO80211VirtualInterface*);
-//    virtual UInt32 getDataQueueDepth(OSObject*) ;
-  
-    
-    
-    
-    
-//    virtual IOReturn getHardwareAddress(void *   addr,
-//                                        UInt32 * inOutAddrBytes) override;
-    
-//    virtual IOReturn getHardwareAddress(IOEthernetAddress *);
     
 protected:
     static IORegistryPlane gIO80211Plane;

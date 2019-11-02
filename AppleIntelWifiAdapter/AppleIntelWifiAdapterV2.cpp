@@ -8,21 +8,6 @@
 
 OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
 
-//AppleIntelWifiAdapterV2::AppleIntelWifiAdapterV2()
-//{
-//
-//}
-//
-//
-//AppleIntelWifiAdapterV2::~AppleIntelWifiAdapterV2()
-//{
-//
-//}
-//
-//AppleIntelWifiAdapterV2::AppleIntelWifiAdapterV2(OSMetaClass const* metaclass)
-//{
-//
-//}
 
 void AppleIntelWifiAdapterV2::free() {
     super::free();
@@ -31,17 +16,17 @@ void AppleIntelWifiAdapterV2::free() {
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
-    super::init(properties);
     IOLog("Driver init()");
-    return true;
+    return super::init(properties);
 }
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
     IOLog("Driver Probe()");
+    super::probe(provider, score);
     
     pciDevice = OSDynamicCast(IOPCIDevice, provider);
-    if (pciDevice == nullptr) {
+    if (!pciDevice) {
         IOLog("Not pci device");
         return NULL;
     }
@@ -57,8 +42,10 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
 {
     IOLog("Driver Start()");
-    super::start(provider);
-    return false;
+    if (!super::start(provider)) {
+        return false;
+    }
+    return true;
 }
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
@@ -73,77 +60,114 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int, int, IO80211Inte
     return kIOReturnSuccess;
 }
 
-//
-//IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
-//{
-//    IOLog("Driver Enable()");
-//    return kIOReturnSuccess;
-//}
-//
-//IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
-//{
-//    IOLog("Driver Disable()");
-//    return kIOReturnSuccess;
-//}
-//
+SInt32 AppleIntelWifiAdapterV2::apple80211VirtualRequest(uint,int,IO80211VirtualInterface *,void *)
+{
+    return kIOReturnSuccess;
+}
 
-//
-//IOReturn AppleIntelWifiAdapterV2::getHardwareAddressForInterface(IO80211Interface *netif, IOEthernetAddress *addr)
-//{
-//    return kIOReturnSuccess;
-//}
-//
-//IOReturn AppleIntelWifiAdapterV2::setPromiscuousMode(bool active)
-//{
-//    return kIOReturnSuccess;
-//}
-//
-//IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
-//{
-//    return kIOReturnSuccess;
-//}
-//
-//bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *netif)
-//{
-//    return kIOReturnSuccess;
-//}
-//
-//IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface()
-//{
-//    return NULL;
-//}
-//
-//const OSString* AppleIntelWifiAdapterV2::newVendorString() const
-//{
-//    return OSString::withCString("Intel");
-//}
-//
-//const OSString* AppleIntelWifiAdapterV2::newModelString() const
-//{
-//    return OSString::withCString("test model");
-//}
-//
-//UInt32 AppleIntelWifiAdapterV2::apple80211SkywalkRequest(uint,int, IO80211SkywalkInterface *,void *)
-//{
-//    return 0;
-//}
-//
-//SInt32 AppleIntelWifiAdapterV2::disableVirtualInterface(IO80211VirtualInterface *)
-//{
-//    return 0;
-//}
-//
-//SInt32 AppleIntelWifiAdapterV2::enableVirtualInterface(IO80211VirtualInterface *)
-//{
-//    return 0;
-//}
-//
-//UInt32 AppleIntelWifiAdapterV2::getDataQueueDepth(OSObject *)
-//{
-//    return 1024;
-//}
-//
-//SInt32 AppleIntelWifiAdapterV2::setVirtualHardwareAddress(IO80211VirtualInterface *, ether_addr *)
-//{
-//    return 0;
-//}
+
+IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
+{
+    IOLog("Driver Enable()");
+//    super::enable(netif);
+    return kIOReturnSuccess;
+}
+
+IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
+{
+    IOLog("Driver Disable()");
+//    super::disable(netif);
+    return kIOReturnSuccess;
+}
+
+
+IOReturn AppleIntelWifiAdapterV2::getHardwareAddressForInterface(IO80211Interface *netif, IOEthernetAddress *addr)
+{
+    return kIOReturnSuccess;
+}
+
+IOReturn AppleIntelWifiAdapterV2::setPromiscuousMode(bool active)
+{
+    return kIOReturnSuccess;
+}
+
+IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
+{
+    return kIOReturnSuccess;
+}
+
+bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *netif)
+{
+    return kIOReturnSuccess;
+}
+
+IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface()
+{
+    return NULL;
+}
+
+const OSString* AppleIntelWifiAdapterV2::newVendorString() const
+{
+    return OSString::withCString("Intel");
+}
+
+const OSString* AppleIntelWifiAdapterV2::newModelString() const
+{
+    return OSString::withCString("test model");
+}
+
+bool AppleIntelWifiAdapterV2::createWorkLoop() {
+    if (!fWorkLoop) {
+        fWorkLoop = IO80211WorkLoop::workLoop();
+    }
+    
+    return (fWorkLoop != NULL);
+}
+
+IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
+    return fWorkLoop;
+}
+
+IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
+//    memcpy(addrP->bytes, &hw->wiphy->addresses[0], ETHER_ADDR_LEN);
+    return kIOReturnSuccess;
+}
+
+
+int AppleIntelWifiAdapterV2::apple80211SkywalkRequest(uint,int, IO80211SkywalkInterface *,void *)
+{
+    return 0;
+}
+
+SInt32 AppleIntelWifiAdapterV2::disableVirtualInterface(IO80211VirtualInterface *)
+{
+    return 0;
+}
+
+SInt32 AppleIntelWifiAdapterV2::enableVirtualInterface(IO80211VirtualInterface *)
+{
+    return 0;
+}
+
+UInt32 AppleIntelWifiAdapterV2::getDataQueueDepth(OSObject *)
+{
+    return 1024;
+}
+
+SInt32 AppleIntelWifiAdapterV2::setVirtualHardwareAddress(IO80211VirtualInterface *, ether_addr *)
+{
+    return 0;
+}
+
+IO80211ScanManager* AppleIntelWifiAdapterV2::getPrimaryInterfaceScanManager(void)
+{
+    return NULL;
+}
+
+IO80211SkywalkInterface* AppleIntelWifiAdapterV2::getInfraInterface(void) {
+    return NULL;
+}
+
+IO80211ControllerMonitor* AppleIntelWifiAdapterV2::getInterfaceMonitor(void) {
+    return NULL;
+}
