@@ -4,9 +4,9 @@
 #include <IOKit/IOInterruptController.h>
 #include <IOKit/IOCommandGate.h>
 
-#define super IO80211Controller
+#define super IOEthernetController
 
-OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
+OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
 
 
 void AppleIntelWifiAdapterV2::free() {
@@ -54,36 +54,17 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
     super::stop(provider);
 }
 
-SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int, int, IO80211Interface*, void*)
-{
-    
-    return kIOReturnSuccess;
-}
-
-SInt32 AppleIntelWifiAdapterV2::apple80211VirtualRequest(uint,int,IO80211VirtualInterface *,void *)
-{
-    return kIOReturnSuccess;
-}
-
 
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IOLog("Driver Enable()");
-//    super::enable(netif);
-    return kIOReturnSuccess;
+    return super::enable(netif);
 }
 
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
 {
     IOLog("Driver Disable()");
-//    super::disable(netif);
-    return kIOReturnSuccess;
-}
-
-
-IOReturn AppleIntelWifiAdapterV2::getHardwareAddressForInterface(IO80211Interface *netif, IOEthernetAddress *addr)
-{
-    return kIOReturnSuccess;
+    return super::enable(netif);
 }
 
 IOReturn AppleIntelWifiAdapterV2::setPromiscuousMode(bool active)
@@ -101,26 +82,10 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *netif)
     return kIOReturnSuccess;
 }
 
-IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface()
-{
-    return NULL;
-}
-
-const OSString* AppleIntelWifiAdapterV2::newVendorString() const
-{
-    return OSString::withCString("Intel");
-}
-
-const OSString* AppleIntelWifiAdapterV2::newModelString() const
-{
-    return OSString::withCString("test model");
-}
-
 bool AppleIntelWifiAdapterV2::createWorkLoop() {
     if (!fWorkLoop) {
-        fWorkLoop = IO80211WorkLoop::workLoop();
+        fWorkLoop = IOWorkLoop::workLoop();
     }
-    
     return (fWorkLoop != NULL);
 }
 
@@ -131,43 +96,4 @@ IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
 //    memcpy(addrP->bytes, &hw->wiphy->addresses[0], ETHER_ADDR_LEN);
     return kIOReturnSuccess;
-}
-
-
-int AppleIntelWifiAdapterV2::apple80211SkywalkRequest(uint,int, IO80211SkywalkInterface *,void *)
-{
-    return 0;
-}
-
-SInt32 AppleIntelWifiAdapterV2::disableVirtualInterface(IO80211VirtualInterface *)
-{
-    return 0;
-}
-
-SInt32 AppleIntelWifiAdapterV2::enableVirtualInterface(IO80211VirtualInterface *)
-{
-    return 0;
-}
-
-UInt32 AppleIntelWifiAdapterV2::getDataQueueDepth(OSObject *)
-{
-    return 1024;
-}
-
-SInt32 AppleIntelWifiAdapterV2::setVirtualHardwareAddress(IO80211VirtualInterface *, ether_addr *)
-{
-    return 0;
-}
-
-IO80211ScanManager* AppleIntelWifiAdapterV2::getPrimaryInterfaceScanManager(void)
-{
-    return NULL;
-}
-
-IO80211SkywalkInterface* AppleIntelWifiAdapterV2::getInfraInterface(void) {
-    return NULL;
-}
-
-IO80211ControllerMonitor* AppleIntelWifiAdapterV2::getInterfaceMonitor(void) {
-    return NULL;
 }
