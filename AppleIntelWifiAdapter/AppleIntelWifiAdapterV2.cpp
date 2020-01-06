@@ -39,6 +39,8 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
     IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    int s = m_pDevice->probe(pciDevice);
+    IOLog("%d", s);
     return NULL;
 }
 

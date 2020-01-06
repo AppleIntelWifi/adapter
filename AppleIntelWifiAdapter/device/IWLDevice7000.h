@@ -37,7 +37,6 @@
 #define IWL3160_DCCM_LEN        0x10000
 #define IWL7265_DCCM_LEN        0x17A00
 
-
 #define IWL7260_FW_PRE "iwlwifi-7260-"
 #define IWL7260_MODULE_FIRMWARE(api) IWL7260_FW_PRE __stringify(api) ".ucode"
 

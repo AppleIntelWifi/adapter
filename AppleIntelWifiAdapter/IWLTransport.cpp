@@ -8,7 +8,20 @@
 
 #include "IWLTransport.hpp"
 
+IWLTransport::IWLTransport()
+{
+}
+
+IWLTransport::~IWLTransport()
+{
+}
+
 void IWLTransport::setDevice(IOPCIDevice *device)
 {
     this->pciDevice = device;
+}
+
+void IWLTransport::osWriteInt8(volatile void *base, uintptr_t byteOffset, uint8_t data)
+{
+    *(volatile uint8_t *)((uintptr_t)base + byteOffset) = data;
 }

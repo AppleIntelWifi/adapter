@@ -30,6 +30,9 @@ private:
     
 private:
     IOPCIDevice *pciDevice;
+    const struct iwl_cfg *pciDeviceConfig;
+    const char *pciDeviceName;
+    
     IWLTransport *iwl_trans;
 };
 

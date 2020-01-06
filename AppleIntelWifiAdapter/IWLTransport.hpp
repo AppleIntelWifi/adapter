@@ -24,6 +24,10 @@ public:
     void setDevice(IOPCIDevice *device);
 
 private:
+    
+    void osWriteInt8(volatile void* base, uintptr_t byteOffset, uint8_t data);
+    
+private:
     IOPCIDevice *pciDevice;
 };
 
