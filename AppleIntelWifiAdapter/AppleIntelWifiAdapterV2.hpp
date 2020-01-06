@@ -9,6 +9,7 @@
 #include <IOKit/IOService.h>
 #include <IOKit/pci/IOPCIDevice.h>
 #include <IOKit/IOLib.h>
+#include "IWLDevice.hpp"
 
 class AppleIntelWifiAdapterV2 : public IOEthernetController
 {
@@ -34,7 +35,7 @@ public:
     
     
 private:
-    IOPCIDevice *pciDevice;
+    IWLDevice *m_pDevice;
     
     IOWorkLoop *fWorkLoop;
 };

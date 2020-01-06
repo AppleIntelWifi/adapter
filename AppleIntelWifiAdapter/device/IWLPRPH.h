@@ -359,13 +359,6 @@ enum {
     HW_STEP_LOCATION_BITS = 24,
 };
 
-#define AUX_MISC_MASTER1_EN        0xA20818
-enum aux_misc_master1_en {
-    AUX_MISC_MASTER1_EN_SBE_MSK    = 0x1,
-};
-
-#define AUX_MISC_MASTER1_SMPHR_STATUS    0xA20800
-#define RSA_ENABLE            0xA24B08
 #define PREG_AUX_BUS_WPROT_0        0xA04CC0
 
 /* device family 9000 WPROT register */
@@ -382,6 +375,9 @@ enum aux_misc_master1_en {
 #define UMAG_SB_CPU_1_STATUS        0xA038C0
 #define UMAG_SB_CPU_2_STATUS        0xA038C4
 #define UMAG_GEN_HW_STATUS        0xA038C8
+#define UREG_UMAC_CURRENT_PC        0xa05c18
+#define UREG_LMAC1_CURRENT_PC        0xa05c1c
+#define UREG_LMAC2_CURRENT_PC        0xa05c20
 
 /* For UMAG_GEN_HW_STATUS reg check */
 enum {
@@ -404,6 +400,11 @@ enum {
 #define HPM_DEBUG            0xA03440
 #define PERSISTENCE_BIT            BIT(12)
 #define PREG_WFPM_ACCESS        BIT(12)
+
+#define HPM_HIPM_GEN_CFG            0xA03458
+#define HPM_HIPM_GEN_CFG_CR_PG_EN        BIT(0)
+#define HPM_HIPM_GEN_CFG_CR_SLP_EN        BIT(1)
+#define HPM_HIPM_GEN_CFG_CR_FORCE_ACTIVE    BIT(10)
 
 #define UREG_DOORBELL_TO_ISR6        0xA05C04
 #define UREG_DOORBELL_TO_ISR6_NMI_BIT    BIT(0)

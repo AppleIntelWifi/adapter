@@ -14,6 +14,8 @@
 		026E8CDF2356F2AD000BFD46 /* IO80211WorkLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */; };
 		026E8CE02356F2AD000BFD46 /* apple80211_var.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CDA2356F2AD000BFD46 /* apple80211_var.h */; };
 		026E8CE12356F2AD000BFD46 /* IO80211Interface.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */; };
+		02DCDEEA23C334DD00997FA0 /* IWLTransport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */; };
+		02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02DCDEE923C334DD00997FA0 /* IWLTransport.hpp */; };
 		F8C2805B23C1FFD9000827EA /* IWLDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8C2805923C1FFD9000827EA /* IWLDevice.cpp */; };
 		F8C2805C23C1FFD9000827EA /* IWLDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */; };
 		F8C2806923C20AEA000827EA /* nl80211.h in Headers */ = {isa = PBXBuildFile; fileRef = F8C2806823C20AEA000827EA /* nl80211.h */; };
@@ -51,6 +53,10 @@
 		026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO80211WorkLoop.h; sourceTree = "<group>"; };
 		026E8CDA2356F2AD000BFD46 /* apple80211_var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_var.h; sourceTree = "<group>"; };
 		026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IO80211Interface.h; sourceTree = "<group>"; };
+		02DCDEE623C30E8000997FA0 /* IWLCSR.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLCSR.h; sourceTree = "<group>"; };
+		02DCDEE723C329C400997FA0 /* IWLDebug.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLDebug.h; sourceTree = "<group>"; };
+		02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLTransport.cpp; sourceTree = "<group>"; };
+		02DCDEE923C334DD00997FA0 /* IWLTransport.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLTransport.hpp; sourceTree = "<group>"; };
 		F8C2805923C1FFD9000827EA /* IWLDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLDevice.cpp; sourceTree = "<group>"; };
 		F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLDevice.hpp; sourceTree = "<group>"; };
 		F8C2805D23C20000000827EA /* IWLDeviceList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLDeviceList.h; sourceTree = "<group>"; };
@@ -134,6 +140,9 @@
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
 				F8C2805923C1FFD9000827EA /* IWLDevice.cpp */,
 				F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */,
+				02DCDEE723C329C400997FA0 /* IWLDebug.h */,
+				02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */,
+				02DCDEE923C334DD00997FA0 /* IWLTransport.hpp */,
 			);
 			path = AppleIntelWifiAdapter;
 			sourceTree = "<group>";
@@ -210,6 +219,7 @@
 				F8C2806F23C210E9000827EA /* IWLDevice9000.h */,
 				F8C2807023C21305000827EA /* IWLPRPH.h */,
 				F8C2807323C21428000827EA /* IWLDevice22000.h */,
+				02DCDEE623C30E8000997FA0 /* IWLCSR.h */,
 			);
 			path = device;
 			sourceTree = "<group>";
@@ -235,6 +245,7 @@
 				026E8CDD2356F2AD000BFD46 /* apple80211_ioctl.h in Headers */,
 				F8C2805C23C1FFD9000827EA /* IWLDevice.hpp in Headers */,
 				F8C2806923C20AEA000827EA /* nl80211.h in Headers */,
+				02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */,
 				026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */,
 				026E8CDE2356F2AD000BFD46 /* apple80211_wps.h in Headers */,
 			);
@@ -328,6 +339,7 @@
 			files = (
 				F8C2805B23C1FFD9000827EA /* IWLDevice.cpp in Sources */,
 				026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */,
+				02DCDEEA23C334DD00997FA0 /* IWLTransport.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

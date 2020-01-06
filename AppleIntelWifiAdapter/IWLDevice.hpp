@@ -9,8 +9,29 @@
 #ifndef IWLDevice_hpp
 #define IWLDevice_hpp
 
+#include <IOKit/IOLib.h>
+#include <IOKit/pci/IOPCIDevice.h>
+#include "IWLTransport.hpp"
+
 #include "IWLDeviceList.h"
 
+class IWLDevice
+{
+public:
+    
+    bool init();
+    
+    int probe(IOPCIDevice *pciDevice);
+    
+    void release();
+    
+private:
+    
+    
+private:
+    IOPCIDevice *pciDevice;
+    IWLTransport *iwl_trans;
+};
 
 
 #endif /* IWLDevice_hpp */

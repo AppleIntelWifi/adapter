@@ -7,3 +7,25 @@
 //
 
 #include "IWLDevice.hpp"
+
+bool IWLDevice::init()
+{
+    this->iwl_trans = new IWLTransport();
+    return true;
+}
+
+void IWLDevice::release()
+{
+    if (this->iwl_trans) {
+        delete this->iwl_trans;
+        this->iwl_trans = NULL;
+    }
+}
+
+int IWLDevice::probe(IOPCIDevice *pciDevice)
+{
+    iwl_trans->setDevice(pciDevice);
+    this->pciDevice = pciDevice;
+    
+    return 0;
+}

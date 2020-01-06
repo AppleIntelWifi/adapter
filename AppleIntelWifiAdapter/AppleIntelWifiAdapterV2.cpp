@@ -11,12 +11,15 @@ OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
 
 void AppleIntelWifiAdapterV2::free() {
     super::free();
+    OSSafeReleaseNULL(m_pDevice);
     IOLog("Driver free()");
 }
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
     IOLog("Driver init()");
+    m_pDevice = new IWLDevice();
+    m_pDevice->init();
     return super::init(properties);
 }
 
@@ -25,7 +28,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     IOLog("Driver Probe()");
     super::probe(provider, score);
     
-    pciDevice = OSDynamicCast(IOPCIDevice, provider);
+    IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
         IOLog("Not pci device");
         return NULL;	
@@ -53,7 +56,6 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
     IOLog("Driver Stop()");
     super::stop(provider);
 }
-
 
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {

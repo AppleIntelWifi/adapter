@@ -15,6 +15,10 @@
 #define IWL8000_UCODE_API_MAX    36
 #define IWL8265_UCODE_API_MAX    36
 
+/* Lowest firmware API version supported */
+#define IWL8000_UCODE_API_MIN    22
+#define IWL8265_UCODE_API_MIN    22
+
 /* NVM versions */
 #define IWL8000_NVM_VERSION        0x0a1d
 
@@ -93,20 +97,22 @@ static const struct iwl_tt_params iwl8000_tt_params = {
     .apmg_not_supported = true,                    \
     .nvm_type = IWL_NVM_EXT,                    \
     .dbgc_supported = true,                        \
-    .min_umac_error_event_table = 0x800000,                \
-    .trans.csr = &iwl_csr_v1
+    .min_umac_error_event_table = 0x800000
 
 #define IWL_DEVICE_8000                            \
     IWL_DEVICE_8000_COMMON,                        \
-    .ucode_api_max = IWL8000_UCODE_API_MAX               \
+    .ucode_api_max = IWL8000_UCODE_API_MAX,                \
+    .ucode_api_min = IWL8000_UCODE_API_MIN                \
 
 #define IWL_DEVICE_8260                            \
     IWL_DEVICE_8000_COMMON,                        \
-    .ucode_api_max = IWL8000_UCODE_API_MAX               \
+    .ucode_api_max = IWL8000_UCODE_API_MAX,                \
+    .ucode_api_min = IWL8000_UCODE_API_MIN                \
 
 #define IWL_DEVICE_8265                            \
     IWL_DEVICE_8000_COMMON,                        \
-    .ucode_api_max = IWL8265_UCODE_API_MAX               \
+    .ucode_api_max = IWL8265_UCODE_API_MAX,                \
+    .ucode_api_min = IWL8265_UCODE_API_MIN                \
 
 const struct iwl_cfg iwl8260_2n_cfg = {
     .name = "Intel(R) Dual Band Wireless N 8260",
