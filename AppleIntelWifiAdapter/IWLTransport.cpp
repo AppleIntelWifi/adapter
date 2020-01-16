@@ -7,6 +7,10 @@
 //
 
 #include "IWLTransport.hpp"
+#include "IWLMvmTransOpsGen2.hpp"
+#include "IWLMvmTransOpsGen1.hpp"
+
+#define super IWLIO
 
 IWLTransport::IWLTransport()
 {
@@ -16,12 +20,37 @@ IWLTransport::~IWLTransport()
 {
 }
 
-void IWLTransport::setDevice(IOPCIDevice *device)
+bool IWLTransport::init(IWLDevice *device)
 {
-    this->pciDevice = device;
+    if (!super::init(device)) {
+        IOLog("IWLTransport init fail\n");
+        return false;
+    }
+    if (m_pDevice->cfg->trans.gen2) {
+        trans_ops = new IWLMvmTransOpsGen2();
+    } else {
+        trans_ops = new IWLMvmTransOpsGen1();
+    }
+    return true;
 }
 
-void IWLTransport::osWriteInt8(volatile void *base, uintptr_t byteOffset, uint8_t data)
+void IWLTransport::release()
 {
-    *(volatile uint8_t *)((uintptr_t)base + byteOffset) = data;
+    
+    super::release();
 }
+
+IWLTransOps *IWLTransport::getTransOps()
+{
+    return trans_ops;
+}
+
+void IWLTransport::setPMI(bool state)
+{
+    if (state) {
+        set_bit(STATUS_TPOWER_PMI, &this->status);
+    } else {
+        clear_bit(STATUS_TPOWER_PMI, &this->status);
+    }
+}
+

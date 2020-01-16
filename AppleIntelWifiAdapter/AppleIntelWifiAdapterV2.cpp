@@ -19,7 +19,6 @@ bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
     IOLog("Driver init()");
     m_pDevice = new IWLDevice();
-    m_pDevice->init();
     return super::init(properties);
 }
 
@@ -31,7 +30,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
         IOLog("Not pci device");
-        return NULL;	
+        return NULL;
     }
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
     UInt16 deviceID = pciDevice->configRead16(kIOPCIConfigDeviceID);
@@ -39,7 +38,8 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
     IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
-    int s = m_pDevice->probe(pciDevice);
+    m_pDevice->init(pciDevice);
+    int s = m_pDevice->probe();
     IOLog("%d", s);
     return NULL;
 }
@@ -48,6 +48,16 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
 {
     IOLog("Driver Start()");
     if (!super::start(provider)) {
+        return false;
+    }
+    bool succeed = m_pDevice->NICInit();
+    if (!succeed) {
+        IOLog("NIC init fail\n");
+        return false;
+    }
+    succeed = m_pDevice->NICStart();
+    if (!succeed) {
+        IOLog("NIC start fail\n");
         return false;
     }
     return true;
@@ -98,6 +108,11 @@ IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
-//    memcpy(addrP->bytes, &hw->wiphy->addresses[0], ETHER_ADDR_LEN);
+    addrP->bytes[0] = 0x29;
+    addrP->bytes[1] = 0xC2;
+    addrP->bytes[2] = 0xdd;
+    addrP->bytes[3] = 0x8F;
+    addrP->bytes[4] = 0x93;
+    addrP->bytes[5] = 0x4D;
     return kIOReturnSuccess;
 }

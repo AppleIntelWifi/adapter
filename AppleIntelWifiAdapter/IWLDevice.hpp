@@ -11,7 +11,6 @@
 
 #include <IOKit/IOLib.h>
 #include <IOKit/pci/IOPCIDevice.h>
-#include "IWLTransport.hpp"
 
 #include "IWLDeviceList.h"
 
@@ -19,21 +18,32 @@ class IWLDevice
 {
 public:
     
-    bool init();
+    bool init(IOPCIDevice *pciDevice);
     
-    int probe(IOPCIDevice *pciDevice);
+    int probe();
     
     void release();
     
-private:
+    void enablePCI();
     
+    bool NICInit();
     
-private:
+    bool NICStart();
+    
+public:
     IOPCIDevice *pciDevice;
-    const struct iwl_cfg *pciDeviceConfig;
-    const char *pciDeviceName;
+    const struct iwl_cfg *cfg;
     
-    IWLTransport *iwl_trans;
+    IOSimpleLock *registerRWLock;
+    bool holdNICWake;
+    
+private:
+    
+    
+private:
+    const char *name;
+    
+    const iwl_cfg_trans_params *trans_cfg;
 };
 
 
