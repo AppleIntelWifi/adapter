@@ -20,30 +20,30 @@ public:
     
     bool init(IOPCIDevice *pciDevice);
     
-    int probe();
-    
     void release();
     
     void enablePCI();
     
-    bool NICInit();
-    
-    bool NICStart();
-    
 public:
+    
     IOPCIDevice *pciDevice;
+    
     const struct iwl_cfg *cfg;
+    const char *name;
+    uint32_t hw_rf_id;
+    uint32_t hw_rev;
+    UInt16 deviceID;
+    uint16_t hw_id;
+    uint16_t subSystemDeviceID;
+    char hw_id_str[64];
     
     IOSimpleLock *registerRWLock;
+    
     bool holdNICWake;
     
 private:
     
     
-private:
-    const char *name;
-    
-    const iwl_cfg_trans_params *trans_cfg;
 };
 
 

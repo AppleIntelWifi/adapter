@@ -39,7 +39,7 @@ enum iwl_trans_status {
     STATUS_TRANS_DEAD,
 };
 
-class IWLTransport : IWLIO
+class IWLTransport : public IWLIO
 {
     
 public:
@@ -50,8 +50,25 @@ public:
     
     void release();
     
+    bool finishNicInit();
+   
+    ///
+    ///msix
+    void initMsix();
+    
+    void configMsixHw();
+    
+    
+    
+    
+    void disableIntr();
+    
+    void enableIntr();
+    
     IWLTransOps *getTransOps();
     
+    ///
+    ///power
     void setPMI(bool state);
     
 private:
@@ -61,6 +78,19 @@ private:
     //a bit-mask of transport status flags
     unsigned long status;
     IWLTransOps *trans_ops;
+    
+    
+    //msix
+    u32 fh_init_mask;
+    u32 hw_init_mask;
+    u32 fh_mask;
+    u32 hw_mask;
+    
+    //interrupt
+    u32 inta_mask;
+    
+    IOSimpleLock *irq_lock;
+    bool msix_enabled;
     
 };
 

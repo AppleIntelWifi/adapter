@@ -8,14 +8,29 @@
 
 #include "IWLMvmTransOpsGen2.hpp"
 
-bool IWLMvmTransOpsGen2::startFW()
+#define super IWLTransOps
+
+bool IWLMvmTransOpsGen2::startHW()
 {
-    
     return true;
 }
 
-bool IWLMvmTransOpsGen2::preparedCardHW()
+void IWLMvmTransOpsGen2::fwAlive(UInt32 scd_addr)
 {
     
+}
+
+bool IWLMvmTransOpsGen2::startFW()
+{
     return true;
+}
+
+void IWLMvmTransOpsGen2::stopDevice()
+{
+    
+}
+
+void IWLMvmTransOpsGen2::sendCmd(iwl_host_cmd *cmd)
+{
+    
 }

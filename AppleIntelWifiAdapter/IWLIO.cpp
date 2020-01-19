@@ -8,19 +8,28 @@
 
 #include "IWLIO.hpp"
 
+/* PCI registers */
+#define PCI_CFG_RETRY_TIMEOUT    0x041
 
 bool IWLIO::init(IWLDevice *device)
 {
     this->m_pDevice = device;
     //init pci
     m_pDevice->enablePCI();
-    IOMemoryMap *mp = m_pDevice->pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
-    this->pciHwBase = (void *)mp->getVirtualAddress();
+    fMemMap = m_pDevice->pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
+    if (!fMemMap) {
+        IWL_ERR(0, "map memory fail\n");
+        return false;
+    }
+    /* We disable the RETRY_TIMEOUT register (0x41) to keep
+     * PCI Tx retries from interfering with C3 CPU state */
+    m_pDevice->pciDevice->configWrite8(PCI_CFG_RETRY_TIMEOUT, 0x00);
     return true;
 }
 
 void IWLIO::release()
 {
+    OSSafeReleaseNULL(fMemMap);
 }
 
 bool IWLIO::grabNICAccess(IOInterruptState *state)
@@ -50,7 +59,7 @@ bool IWLIO::grabNICAccess(IOInterruptState *state)
             iwlWrite32(CSR_RESET,
                        CSR_RESET_REG_FLAG_FORCE_NMI);
         }
-        IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
+//        IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
     }
     return true;
 }
@@ -113,13 +122,13 @@ u32 IWLIO::iwlWriteMem32(u32 addr, u32 val)
 
 void IWLIO::setBitMask(u32 reg, u32 mask, u32 val)
 {
-    IOInterruptState state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
+//    IOInterruptState state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
     u32 uV;
     uV = iwlRead32(reg);
     uV &= ~mask;
     uV |= val;
     iwlWrite32(reg, uV);
-    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, state);
+//    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, state);
 }
 
 void IWLIO::setBit(u32 reg, u32 mask)
@@ -134,7 +143,7 @@ void IWLIO::clearBit(u32 reg, u32 mask)
 
 void IWLIO::osWriteInt8(uintptr_t byteOffset, uint8_t data)
 {
-    *(volatile uint8_t *)((uintptr_t)pciHwBase + byteOffset) = data;
+    m_pDevice->pciDevice->ioWrite8(byteOffset, data);
 }
 
 void IWLIO::iwlWrite8(u32 ofs, u8 val)
@@ -144,7 +153,7 @@ void IWLIO::iwlWrite8(u32 ofs, u8 val)
 
 void IWLIO::iwlWrite32(u32 ofs, u32 val)
 {
-    OSWriteLittleInt32(pciHwBase, ofs, val);
+    m_pDevice->pciDevice->ioWrite32(ofs, val);
 }
 
 void IWLIO::iwlWrite64(u64 ofs, u64 val)
@@ -173,7 +182,11 @@ void IWLIO::iwlWriteDirect64(u64 reg, u64 value)
 
 u32 IWLIO::iwlRead32(u32 ofs)
 {
-    return OSReadLittleInt32(pciHwBase, ofs);
+    if (!m_pDevice->pciDevice) {
+        IOLog("aaaaaaa\n");
+        return 0;
+    }
+    return m_pDevice->pciDevice->ioRead32(ofs);
 }
 
 u32 IWLIO::iwlReadDirect32(u32 reg)
@@ -198,6 +211,19 @@ int IWLIO::iwlPollBit(u32 addr,
         t += IWL_POLL_INTERVAL;
     } while (t < timeout);
     
+    return -ETIMEDOUT;
+}
+
+int IWLIO::iwlPollPRPHBit(u32 addr, u32 bits, u32 mask, int timeout)
+{
+    int t = 0;
+    do {
+        if ((iwlReadPRPH(addr) & mask) == mask)
+            return t;
+        IODelay(IWL_POLL_INTERVAL);
+        t += IWL_POLL_INTERVAL;
+    } while (t < timeout);
+
     return -ETIMEDOUT;
 }
 
@@ -236,4 +262,39 @@ void IWLIO::iwlWritePRPH(u32 addr, u32 val)
 {
     iwlWrite32(HBUS_TARG_PRPH_WADDR, ((addr & 0x000FFFFF) | (3 << 24)));
     iwlWrite32(HBUS_TARG_PRPH_WDAT, val);
+}
+
+void IWLIO::iwlWritePRPHNoGrab(u32 addr, u32 val)
+{
+    iwlWritePRPH(addr, val);
+}
+
+u32 IWLIO::iwlUmacPRPH(u32 ofs)
+{
+    return ofs + m_pDevice->cfg->trans.umac_prph_offset;
+}
+
+u32 IWLIO::iwlReadUmacPRPHNoGrab(u32 ofs)
+{
+    return iwlReadPRPHNoGrab(iwlUmacPRPH(ofs));
+}
+
+u32 IWLIO::iwlReadUmacPRPH(u32 ofs)
+{
+    return iwlReadPRPH(iwlUmacPRPH(ofs));
+}
+
+void IWLIO::iwlWriteUmacPRPHNoGrab(u32 ofs, u32 val)
+{
+    iwlWritePRPHNoGrab(iwlUmacPRPH(ofs), val);
+}
+
+void IWLIO::iwlWriteUmacPRPH(u32 ofs, u32 val)
+{
+    iwlWritePRPH(iwlUmacPRPH(ofs), val);
+}
+
+int IWLIO::iwlPollUmacPRPHBit(u32 addr, u32 bits, u32 mask, int timeout)
+{
+    return iwlPollPRPHBit(iwlUmacPRPH(addr), bits, mask, timeout);
 }

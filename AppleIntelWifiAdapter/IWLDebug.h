@@ -20,19 +20,19 @@
 #define TraceLog(args...) IOLog(args)
 
 #define __iwl_warn(args...) \
-do { TraceLog("WARN: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter WARN: " args); } while (0)
 
 #define __iwl_info(args...) \
-do { TraceLog("INFO: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter INFO: " args); } while (0)
 
 #define __iwl_crit(args...) \
-do { TraceLog("CRIT: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter CRIT: " args); } while (0)
 
 #define __iwl_err(rfkill_prefix, trace_only, args...) \
-do { if (!trace_only) TraceLog("ERR: " args); } while (0)
+do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); } while (0)
 
 #define __iwl_dbg(level, limit, args...) \
-do { if (iwl_have_debug_level(level) && (!limit)) DebugLog("DEBUG: " args); } while (0);
+do { if (iwl_have_debug_level(level) && (!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);
 
 /* No matter what is m (priv, bus, trans), this will work */
 #define IWL_ERR_DEV(m, f, a...)                        \

@@ -11,14 +11,14 @@ OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
 
 void AppleIntelWifiAdapterV2::free() {
     super::free();
-    OSSafeReleaseNULL(m_pDevice);
+    OSSafeReleaseNULL(drv);
     IOLog("Driver free()");
 }
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
     IOLog("Driver init()");
-    m_pDevice = new IWLDevice();
+    drv = new IWLMvmDriver();
     return super::init(properties);
 }
 
@@ -26,7 +26,6 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
     IOLog("Driver Probe()");
     super::probe(provider, score);
-    
     IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
         IOLog("Not pci device");
@@ -38,10 +37,10 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
     IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
-    m_pDevice->init(pciDevice);
-    int s = m_pDevice->probe();
-    IOLog("%d", s);
-    return NULL;
+    if (!drv->init(pciDevice)) {
+        return NULL;
+    }
+    return drv->probe() > 0 ? NULL : NULL;
 }
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
@@ -50,17 +49,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     if (!super::start(provider)) {
         return false;
     }
-    bool succeed = m_pDevice->NICInit();
-    if (!succeed) {
-        IOLog("NIC init fail\n");
-        return false;
-    }
-    succeed = m_pDevice->NICStart();
-    if (!succeed) {
-        IOLog("NIC start fail\n");
-        return false;
-    }
-    return true;
+    return drv->start();
 }
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
@@ -78,7 +67,7 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
 {
     IOLog("Driver Disable()");
-    return super::enable(netif);
+    return super::disable(netif);
 }
 
 IOReturn AppleIntelWifiAdapterV2::setPromiscuousMode(bool active)
@@ -94,17 +83,6 @@ IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
 bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *netif)
 {
     return kIOReturnSuccess;
-}
-
-bool AppleIntelWifiAdapterV2::createWorkLoop() {
-    if (!fWorkLoop) {
-        fWorkLoop = IOWorkLoop::workLoop();
-    }
-    return (fWorkLoop != NULL);
-}
-
-IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
-    return fWorkLoop;
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {

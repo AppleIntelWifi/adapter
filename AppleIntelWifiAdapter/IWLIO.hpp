@@ -28,6 +28,8 @@ public:
     
     void release();
     
+//    allocDMABuffer(int size, mach_vm_address_t physical_mask);
+    
     bool grabNICAccess(IOInterruptState *state);
     
     void releaseNICAccess(IOInterruptState *state);
@@ -65,6 +67,8 @@ public:
     int iwlPollBit(u32 addr,
                    u32 bits, u32 mask, int timeout);
     
+    int iwlPollPRPHBit(u32 addr, u32 bits, u32 mask, int timeout);
+    
     int iwlPollDirectBit(u32 addr, u32 mask, int timeout);
     
     u32 iwlReadPRPH(u32 ofs);
@@ -73,6 +77,24 @@ public:
     
     void iwlWritePRPH(u32 addr, u32 val);
     
+    void iwlWritePRPHNoGrab(u32 addr, u32 val);
+    
+    /*
+    * UMAC periphery address space changed from 0xA00000 to 0xD00000 starting from
+    * device family AX200. So peripheries used in families above and below AX200
+    * should go through iwl_..._umac_..._prph.
+    */
+    u32 iwlUmacPRPH(u32 ofs);
+    
+    u32 iwlReadUmacPRPHNoGrab(u32 ofs);
+    
+    u32 iwlReadUmacPRPH(u32 ofs);
+    
+    void iwlWriteUmacPRPHNoGrab(u32 ofs, u32 val);
+    
+    void iwlWriteUmacPRPH(u32 ofs, u32 val);
+    
+    int iwlPollUmacPRPHBit(u32 addr, u32 bits, u32 mask, int timeout);
     
 protected:
     
@@ -87,7 +109,7 @@ protected:
     
 private:
     
-    volatile void *pciHwBase;
+    IOMemoryMap *fMemMap;
     
 };
 

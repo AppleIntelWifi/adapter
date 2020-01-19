@@ -13,12 +13,25 @@
 
 class IWLMvmTransOpsGen2 : public IWLTransOps {
     
-    
 public:
     
-    bool preparedCardHW() override;
+    IWLMvmTransOpsGen2() {}
+    IWLMvmTransOpsGen2(IWLIO *io) : IWLTransOps(io) {}
+    ~IWLMvmTransOpsGen2() {}
+    
+    bool startHW() override;
+    
+    void fwAlive(UInt32 scd_addr) override;
     
     bool startFW() override;
+    
+    void stopDevice() override;
+    
+    void sendCmd(iwl_host_cmd *cmd) override;
+    
+private:
+    
+    IWLIO *io;
 };
 
 #endif /* IWLMvmTransOpsGen2_hpp */

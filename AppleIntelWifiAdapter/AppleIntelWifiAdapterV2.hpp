@@ -9,7 +9,7 @@
 #include <IOKit/IOService.h>
 #include <IOKit/pci/IOPCIDevice.h>
 #include <IOKit/IOLib.h>
-#include "IWLDevice.hpp"
+#include "IWLMvmDriver.hpp"
 
 class AppleIntelWifiAdapterV2 : public IOEthernetController
 {
@@ -27,15 +27,13 @@ public:
     bool configureInterface(IONetworkInterface *netif) override;
     IOReturn setPromiscuousMode(bool active) override;
     IOReturn setMulticastMode(bool active) override;
-    bool createWorkLoop() override;
-    IOWorkLoop* getWorkLoop() const override;
     
     
 public:
     
     
 private:
-    IWLDevice *m_pDevice;
+    IWLMvmDriver *drv;
     
     IOWorkLoop *fWorkLoop;
 };

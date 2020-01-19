@@ -7,3 +7,30 @@
 //
 
 #include "IWLMvmTransOpsGen1.hpp"
+
+#define super IWLTransOps
+
+bool IWLMvmTransOpsGen1::startHW()
+{
+    return true;
+}
+
+void IWLMvmTransOpsGen1::fwAlive(UInt32 scd_addr)
+{
+    
+}
+
+bool IWLMvmTransOpsGen1::startFW()
+{
+    return true;
+}
+
+void IWLMvmTransOpsGen1::stopDevice()
+{
+    
+}
+
+void IWLMvmTransOpsGen1::sendCmd(iwl_host_cmd *cmd)
+{
+    
+}

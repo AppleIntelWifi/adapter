@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>OSBundleRequired</key>
-	<string>Network-Root</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -38,16 +36,16 @@
 	<string>Copyright © 2019 钟先耀. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
 	<dict>
-		<key>com.apple.iokit.IOPCIFamily</key>
-		<string>2.9</string>
 		<key>com.apple.iokit.IONetworkingFamily</key>
 		<string>3.4</string>
-		<key>com.apple.iokit.IO80211Family</key>
-		<string>1200.12.2b1</string>
+		<key>com.apple.iokit.IOPCIFamily</key>
+		<string>2.9</string>
 		<key>com.apple.kpi.iokit</key>
 		<string>19.0</string>
 		<key>com.apple.kpi.libkern</key>
 		<string>19.0</string>
 	</dict>
+	<key>OSBundleRequired</key>
+	<string>Network-Root</string>
 </dict>
 </plist>
