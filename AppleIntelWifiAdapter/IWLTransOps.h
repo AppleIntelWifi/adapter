@@ -203,15 +203,15 @@ public:
     int loadFWChunk(u32 dst_addr, dma_addr_t phy_addr,
                     u32 byte_cnt);
     
-    virtual bool startHW();
+    virtual bool startHW() = 0;
     
-    virtual void fwAlive(UInt32 scd_addr);
+    virtual void fwAlive(UInt32 scd_addr) = 0;
     
-    virtual bool startFW();
+    virtual bool startFW() = 0;
     
-    virtual void stopDevice();
+    virtual void stopDevice() = 0;
     
-    virtual void sendCmd(iwl_host_cmd *cmd);
+    virtual void sendCmd(iwl_host_cmd *cmd) = 0;
     
 private:
     

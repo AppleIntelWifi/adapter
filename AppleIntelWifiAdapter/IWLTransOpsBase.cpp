@@ -11,11 +11,12 @@
 
 bool IWLTransOps::prepareCardHW()
 {
+    IWL_INFO(0, "prepareCardHW\n");
     int t = 0;
     int ret = setHWReady();
     /* If the card is ready, exit 0 */
     if (ret >= 0)
-        return true;
+        return false;
     this->io->setBit(CSR_DBG_LINK_PWR_MGMT_REG, CSR_RESET_LINK_PWR_MGMT_DISABLED);
     IODelay(2000);
     for (int iter = 0; iter < 10; iter++) {
@@ -25,7 +26,7 @@ bool IWLTransOps::prepareCardHW()
         do {
             ret = setHWReady();
             if (ret >= 0)
-                return 0;
+                return false;
             
             IODelay(1000);
             t += 200;
@@ -51,7 +52,7 @@ int IWLTransOps::setHWReady()
     if (ret >= 0)
         this->io->setBit(CSR_MBOX_SET_REG, CSR_MBOX_SET_REG_OS_ALIVE);
     IWL_WARN(0, "hardware%s ready\n", ret < 0 ? " not" : "");
-    return 0;
+    return ret;
 }
 
 void IWLTransOps::loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)

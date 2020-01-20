@@ -27,11 +27,11 @@ bool IWLTransport::init(IWLDevice *device)
         IOLog("IWLTransport init fail\n");
         return false;
     }
-//    if (m_pDevice->cfg->trans.gen2) {
-//        trans_ops = new IWLMvmTransOpsGen2(this);
-//    } else {
-//        trans_ops = new IWLMvmTransOpsGen1(this);
-//    }
+    if (m_pDevice->cfg->trans.gen2) {
+        trans_ops = new IWLMvmTransOpsGen2(this);
+    } else {
+        trans_ops = new IWLMvmTransOpsGen1(this);
+    }
     this->irq_lock = IOSimpleLockAlloc();
     disableIntr();
     /*
@@ -42,13 +42,13 @@ bool IWLTransport::init(IWLDevice *device)
      */
     if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000) {
         m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xfff0) | (CSR_HW_REV_STEP(m_pDevice->hw_rev << 2) << 2);
-//        if (getTransOps()->prepareCardHW()) {
-//            IWL_ERR(0, "Error while preparing HW\n");
-//            return false;
-//        }
-//        if (finishNicInit()) {
-//            return false;
-//        }
+        if (trans_ops->prepareCardHW()) {
+            IWL_ERR(0, "Error while preparing HW\n");
+            return false;
+        }
+        if (finishNicInit()) {
+            return false;
+        }
     }
     m_pDevice->hw_id = (m_pDevice->deviceID << 16) + m_pDevice->subSystemDeviceID;
     m_pDevice->hw_rf_id = iwlRead32(CSR_HW_RF_ID);
@@ -79,6 +79,7 @@ bool IWLTransport::init(IWLDevice *device)
 
 bool IWLTransport::finishNicInit()
 {
+    IWL_INFO(0, "finishNicInit\n");
     if (m_pDevice->cfg->trans.bisr_workaround) {
         IODelay(2);
     }
@@ -180,6 +181,7 @@ void IWLTransport::disableIntr()
 
 void IWLTransport::enableIntr()
 {
+    IWL_INFO(0, "enable interrupt\n");
     IOSimpleLockLock(this->irq_lock);
     set_bit(STATUS_INT_ENABLED, &this->status);
     if (!msix_enabled) {

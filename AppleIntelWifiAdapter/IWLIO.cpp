@@ -35,7 +35,7 @@ void IWLIO::release()
 bool IWLIO::grabNICAccess(IOInterruptState *state)
 {
     int ret;
-    *state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
+//    *state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
     if (this->m_pDevice->holdNICWake) {
         return true;
     }
@@ -67,11 +67,11 @@ bool IWLIO::grabNICAccess(IOInterruptState *state)
 void IWLIO::releaseNICAccess(IOInterruptState *state)
 {
     if (this->m_pDevice->holdNICWake) {
-        goto out;
+        return;
     }
     clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
-out:
-    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
+//out:
+//    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
 }
 
 int IWLIO::iwlReadMem(u32 addr, void *buf, int dwords)
