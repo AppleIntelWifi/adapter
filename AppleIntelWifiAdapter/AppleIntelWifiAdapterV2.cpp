@@ -40,7 +40,11 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     if (!drv->init(pciDevice)) {
         return NULL;
     }
-    return drv->probe() > 0 ? NULL : NULL;
+    //    return drv->probe() ? NULL : NULL;
+    if (drv->probe()) {
+        drv->start();
+    }
+    return NULL;
 }
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)

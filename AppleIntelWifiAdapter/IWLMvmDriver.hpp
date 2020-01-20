@@ -9,6 +9,9 @@
 #ifndef IWLMvmDriver_hpp
 #define IWLMvmDriver_hpp
 
+#include <libkern/OSKextLib.h>
+#include <IOKit/IOLib.h>
+
 #include "IWLTransport.hpp"
 
 class IWLMvmDriver {
@@ -19,16 +22,20 @@ public:
     
     void release();
     
-    int probe();
+    bool probe();
     
     bool start();
+    
+    static void reqFWCallback(
+                              OSKextRequestTag requestTag,
+                              OSReturn result,
+                              const void* resourceData,
+                              uint32_t resourceDataLength,
+                              void* context);
     
 private:
     
     IWLDevice *m_pDevice;
-    
-    IOLock *fwLoadLock;
-    
     
     IWLTransport *trans;
 };

@@ -74,6 +74,7 @@ bool IWLTransport::init(IWLDevice *device)
 
         this->inta_mask = CSR_INI_SET_MASK;
     }
+    IWL_ERR(0, "init succeed\n");
     return true;
 }
 
@@ -103,7 +104,7 @@ bool IWLTransport::finishNicInit()
         /* ensure BISR shift has finished */
         IODelay(200);
     }
-    return err < 0;
+    return err < 0 ? err : 0;
 }
 
 void IWLTransport::release()

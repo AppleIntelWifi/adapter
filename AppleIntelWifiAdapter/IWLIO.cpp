@@ -21,6 +21,11 @@ bool IWLIO::init(IWLDevice *device)
         IWL_ERR(0, "map memory fail\n");
         return false;
     }
+    fHwBase = reinterpret_cast<volatile void *>(fMemMap->getVirtualAddress());
+    if (!fHwBase) {
+        IWL_ERR(0, "map fHwBase fail\n");
+        return false;
+    }kIODirectionOutIn
     /* We disable the RETRY_TIMEOUT register (0x41) to keep
      * PCI Tx retries from interfering with C3 CPU state */
     m_pDevice->pciDevice->configWrite8(PCI_CFG_RETRY_TIMEOUT, 0x00);
@@ -35,7 +40,7 @@ void IWLIO::release()
 bool IWLIO::grabNICAccess(IOInterruptState *state)
 {
     int ret;
-//    *state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
+    *state = IOSimpleLockLockDisableInterrupt(this->m_pDevice->registerRWLock);
     if (this->m_pDevice->holdNICWake) {
         return true;
     }
@@ -59,7 +64,8 @@ bool IWLIO::grabNICAccess(IOInterruptState *state)
             iwlWrite32(CSR_RESET,
                        CSR_RESET_REG_FLAG_FORCE_NMI);
         }
-//        IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
+        IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
+        return false;
     }
     return true;
 }
@@ -67,11 +73,11 @@ bool IWLIO::grabNICAccess(IOInterruptState *state)
 void IWLIO::releaseNICAccess(IOInterruptState *state)
 {
     if (this->m_pDevice->holdNICWake) {
-        return;
+        goto out;
     }
     clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
-//out:
-//    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
+out:
+    IOSimpleLockUnlockEnableInterrupt(this->m_pDevice->registerRWLock, *state);
 }
 
 int IWLIO::iwlReadMem(u32 addr, void *buf, int dwords)
@@ -79,6 +85,7 @@ int IWLIO::iwlReadMem(u32 addr, void *buf, int dwords)
     IOInterruptState flags;
     int offs, ret = 0;
     u32 *vals = (u32 *)buf;
+    
     if (grabNICAccess(&flags)) {
         iwlWrite32(HBUS_TARG_MEM_RADDR, addr);
         for (offs = 0; offs < dwords; offs++)
@@ -143,17 +150,19 @@ void IWLIO::clearBit(u32 reg, u32 mask)
 
 void IWLIO::osWriteInt8(uintptr_t byteOffset, uint8_t data)
 {
-    m_pDevice->pciDevice->ioWrite8(byteOffset, data);
+    *(volatile uint8_t *)((uintptr_t)fHwBase + byteOffset) = data;
 }
 
 void IWLIO::iwlWrite8(u32 ofs, u8 val)
 {
     osWriteInt8(ofs, val);
+    OSSynchronizeIO();
 }
 
 void IWLIO::iwlWrite32(u32 ofs, u32 val)
 {
-    m_pDevice->pciDevice->ioWrite32(ofs, val);
+    OSWriteLittleInt32(fHwBase, ofs, val);
+    OSSynchronizeIO();
 }
 
 void IWLIO::iwlWrite64(u64 ofs, u64 val)
@@ -182,11 +191,7 @@ void IWLIO::iwlWriteDirect64(u64 reg, u64 value)
 
 u32 IWLIO::iwlRead32(u32 ofs)
 {
-    if (!m_pDevice->pciDevice) {
-        IOLog("aaaaaaa\n");
-        return 0;
-    }
-    return m_pDevice->pciDevice->ioRead32(ofs);
+    return OSReadLittleInt32(fHwBase, ofs);
 }
 
 u32 IWLIO::iwlReadDirect32(u32 reg)

@@ -7,6 +7,7 @@
 //
 
 #include "IWLMvmDriver.hpp"
+#include "fw/IWLUcodeParse.hpp"
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
@@ -25,19 +26,15 @@ void IWLMvmDriver::release()
 {
     OSSafeReleaseNULL(trans);
     OSSafeReleaseNULL(m_pDevice);
-    if (fwLoadLock) {
-        IOLockFree(fwLoadLock);
-        fwLoadLock = NULL;
-    }
 }
 
-int IWLMvmDriver::probe()
+bool IWLMvmDriver::probe()
 {
     IOInterruptState flags;
     const struct iwl_cfg *cfg_7265d = NULL;
     UInt16 vendorID = m_pDevice->pciDevice->configRead16(kIOPCIConfigVendorID);
     if (vendorID != PCI_VENDOR_ID_INTEL) {
-        return 0;
+        return false;
     }
     UInt16 deviceID = m_pDevice->deviceID;
     UInt16 subSystemDeviceID = m_pDevice->subSystemDeviceID;
@@ -151,8 +148,6 @@ int IWLMvmDriver::probe()
 
             if (trans->grabNICAccess(&flags)) {
                 u32 val;
-                
-                IOLog("tiao dao zhe li lai\n");
 
                 val = trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
                 val |= ENABLE_WFPM;
@@ -203,7 +198,6 @@ int IWLMvmDriver::probe()
 
 
         IOLog("device name=%s\n", m_pDevice->name);
-        IOLog("%s", m_pDevice->cfg->fw_name_pre);
 
 //        if (m_pDevice->trans_cfg->mq_rx_supported) {
 //            if (!m_pDevice->cfg->num_rbds) {
@@ -231,16 +225,46 @@ int IWLMvmDriver::probe()
             trans->releaseNICAccess(&flags);
         }
     }
-    return m_pDevice->cfg != NULL;
+    return true;
 error:
     return false;
 }
 
 bool IWLMvmDriver::start()
 {
-    if (!fwLoadLock) {
-        fwLoadLock = IOLockAlloc();
+    char tag[8];
+    char firmware_name[64];
+    if (m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_9000 &&
+        (CSR_HW_REV_STEP(m_pDevice->hw_rev) != SILICON_B_STEP &&
+         CSR_HW_REV_STEP(m_pDevice->hw_rev) != SILICON_C_STEP)) {
+        IWL_ERR(0,
+            "Only HW steps B and C are currently supported (0x%0x)\n",
+            m_pDevice->hw_rev);
+        return false;
     }
-    
+    snprintf(tag, sizeof(tag), "%d", m_pDevice->cfg->ucode_api_max);
+    snprintf(firmware_name, sizeof(firmware_name), "%s%s.ucode", m_pDevice->cfg->fw_name_pre, tag);
+    IWL_INFO(0, "attempting to load firmware '%s'\n", firmware_name);
+    IOReturn ret = OSKextRequestResource(OSKextGetCurrentIdentifier(), firmware_name, reqFWCallback, this, NULL);
+    if (ret != kIOReturnSuccess) {
+        IWL_ERR(0, "Error loading firmware %s\n", firmware_name);
+        return false;
+    }
     return true;
 }
+
+void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, const void *resourceData, uint32_t resourceDataLength, void *context)
+{
+    IWL_INFO(0, "request firmware callback\n");
+    if (resourceDataLength <= 4) {
+        IWL_ERR(drv, "Error loading fw, size=%d\n",resourceDataLength);
+        return;
+    }
+    bool ret = IWLUcodeParse::parseFW(resourceData);
+    if (!ret) {
+        IWL_ERR(0, "parse fw failed\n");
+        return;
+    }
+    
+}
+

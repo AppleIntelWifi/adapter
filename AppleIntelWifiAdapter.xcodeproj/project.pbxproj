@@ -27,9 +27,10 @@
 		02CEFCDD23D45C1200B620E6 /* iwlwifi-QuZ-a0-jf-b0-48.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCD523D45C1100B620E6 /* iwlwifi-QuZ-a0-jf-b0-48.ucode */; };
 		02CEFCDE23D45C1200B620E6 /* iwlwifi-QuZ-a0-hr-b0-48.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCD623D45C1100B620E6 /* iwlwifi-QuZ-a0-hr-b0-48.ucode */; };
 		02CEFCDF23D45C1200B620E6 /* iwlwifi-Qu-c0-hr-b0-48.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCD723D45C1100B620E6 /* iwlwifi-Qu-c0-hr-b0-48.ucode */; };
-		02CEFCE023D45C1200B620E6 /* iwlwifi-cc-a0-46.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCD823D45C1100B620E6 /* iwlwifi-cc-a0-46.ucode */; };
 		02CEFCE123D45C1200B620E6 /* iwlwifi-Qu-b0-jf-b0-48.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCD923D45C1100B620E6 /* iwlwifi-Qu-b0-jf-b0-48.ucode */; };
 		02CEFCE223D45C1200B620E6 /* iwlwifi-Qu-b0-hr-b0-48.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 02CEFCDA23D45C1200B620E6 /* iwlwifi-Qu-b0-hr-b0-48.ucode */; };
+		02CEFCE523D5F09600B620E6 /* IWLUcodeParse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */; };
+		02CEFCE623D5F09600B620E6 /* IWLUcodeParse.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */; };
 		02DCDEEA23C334DD00997FA0 /* IWLTransport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */; };
 		02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02DCDEE923C334DD00997FA0 /* IWLTransport.hpp */; };
 		02EAFD7B23D4202C00905E50 /* time-event.h in Headers */ = {isa = PBXBuildFile; fileRef = 02EAFD5823D4202500905E50 /* time-event.h */; };
@@ -112,9 +113,10 @@
 		02CEFCD523D45C1100B620E6 /* iwlwifi-QuZ-a0-jf-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-QuZ-a0-jf-b0-48.ucode"; sourceTree = "<group>"; };
 		02CEFCD623D45C1100B620E6 /* iwlwifi-QuZ-a0-hr-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-QuZ-a0-hr-b0-48.ucode"; sourceTree = "<group>"; };
 		02CEFCD723D45C1100B620E6 /* iwlwifi-Qu-c0-hr-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-Qu-c0-hr-b0-48.ucode"; sourceTree = "<group>"; };
-		02CEFCD823D45C1100B620E6 /* iwlwifi-cc-a0-46.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-cc-a0-46.ucode"; sourceTree = "<group>"; };
 		02CEFCD923D45C1100B620E6 /* iwlwifi-Qu-b0-jf-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-Qu-b0-jf-b0-48.ucode"; sourceTree = "<group>"; };
 		02CEFCDA23D45C1200B620E6 /* iwlwifi-Qu-b0-hr-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-Qu-b0-hr-b0-48.ucode"; sourceTree = "<group>"; };
+		02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLUcodeParse.cpp; sourceTree = "<group>"; };
+		02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLUcodeParse.hpp; sourceTree = "<group>"; };
 		02DCDEE623C30E8000997FA0 /* IWLCSR.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLCSR.h; sourceTree = "<group>"; };
 		02DCDEE723C329C400997FA0 /* IWLDebug.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLDebug.h; sourceTree = "<group>"; };
 		02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLTransport.cpp; sourceTree = "<group>"; };
@@ -277,7 +279,6 @@
 				F8C280B323C2231A000827EA /* iwlwifi-8265-36.ucode */,
 				F8C2807A23C2230D000827EA /* iwlwifi-9000-pu-b0-jf-b0-46.ucode */,
 				F8C2808C23C2230F000827EA /* iwlwifi-9260-th-b0-jf-b0-46.ucode */,
-				02CEFCD823D45C1100B620E6 /* iwlwifi-cc-a0-46.ucode */,
 				02CEFCD423D45C1000B620E6 /* iwlwifi-cc-a0-48.ucode */,
 				02CEFCDA23D45C1200B620E6 /* iwlwifi-Qu-b0-hr-b0-48.ucode */,
 				02CEFCD923D45C1100B620E6 /* iwlwifi-Qu-b0-jf-b0-48.ucode */,
@@ -372,6 +373,8 @@
 			children = (
 				02EAFD5723D41FF600905E50 /* api */,
 				F8C2807123C21390000827EA /* FWFile.h */,
+				02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */,
+				02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */,
 			);
 			path = fw;
 			sourceTree = "<group>";
@@ -406,6 +409,7 @@
 				02EAFD9323D4202C00905E50 /* coex.h in Headers */,
 				F8C2806923C20AEA000827EA /* nl80211.h in Headers */,
 				02EAFD8423D4202C00905E50 /* debug.h in Headers */,
+				02CEFCE623D5F09600B620E6 /* IWLUcodeParse.hpp in Headers */,
 				02EAFD8A23D4202C00905E50 /* d3.h in Headers */,
 				02EAFD8323D4202C00905E50 /* paging.h in Headers */,
 				02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */,
@@ -508,7 +512,6 @@
 				F8C280FA23C2231D000827EA /* iwlwifi-8265-36.ucode in Resources */,
 				02CEFCE123D45C1200B620E6 /* iwlwifi-Qu-b0-jf-b0-48.ucode in Resources */,
 				02CEFCDE23D45C1200B620E6 /* iwlwifi-QuZ-a0-hr-b0-48.ucode in Resources */,
-				02CEFCE023D45C1200B620E6 /* iwlwifi-cc-a0-46.ucode in Resources */,
 				F8C280CF23C2231D000827EA /* iwlwifi-8000C-36.ucode in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -526,6 +529,7 @@
 				02443B5823D1E9A4009C675B /* IWLMvmDriver.cpp in Sources */,
 				026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */,
 				02EAFD9F23D443B400905E50 /* IWLTransOpsBase.cpp in Sources */,
+				02CEFCE523D5F09600B620E6 /* IWLUcodeParse.cpp in Sources */,
 				024DDD4E23CCA027002716C8 /* IWLIO.cpp in Sources */,
 				02DCDEEA23C334DD00997FA0 /* IWLTransport.cpp in Sources */,
 			);

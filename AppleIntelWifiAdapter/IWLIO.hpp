@@ -111,6 +111,8 @@ private:
     
     IOMemoryMap *fMemMap;
     
+    volatile void *fHwBase;
+    
 };
 
 #endif /* IWLIO_hpp */
