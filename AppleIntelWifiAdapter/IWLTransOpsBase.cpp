@@ -74,9 +74,9 @@ void IWLTransOps::loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)
                          FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_VALID);
     
     this->io->iwlWrite32(FH_TCSR_CHNL_TX_CONFIG_REG(FH_SRVC_CHNL),
-                                    FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
-                                    FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_DISABLE |
-                                    FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_ENDTFD);
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_DISABLE |
+                         FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_ENDTFD);
 }
 
 int IWLTransOps::loadFWChunk(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)

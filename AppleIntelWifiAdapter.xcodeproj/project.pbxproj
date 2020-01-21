@@ -117,6 +117,7 @@
 		02CEFCDA23D45C1200B620E6 /* iwlwifi-Qu-b0-hr-b0-48.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-Qu-b0-hr-b0-48.ucode"; sourceTree = "<group>"; };
 		02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLUcodeParse.cpp; sourceTree = "<group>"; };
 		02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLUcodeParse.hpp; sourceTree = "<group>"; };
+		02CEFCE723D68DD400B620E6 /* FWImg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FWImg.h; sourceTree = "<group>"; };
 		02DCDEE623C30E8000997FA0 /* IWLCSR.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLCSR.h; sourceTree = "<group>"; };
 		02DCDEE723C329C400997FA0 /* IWLDebug.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLDebug.h; sourceTree = "<group>"; };
 		02DCDEE823C334DD00997FA0 /* IWLTransport.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLTransport.cpp; sourceTree = "<group>"; };
@@ -375,6 +376,7 @@
 				F8C2807123C21390000827EA /* FWFile.h */,
 				02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */,
 				02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */,
+				02CEFCE723D68DD400B620E6 /* FWImg.h */,
 			);
 			path = fw;
 			sourceTree = "<group>";

@@ -75,6 +75,8 @@ typedef s16 __s16;
 typedef s32 __s32;
 typedef s64 __s64;
 
+typedef UInt16 __sum16;
+
 typedef u64 dma_addr_t;
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -129,5 +131,17 @@ static inline __u16 __le16_to_cpup(const __le16 *p)
 #define RT_ALIGN_T(u, uAlignment, type) ( ((type)(u) + ((uAlignment) - 1)) & ~(type)((uAlignment) - 1) )
 #define RT_ALIGN_Z(cb, uAlignment)              RT_ALIGN_T(cb, uAlignment, size_t)
 #define LNX_ALIGN RT_ALIGN_Z
+
+#define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
+#define ALIGN(x, a)         ALIGN_MASK(x, (typeof(x))(a) - 1)
+
+#define usec_delay(x)           IODelay(x)
+#define msec_delay(x)           IOSleep(x)
+#define udelay(x)               IODelay(x)
+#define mdelay(x)               IODelay(1000*(x))
+#define msleep(x)               IOSleep(x)
+
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+#define usleep_range(min, max)    msleep(DIV_ROUND_UP(min, 1000))
 
 #endif /* types_h */

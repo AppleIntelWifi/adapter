@@ -11,6 +11,7 @@
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
+    this->fwLoadLock = IOLockAlloc();
     this->m_pDevice = new IWLDevice();
     if (!this->m_pDevice->init(pciDevice)) {
         return false;
@@ -24,6 +25,10 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 
 void IWLMvmDriver::release()
 {
+    if (this->fwLoadLock) {
+        IOLockFree(this->fwLoadLock);
+        this->fwLoadLock = NULL;
+    }
     OSSafeReleaseNULL(trans);
     OSSafeReleaseNULL(m_pDevice);
 }
@@ -41,7 +46,7 @@ bool IWLMvmDriver::probe()
     
     IOLog("hw_rf_id=0x%02x\n", m_pDevice->hw_rf_id);
     IOLog("hw_rev=0x%02x\n", m_pDevice->hw_rev);
-
+    
     for (int i = 0; i < ARRAY_SIZE(iwl_dev_info_table); i++) {
         const struct iwl_dev_info *dev_info = &iwl_dev_info_table[i];
         if ((dev_info->device == (u16)IWL_CFG_ANY ||
@@ -70,17 +75,6 @@ bool IWLMvmDriver::probe()
             m_pDevice->name = dev_info->name;
         }
     }
-
-//    if (!m_pDevice->cfg) {
-//        for (int i = 0; i < ARRAY_SIZE(iwl_hw_card_ids); i++) {
-//            pci_device_id dev = iwl_hw_card_ids[i];
-//            if (dev.subdevice == subSystemDeviceID && dev.device == deviceID) {
-//                m_pDevice->cfg = (struct iwl_cfg *)dev.driver_data;
-//                IOLog("我找到啦！！！");
-//                break;
-//            }
-//        }
-//    }
     
     if (m_pDevice->cfg) {
         /*
@@ -99,7 +93,7 @@ bool IWLMvmDriver::probe()
         if (cfg_7265d &&
             (m_pDevice->hw_rev & CSR_HW_REV_TYPE_MSK) == CSR_HW_REV_TYPE_7265D)
             m_pDevice->cfg = cfg_7265d;
-
+        
         if (m_pDevice->cfg == &iwlax210_2ax_cfg_so_hr_a0) {
             if (m_pDevice->hw_rev == CSR_HW_REV_TYPE_TY) {
                 m_pDevice->cfg = &iwlax210_2ax_cfg_ty_gf_a0;
@@ -137,7 +131,7 @@ bool IWLMvmDriver::probe()
                 goto error;
             }
         }
-
+        
         /*
          * The RF_ID is set to zero in blank OTP so read version to
          * extract the RF_ID.
@@ -145,15 +139,15 @@ bool IWLMvmDriver::probe()
         if (m_pDevice->cfg->trans.rf_id &&
             !CSR_HW_RFID_TYPE(m_pDevice->hw_rf_id)) {
             IOInterruptState flags;
-
+            
             if (trans->grabNICAccess(&flags)) {
                 u32 val;
-
+                
                 val = trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
                 val |= ENABLE_WFPM;
                 trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, val);
                 val = trans->iwlReadPRPHNoGrab(SD_REG_VER);
-
+                
                 val &= 0xff00;
                 switch (val) {
                     case REG_VER_RF_ID_JF:
@@ -166,7 +160,7 @@ bool IWLMvmDriver::probe()
                 trans->releaseNICAccess(&flags);
             }
         }
-
+        
         /*
          * This is a hack to switch from Qu B0 to Qu C0.  We need to
          * do this for all cfgs that use Qu B0, except for those using
@@ -183,7 +177,7 @@ bool IWLMvmDriver::probe()
             else if (m_pDevice->cfg == &killer1650i_2ax_cfg_qu_b0_hr_b0)
                 m_pDevice->cfg = &killer1650i_2ax_cfg_qu_c0_hr_b0;
         }
-
+        
         /* same thing for QuZ... */
         if (m_pDevice->hw_rev == CSR_HW_REV_TYPE_QUZ) {
             if (m_pDevice->cfg == &iwl_ax101_cfg_qu_hr)
@@ -191,29 +185,29 @@ bool IWLMvmDriver::probe()
             else if (m_pDevice->cfg == &iwl_ax201_cfg_qu_hr)
                 m_pDevice->cfg = &iwl_ax201_cfg_quz_hr;
         }
-
+        
         /* if we don't have a name yet, copy name from the old cfg */
         if (!m_pDevice->name)
             m_pDevice->name = m_pDevice->cfg->name;
-
-
+        
+        
         IOLog("device name=%s\n", m_pDevice->name);
-
-//        if (m_pDevice->trans_cfg->mq_rx_supported) {
-//            if (!m_pDevice->cfg->num_rbds) {
-//                goto error;
-//            }
-//            trans_pcie->num_rx_bufs = iwl_trans->cfg->num_rbds;
-//        } else {
-//            trans_pcie->num_rx_bufs = RX_QUEUE_SIZE;
-//        }
-
+        
+        //        if (m_pDevice->trans_cfg->mq_rx_supported) {
+        //            if (!m_pDevice->cfg->num_rbds) {
+        //                goto error;
+        //            }
+        //            trans_pcie->num_rx_bufs = iwl_trans->cfg->num_rbds;
+        //        } else {
+        //            trans_pcie->num_rx_bufs = RX_QUEUE_SIZE;
+        //        }
+        
         if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000 &&
             trans->grabNICAccess(&flags)) {
             u32 hw_step;
             
             IOLog("HW_STEP_LOCATION_BITS\n");
-
+            
             hw_step = trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
             hw_step |= ENABLE_WFPM;
             trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, hw_step);
@@ -238,33 +232,126 @@ bool IWLMvmDriver::start()
         (CSR_HW_REV_STEP(m_pDevice->hw_rev) != SILICON_B_STEP &&
          CSR_HW_REV_STEP(m_pDevice->hw_rev) != SILICON_C_STEP)) {
         IWL_ERR(0,
-            "Only HW steps B and C are currently supported (0x%0x)\n",
-            m_pDevice->hw_rev);
+                "Only HW steps B and C are currently supported (0x%0x)\n",
+                m_pDevice->hw_rev);
         return false;
     }
     snprintf(tag, sizeof(tag), "%d", m_pDevice->cfg->ucode_api_max);
     snprintf(firmware_name, sizeof(firmware_name), "%s%s.ucode", m_pDevice->cfg->fw_name_pre, tag);
     IWL_INFO(0, "attempting to load firmware '%s'\n", firmware_name);
+    IOLockLock(fwLoadLock);
     IOReturn ret = OSKextRequestResource(OSKextGetCurrentIdentifier(), firmware_name, reqFWCallback, this, NULL);
     if (ret != kIOReturnSuccess) {
         IWL_ERR(0, "Error loading firmware %s\n", firmware_name);
         return false;
     }
-    return true;
+    IOLockSleep(fwLoadLock, this, 0);
+    IOLockUnlock(fwLoadLock);
+    return m_pDevice->firmwareLoadToBuf ? this->drvStart() : false;
 }
+
+#define IWL_DEFAULT_SCAN_CHANNELS 40
 
 void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, const void *resourceData, uint32_t resourceDataLength, void *context)
 {
-    IWL_INFO(0, "request firmware callback\n");
+    IWLMvmDriver *that = (IWLMvmDriver*)context;
+    bool ret;
     if (resourceDataLength <= 4) {
-        IWL_ERR(drv, "Error loading fw, size=%d\n",resourceDataLength);
+        IWL_ERR(0, "Error loading fw, size=%d\n",resourceDataLength);
+        IOLockWakeup(that->fwLoadLock, that, true);
         return;
     }
-    bool ret = IWLUcodeParse::parseFW(resourceData);
+    that->m_pDevice->usniffer_images = false;
+    iwl_fw *fw = &that->m_pDevice->fw;
+    fw->ucode_capa.max_probe_length = IWL_DEFAULT_MAX_PROBE_LENGTH;
+    fw->ucode_capa.standard_phy_calibration_size =
+    IWL_DEFAULT_STANDARD_PHY_CALIBRATE_TBL_SIZE;
+    fw->ucode_capa.n_scan_channels = IWL_DEFAULT_SCAN_CHANNELS;
+    /* dump all fw memory areas by default */
+    fw->dbg.dump_mask = 0xffffffff;
+    IWL_INFO(drv, "Loaded firmware file '%s' (%zd bytes).\n",
+             that->m_pDevice->name, resourceDataLength);
+    
+    IWLUcodeParse parser(that->m_pDevice);
+    ret = parser.parseFW(resourceData, resourceDataLength, &that->m_pDevice->fw, &that->m_pDevice->pieces);
     if (!ret) {
         IWL_ERR(0, "parse fw failed\n");
+        IOLockWakeup(that->fwLoadLock, that, true);
         return;
     }
+
+    iwl_firmware_pieces *pieces = &that->m_pDevice->pieces;
+
+    /* Allocate ucode buffers for card's bus-master loading ... */
+
+    /* Runtime instructions and 2 copies of data:
+     * 1) unmodified from disk
+     * 2) backup cache for save/restore during power-downs
+     */
+    bool isAllocErr = false;
+    for (int i = 0; i < IWL_UCODE_TYPE_MAX; i++) {
+        if (parser.allocUcode(pieces, (enum iwl_ucode_type)i)) {
+            isAllocErr = true;
+            break;
+        }
+    }
+
+    if (isAllocErr) {
+        IOLockWakeup(that->fwLoadLock, that, true);
+        return;
+    }
+
+    /*
+     * The (size - 16) / 12 formula is based on the information recorded
+     * for each event, which is of mode 1 (including timestamp) for all
+     * new microcodes that include this information.
+     */
+    fw->init_evtlog_ptr = pieces->init_evtlog_ptr;
+    if (pieces->init_evtlog_size)
+        fw->init_evtlog_size = (pieces->init_evtlog_size - 16)/12;
+    else
+        fw->init_evtlog_size =
+        that->m_pDevice->cfg->trans.base_params->max_event_log_size;
+    fw->init_errlog_ptr = pieces->init_errlog_ptr;
+    fw->inst_evtlog_ptr = pieces->inst_evtlog_ptr;
+    if (pieces->inst_evtlog_size)
+        fw->inst_evtlog_size = (pieces->inst_evtlog_size - 16)/12;
+    else
+        fw->inst_evtlog_size =
+        that->m_pDevice->cfg->trans.base_params->max_event_log_size;
+    fw->inst_errlog_ptr = pieces->inst_errlog_ptr;
+    /*
+     * figure out the offset of chain noise reset and gain commands
+     * base on the size of standard phy calibration commands table size
+     */
+    if (fw->ucode_capa.standard_phy_calibration_size >
+        IWL_MAX_PHY_CALIBRATE_TBL_SIZE)
+        fw->ucode_capa.standard_phy_calibration_size =
+        IWL_MAX_STANDARD_PHY_CALIBRATE_TBL_SIZE;
     
+    that->m_pDevice->firmwareLoadToBuf = true;
+    
+    IOLockWakeup(that->fwLoadLock, that, true);
+}
+
+bool IWLMvmDriver::drvStart()
+{
+    //TODO
+//    /********************************
+//     * 1. Allocating and configuring HW data
+//     ********************************/
+//    hw = ieee80211_alloc_hw(sizeof(struct iwl_op_mode) +
+//                            sizeof(struct iwl_mvm),
+//                            &iwl_mvm_hw_ops);
+//    if (!hw)
+//        return NULL;
+    
+    if (iwl_mvm_has_new_rx_api(&this->m_pDevice->fw)) {
+        
+    } else {
+        
+    }
+    
+    return true;
 }
 

@@ -175,4 +175,26 @@ static inline u32 get_unaligned_le32(const void *p)
     return le32_to_cpup((__le32 *)p);
 }
 
+/**
+ * kmemdup - duplicate region of memory
+ *
+ * @src: memory region to duplicate
+ * @len: memory region length
+ * @gfp: GFP mask to use
+ */
+static inline void *kmemdup(const void *src, size_t len) {
+    void *p;
+    p = IOMalloc(len);
+    if (p)
+        memcpy(p, src, len);
+    return p;
+}
+
+static inline void* kcalloc(size_t n, size_t size) {
+    if (size != 0 && n > SIZE_MAX / size) {
+        return NULL;
+    }
+    return IOMallocZero(n * size);
+}
+
 #endif /* kernel_h */

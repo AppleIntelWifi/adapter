@@ -25,7 +25,7 @@ bool IWLIO::init(IWLDevice *device)
     if (!fHwBase) {
         IWL_ERR(0, "map fHwBase fail\n");
         return false;
-    }kIODirectionOutIn
+    }
     /* We disable the RETRY_TIMEOUT register (0x41) to keep
      * PCI Tx retries from interfering with C3 CPU state */
     m_pDevice->pciDevice->configWrite8(PCI_CFG_RETRY_TIMEOUT, 0x00);

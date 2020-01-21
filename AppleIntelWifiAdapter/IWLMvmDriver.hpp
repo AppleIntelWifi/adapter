@@ -13,6 +13,7 @@
 #include <IOKit/IOLib.h>
 
 #include "IWLTransport.hpp"
+#include "fw/IWLUcodeParse.hpp"
 
 class IWLMvmDriver {
     
@@ -33,11 +34,21 @@ public:
                               uint32_t resourceDataLength,
                               void* context);
     
+    bool drvStart();
+    
 private:
+    
+    IOLock *fwLoadLock;
     
     IWLDevice *m_pDevice;
     
     IWLTransport *trans;
 };
+
+static inline bool iwl_mvm_has_new_rx_api(struct iwl_fw *fw)
+{
+    return fw_has_capa(&fw->ucode_capa,
+               IWL_UCODE_TLV_CAPA_MULTI_QUEUE_RX_SUPPORT);
+}
 
 #endif /* IWLMvmDriver_hpp */
