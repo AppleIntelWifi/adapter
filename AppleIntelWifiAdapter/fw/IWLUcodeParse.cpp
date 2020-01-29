@@ -8,6 +8,7 @@
 
 #include "IWLUcodeParse.hpp"
 #include "FWFile.h"
+#include <linux/types.h>
 
 IWLUcodeParse::IWLUcodeParse(IWLDevice *drv)
 {
@@ -193,8 +194,8 @@ bool IWLUcodeParse::parseTLVFirmware(const void *raw, size_t len, struct iwl_fw 
                     len, tlv_len);
             return false;
         }
-        len -= ALIGN(tlv_len, 4);
-        data += sizeof(*tlv) + ALIGN(tlv_len, 4);
+        len -= _ALIGN(tlv_len, 4);
+        data += sizeof(*tlv) + _ALIGN(tlv_len, 4);
         
         switch (tlv_type) {
             case IWL_UCODE_TLV_INST:

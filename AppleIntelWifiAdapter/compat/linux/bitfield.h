@@ -14,6 +14,7 @@
 
 #define BITS_PER_LONG 64
 
+#define BITS_PER_LONG_LONG 64
 
 #define BIT(nr)            (1UL << (nr))
 #define BIT_ULL(nr)        (1ULL << (nr))
@@ -35,6 +36,14 @@
             (bit) = find_next_bit((addr), (size), (bit) + 1))
 
 #define find_first_bit(addr, size) find_next_bit((addr), (size), 0)
+
+#define GENMASK(h, l) \
+    (((~(0UL)) - ((1UL) << (l)) + 1) & \
+     (~(0UL) >> (BITS_PER_LONG - 1 - (h))))
+
+#define GENMASK_ULL(h, l) \
+    (((~(0ULL)) - ((1ULL) << (l)) + 1) & \
+     (~(0ULL) >> (BITS_PER_LONG_LONG - 1 - (h))))
 
 static inline UInt64 OSBitwiseAtomic64(unsigned long and_mask, unsigned long or_mask, unsigned long xor_mask, unsigned long * value)
 {

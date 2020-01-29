@@ -14,6 +14,8 @@
 
 #include "IWLDeviceList.h"
 #include "fw/FWImg.h"
+#include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_amrr.h>
 
 enum iwl_power_level {
     IWL_POWER_INDEX_1,
@@ -112,14 +114,14 @@ public:
             return false;
         return true;
     }
-
+    
     bool iwl_enable_tx_ampdu()
     {
         if (iwlwifi_mod_params.disable_11n & IWL_DISABLE_HT_TXAGG)
             return false;
         if (iwlwifi_mod_params.disable_11n & IWL_ENABLE_HT_TXAGG)
             return true;
-
+        
         /* enabled by default */
         return true;
     }
@@ -127,6 +129,10 @@ public:
 public:
     
     IOPCIDevice *pciDevice;
+    ieee80211com *ie_ic;
+    ieee80211_state *ie_state;
+    ieee80211_amrr *ie_amrr;
+    
     bool firmwareLoadToBuf;
     iwl_fw fw;
     iwl_firmware_pieces pieces;

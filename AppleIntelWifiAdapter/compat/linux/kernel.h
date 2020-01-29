@@ -165,16 +165,6 @@ bool is_power_of_2(unsigned long n)
     return (n != 0 && ((n & (n - 1)) == 0));
 }
 
-static inline void put_unaligned_le32(u32 val, void *p)
-{
-    *((__le32 *)p) = cpu_to_le32(val);
-}
-
-static inline u32 get_unaligned_le32(const void *p)
-{
-    return le32_to_cpup((__le32 *)p);
-}
-
 /**
  * kmemdup - duplicate region of memory
  *
@@ -196,5 +186,18 @@ static inline void* kcalloc(size_t n, size_t size) {
     }
     return IOMallocZero(n * size);
 }
+
+static inline int atomic_dec_and_test(volatile SInt32 * addr)
+{
+    return ((OSDecrementAtomic(addr) == 1) ? 1 : 0);
+}
+
+static inline int atomic_inc_and_test(volatile SInt32 * addr)
+{
+    return ((OSIncrementAtomic(addr) == -1) ? 1 : 0);
+}
+
+#define atomic_inc(v) OSIncrementAtomic(v)
+#define atomic_dec(v) OSDecrementAtomic(v)
 
 #endif /* kernel_h */

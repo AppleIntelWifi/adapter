@@ -145,5 +145,84 @@ enum {
 #define NETIF_F_HW_ESP_TX_CSUM    __NETIF_F(HW_ESP_TX_CSUM)
 #define    NETIF_F_RX_UDP_TUNNEL_PORT  __NETIF_F(RX_UDP_TUNNEL_PORT)
 
+/**
+ * ether_addr_equal_masked - Compare two Ethernet addresses with a mask
+ * @addr1: Pointer to a six-byte array containing the 1st Ethernet address
+ * @addr2: Pointer to a six-byte array containing the 2nd Ethernet address
+ * @mask: Pointer to a six-byte array containing the Ethernet address bitmask
+ *
+ * Compare two Ethernet addresses with a mask, returns true if for every bit
+ * set in the bitmask the equivalent bits in the ethernet addresses are equal.
+ * Using a mask with all bits set is a slower ether_addr_equal.
+ */
+static inline bool ether_addr_equal_masked(const u8 *addr1, const u8 *addr2,
+                       const u8 *mask)
+{
+    int i;
+
+    for (i = 0; i < ETH_ALEN; i++) {
+        if ((addr1[i] ^ addr2[i]) & mask[i])
+            return false;
+    }
+
+    return true;
+}
+
+/**
+ * ether_addr_to_u64 - Convert an Ethernet address into a u64 value.
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return a u64 value of the address
+ */
+static inline u64 ether_addr_to_u64(const u8 *addr)
+{
+    u64 u = 0;
+    int i;
+
+    for (i = 0; i < ETH_ALEN; i++)
+        u = u << 8 | addr[i];
+
+    return u;
+}
+
+/**
+ * u64_to_ether_addr - Convert a u64 to an Ethernet address.
+ * @u: u64 to convert to an Ethernet MAC address
+ * @addr: Pointer to a six-byte array to contain the Ethernet address
+ */
+static inline void u64_to_ether_addr(u64 u, u8 *addr)
+{
+    int i;
+
+    for (i = ETH_ALEN - 1; i >= 0; i--) {
+        addr[i] = u & 0xff;
+        u = u >> 8;
+    }
+}
+
+/**
+ * eth_addr_dec - Decrement the given MAC address
+ *
+ * @addr: Pointer to a six-byte array containing Ethernet address to decrement
+ */
+static inline void eth_addr_dec(u8 *addr)
+{
+    u64 u = ether_addr_to_u64(addr);
+
+    u--;
+    u64_to_ether_addr(u, addr);
+}
+
+/**
+ * eth_addr_inc() - Increment the given MAC address.
+ * @addr: Pointer to a six-byte array containing Ethernet address to increment.
+ */
+static inline void eth_addr_inc(u8 *addr)
+{
+    u64 u = ether_addr_to_u64(addr);
+
+    u++;
+    u64_to_ether_addr(u, addr);
+}
 
 #endif /* netdevice_h */

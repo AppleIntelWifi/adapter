@@ -13,6 +13,16 @@
 #include <libkern/OSAtomic.h>
 #include "bitfield.h"
 
+#define local_bh_disable()
+#define local_bh_enable()
+
+#define IFNAMSIZ 32
+
+#define NUM_DEFAULT_KEYS 4
+#define NUM_DEFAULT_MGMT_KEYS 2
+
+#define gfp_t int
+
 #define __packed __attribute__((packed))
 #define __aligned(x)        __attribute__((aligned(x)))
 #define __must_check        __attribute__((warn_unused_result))
@@ -42,6 +52,8 @@
 #define __bitwise
 #define __force
 
+#define list_head       queue_entry
+
 #define WARN_ON(x) (x)
 #define WARN_ON_ONCE(x) (x)
 
@@ -60,10 +72,12 @@ typedef u16 __u16;
 typedef u32 __u32;
 typedef u64 __u64;
 
-typedef __u16 __le16;
-typedef __u16 __be16;
-typedef __u32 __le32;
-typedef __u64 __le64;
+typedef  SInt16 __be16;
+typedef  SInt32 __be32;
+typedef  SInt64 __be64;
+typedef  SInt16 __le16;
+typedef  SInt32 __le32;
+typedef  SInt64 __le64;
 
 typedef SInt8  s8;
 typedef SInt16 s16;
@@ -111,10 +125,6 @@ typedef u64 dma_addr_t;
 #define __cpu_to_be16(x) ((__force __be16)__swab16((x)))
 #define __be16_to_cpu(x) __swab16((__force __u16)(__be16)(x))
 
-#define le32_to_cpup __le32_to_cpup
-#define le16_to_cpup __le16_to_cpup
-
-
 static inline __u32 __le32_to_cpup(const __le32 *p)
 {
     return (__force __u32)*p;
@@ -125,6 +135,27 @@ static inline __u16 __le16_to_cpup(const __le16 *p)
     return (__force __u16)*p;
 }
 
+#define le32_to_cpup __le32_to_cpup
+#define le16_to_cpup __le16_to_cpup
+
+static inline u32 get_unaligned_le32(const void *p)
+{
+    return le32_to_cpup((__le32 *)p);
+}
+
+static inline u32 get_unaligned_le16(const void *p)
+{
+    return le16_to_cpup((__le16 *)p);
+}
+
+static inline void put_unaligned_le32(u32 val, void *p)
+{
+    *((__le32 *)p) = cpu_to_le32(val);
+}
+
+#define atomic_t    volatile SInt32
+#define atomic64_t  volatile SInt64
+
 #define ETHTOOL_FWVERS_LEN    32
 
 
@@ -133,15 +164,15 @@ static inline __u16 __le16_to_cpup(const __le16 *p)
 #define LNX_ALIGN RT_ALIGN_Z
 
 #define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN(x, a)         ALIGN_MASK(x, (typeof(x))(a) - 1)
+#define _ALIGN(x, a)         ALIGN_MASK(x, (typeof(x))(a) - 1)
 
-#define usec_delay(x)           IODelay(x)
-#define msec_delay(x)           IOSleep(x)
-#define udelay(x)               IODelay(x)
-#define mdelay(x)               IODelay(1000*(x))
-#define msleep(x)               IOSleep(x)
+#define _usec_delay(x)           IODelay(x)
+#define _msec_delay(x)           IOSleep(x)
+#define _udelay(x)               IODelay(x)
+#define _mdelay(x)               IODelay(1000*(x))
+#define _msleep(x)               IOSleep(x)
 
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
-#define usleep_range(min, max)    msleep(DIV_ROUND_UP(min, 1000))
+#define usleep_range(min, max)    _msleep(DIV_ROUND_UP(min, 1000))
 
 #endif /* types_h */
