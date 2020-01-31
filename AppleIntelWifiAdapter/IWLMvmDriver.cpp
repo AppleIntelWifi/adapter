@@ -29,8 +29,16 @@ void IWLMvmDriver::release()
         IOLockFree(this->fwLoadLock);
         this->fwLoadLock = NULL;
     }
-    OSSafeReleaseNULL(trans);
-    OSSafeReleaseNULL(m_pDevice);
+    if (trans) {
+        trans->release();
+        delete trans;
+        trans = NULL;
+    }
+    if (m_pDevice) {
+        m_pDevice->release();
+        delete m_pDevice;
+        m_pDevice = NULL;
+    }
 }
 
 bool IWLMvmDriver::probe()

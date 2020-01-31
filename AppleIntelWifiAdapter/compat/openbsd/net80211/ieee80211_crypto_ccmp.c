@@ -55,7 +55,7 @@ ieee80211_ccmp_set_key(struct ieee80211com *ic, struct ieee80211_key *k)
 {
 	struct ieee80211_ccmp_ctx *ctx;
 
-	ctx = (struct ieee80211_ccmp_ctx *)IOMallocZero(sizeof(*ctx));
+	ctx = (struct ieee80211_ccmp_ctx *)_MallocZero(sizeof(*ctx));
 	if (ctx == NULL)
 		return ENOMEM;
 	AES_Setkey(&ctx->aesctx, k->k_key, 16);

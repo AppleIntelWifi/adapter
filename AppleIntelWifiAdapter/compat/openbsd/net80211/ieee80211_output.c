@@ -240,7 +240,8 @@ ieee80211_mgmt_output(struct ifnet *ifp, struct ieee80211_node *ni,
 	    ieee80211_pwrsave(ic, m, ni) != 0)
 		return 0;
 #endif
-	mq_enqueue(&ic->ic_mgtq, m);
+    ifp->output_queue->enqueue(m, NULL);
+//	mq_enqueue(&ic->ic_mgtq, m);
 	ifp->if_timer = 1;
 //	if_start(ifp);
     ifp->output_queue->service();
@@ -475,7 +476,7 @@ ieee80211_tx_compressed_bar(struct ieee80211com *ic, struct ieee80211_node *ni,
 		return;
 
 	ieee80211_ref_node(ni);
-	if (mq_enqueue(&ic->ic_mgtq, m) == 0)
+	if (ifp->output_queue->enqueue(m, NULL))
 //		if_start(ifp);
         ifp->output_queue->service();
 	else

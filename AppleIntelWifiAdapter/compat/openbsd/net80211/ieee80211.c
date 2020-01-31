@@ -61,6 +61,17 @@
 int	ieee80211_debug = 0;
 #endif
 
+///compat for undefined symbols
+int _stop(struct kmod_info*, void*) {
+    IOLog("_stop(struct kmod_info*, void*) has been invoked\n");
+    return 0;
+};
+int _start(struct kmod_info*, void*) {
+    IOLog("_start(struct kmod_info*, void*) has been invoked\n");
+    return 0;
+};
+///
+
 int ieee80211_cache_size = IEEE80211_CACHE_SIZE;
 
 void ieee80211_setbasicrates(struct ieee80211com *);
@@ -190,7 +201,7 @@ ieee80211_ifattach(struct ifnet *ifp)
     
     //	ieee80211_set_link_state(ic, LINK_STATE_DOWN);
     
-    timeout::timeout_set(&ic->ic_bgscan_timeout, ieee80211_bgscan_timeout, ifp);
+    timeout_set(&ic->ic_bgscan_timeout, ieee80211_bgscan_timeout, ifp);
 }
 
 void
@@ -198,7 +209,7 @@ ieee80211_ifdetach(struct ifnet *ifp)
 {
     struct ieee80211com *ic = (struct ieee80211com *)ifp;
     
-    timeout::timeout_del(&ic->ic_bgscan_timeout);
+    timeout_del(&ic->ic_bgscan_timeout);
     ieee80211_proto_detach(ifp);
     ieee80211_crypto_detach(ifp);
     ieee80211_node_detach(ifp);
@@ -245,6 +256,7 @@ ieee80211_chan2ieee(struct ieee80211com *ic, const struct ieee80211_channel *c)
         return IEEE80211_CHAN_ANY;
     
     panic("%s: bogus channel pointer", ifp->if_xname);
+    return 0;
 }
 
 /*

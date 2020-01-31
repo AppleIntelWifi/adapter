@@ -35,7 +35,7 @@ typedef struct RMD160Context {
 	u_char buffer[RMD160_BLOCK_LENGTH];	/* input buffer */
 } RMD160_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 void	 RMD160Init(RMD160_CTX *);
 void	 RMD160Transform(u_int32_t [5], const u_char [RMD160_BLOCK_LENGTH])
 	     __attribute__((__bounded__(__minbytes__,1,5)))
@@ -44,6 +44,6 @@ void	 RMD160Update(RMD160_CTX *, const u_char *, u_int32_t)
 	     __attribute__((__bounded__(__string__,2,3)));
 void	 RMD160Final(u_char [RMD160_DIGEST_LENGTH], RMD160_CTX *)
 	     __attribute__((__bounded__(__minbytes__,1,RMD160_DIGEST_LENGTH)));
-__END_DECLS
+//__END_DECLS
 
 #endif  /* _RMD160_H */

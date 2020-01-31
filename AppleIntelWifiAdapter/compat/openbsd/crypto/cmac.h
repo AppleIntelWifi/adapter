@@ -29,13 +29,13 @@ typedef struct _AES_CMAC_CTX {
 	u_int		M_n;
 } AES_CMAC_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 void	 AES_CMAC_Init(AES_CMAC_CTX *);
 void	 AES_CMAC_SetKey(AES_CMAC_CTX *, const u_int8_t [AES_CMAC_KEY_LENGTH]);
 void	 AES_CMAC_Update(AES_CMAC_CTX *, const u_int8_t *, u_int)
 		__attribute__((__bounded__(__string__,2,3)));
 void	 AES_CMAC_Final(u_int8_t [AES_CMAC_DIGEST_LENGTH], AES_CMAC_CTX *)
 		__attribute__((__bounded__(__minbytes__,1,AES_CMAC_DIGEST_LENGTH)));
-__END_DECLS
+//__END_DECLS
 
 #endif /* _CMAC_H_ */

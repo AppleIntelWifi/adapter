@@ -232,6 +232,35 @@ int IWLIO::iwlPollPRPHBit(u32 addr, u32 bits, u32 mask, int timeout)
     return -ETIMEDOUT;
 }
 
+void IWLIO::iwlSetBitsPRPH(u32 ofs, u32 mask)
+{
+    IOInterruptState flags;
+    if (grabNICAccess(&flags)) {
+        iwlWritePRPHNoGrab(ofs, iwlReadPRPHNoGrab(ofs) | mask);
+        releaseNICAccess(&flags);
+    }
+}
+
+void IWLIO::iwlSetBitsMaskPRPH(u32 ofs, u32 bits, u32 mask)
+{
+    IOInterruptState flags;
+    if (grabNICAccess(&flags)) {
+        iwlWritePRPHNoGrab(ofs, (iwlReadPRPHNoGrab(ofs) & mask) | bits);
+        releaseNICAccess(&flags);
+    }
+}
+
+void IWLIO::iwlClearBitsPRPH(u32 ofs, u32 mask)
+{
+    IOInterruptState flags;
+    u32 val;
+    if (grabNICAccess(&flags)) {
+        val = iwlReadPRPHNoGrab(ofs);
+        iwlWritePRPHNoGrab(ofs, (val & ~mask));
+        releaseNICAccess(&flags);
+    }
+}
+
 int IWLIO::iwlPollDirectBit(u32 addr, u32 mask, int timeout)
 {
     int t = 0;
@@ -274,6 +303,12 @@ void IWLIO::iwlWritePRPHNoGrab(u32 addr, u32 val)
     iwlWritePRPH(addr, val);
 }
 
+void IWLIO::iwlWritePRPH64NoGrab(u64 ofs, u64 val)
+{
+    iwlWritePRPHNoGrab((u32)ofs, val & 0xffffffff);
+    iwlWritePRPHNoGrab((u32)ofs + 4, val >> 32);
+}
+
 u32 IWLIO::iwlUmacPRPH(u32 ofs)
 {
     return ofs + m_pDevice->cfg->trans.umac_prph_offset;
@@ -302,4 +337,16 @@ void IWLIO::iwlWriteUmacPRPH(u32 ofs, u32 val)
 int IWLIO::iwlPollUmacPRPHBit(u32 addr, u32 bits, u32 mask, int timeout)
 {
     return iwlPollPRPHBit(iwlUmacPRPH(addr), bits, mask, timeout);
+}
+
+u32 IWLIO::iwlReadShr(u32 reg)
+{
+    iwlWrite32(HEEP_CTRL_WRD_PCIEX_CTRL_REG, ((reg & 0x0000ffff) | (2 << 28)));
+    return iwlRead32(HEEP_CTRL_WRD_PCIEX_DATA_REG);
+}
+
+void IWLIO::iwlWriteShr(u32 reg, u32 val)
+{
+    iwlWrite32(HEEP_CTRL_WRD_PCIEX_DATA_REG, val);
+    iwlWrite32(HEEP_CTRL_WRD_PCIEX_CTRL_REG, ((reg & 0x0000ffff) | (3 << 28)));
 }

@@ -57,7 +57,7 @@ ieee80211_wep_set_key(struct ieee80211com *ic, struct ieee80211_key *k)
 {
 	struct ieee80211_wep_ctx *ctx;
 
-	ctx = (struct ieee80211_wep_ctx *)IOMallocZero(sizeof(*ctx));
+	ctx = (struct ieee80211_wep_ctx *)_MallocZero(sizeof(*ctx));
 	if (ctx == NULL)
 		return ENOMEM;
 	k->k_priv = ctx;

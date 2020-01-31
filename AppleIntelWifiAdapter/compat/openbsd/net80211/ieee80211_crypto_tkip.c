@@ -71,7 +71,7 @@ ieee80211_tkip_set_key(struct ieee80211com *ic, struct ieee80211_key *k)
 {
 	struct ieee80211_tkip_ctx *ctx;
 
-	ctx = (struct ieee80211_tkip_ctx *)IOMallocZero(sizeof(*ctx));
+	ctx = (struct ieee80211_tkip_ctx *)_MallocZero(sizeof(*ctx));
 	if (ctx == NULL)
 		return ENOMEM;
 	/*
@@ -515,8 +515,8 @@ ieee80211_michael_mic_failure_timeout(void *arg)
 void
 ieee80211_michael_mic_failure(struct ieee80211com *ic, u_int64_t tsc)
 {
-	extern int ticks;
-    extern int hz;
+	int ticks = 4;
+    int hz = 250;
 #ifndef IEEE80211_STA_ONLY
 	int sec;
 #endif
@@ -553,13 +553,13 @@ ieee80211_michael_mic_failure(struct ieee80211com *ic, u_int64_t tsc)
 		log(LOG_WARNING, "%s: HostAP will be disabled for %d seconds "
 		    "as a countermeasure against TKIP key cracking attempts\n",
 		    ic->ic_if.if_xname, sec);
-		timeout::timeout_add_sec(&ic->ic_tkip_micfail_timeout, sec);
+		timeout_add_sec(&ic->ic_tkip_micfail_timeout, sec);
 
 		/* deauthenticate all currently associated STAs using TKIP */
 		ieee80211_iterate_nodes(ic, ieee80211_tkip_deauth, ic);
 
 		/* schedule a GTK change */
-		timeout::timeout_add_sec(&ic->ic_rsn_timeout, 1);
+		timeout_add_sec(&ic->ic_rsn_timeout, 1);
 		break;
 #endif
 	case IEEE80211_M_STA:

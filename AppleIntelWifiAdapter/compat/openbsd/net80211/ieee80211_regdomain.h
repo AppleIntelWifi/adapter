@@ -754,7 +754,7 @@ struct ieee80211_regchannel {
 	{ 5240, DMN_WORLD, IEEE80211_CHAN_OFDM },			\
 }
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 
 extern u_int16_t	 ieee80211_name2countrycode(const char *);
 extern u_int32_t	 ieee80211_name2regdomain(const char *);
@@ -763,6 +763,6 @@ extern const char	*ieee80211_regdomain2name(u_int32_t);
 extern u_int32_t	 ieee80211_regdomain2flag(u_int16_t, u_int16_t);
 extern u_int32_t	 ieee80211_countrycode2regdomain(u_int16_t);
 
-__END_DECLS
+//__END_DECLS
 
 #endif /* _NET80211_IEEE80211_REGDOMAIN_H_ */

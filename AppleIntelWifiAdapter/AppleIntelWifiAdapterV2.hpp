@@ -11,6 +11,8 @@
 #include <IOKit/IOLib.h>
 #include "IWLMvmDriver.hpp"
 
+OSDefineMetaClassAndStructors(CTimeout, OSObject)
+
 class AppleIntelWifiAdapterV2 : public IOEthernetController
 {
     OSDeclareDefaultStructors( AppleIntelWifiAdapterV2 )
@@ -34,7 +36,6 @@ public:
     
 private:
     IWLMvmDriver *drv;
-    
     IOWorkLoop *fWorkLoop;
 };
 

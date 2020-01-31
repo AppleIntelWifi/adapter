@@ -99,7 +99,7 @@ ieee80211_inact_timeout(void *arg)
 	struct ieee80211_node *ni, *next_ni;
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	for (ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
 	    ni != NULL; ni = next_ni) {
 		next_ni = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
@@ -108,9 +108,9 @@ ieee80211_inact_timeout(void *arg)
 		if (ni->ni_inact < IEEE80211_INACT_MAX)
 			ni->ni_inact++;
 	}
-	timeout::splx(s);
+	splx(s);
 
-	timeout::timeout_add_sec(&ic->ic_inact_timeout, IEEE80211_INACT_WAIT);
+	timeout_add_sec(&ic->ic_inact_timeout, IEEE80211_INACT_WAIT);
 }
 
 void
@@ -119,7 +119,7 @@ ieee80211_node_cache_timeout(void *arg)
 	struct ieee80211com *ic = (struct ieee80211com *)arg;
 
 	ieee80211_clean_nodes(ic, 1);
-	timeout::timeout_add_sec(&ic->ic_node_cache_timeout, IEEE80211_CACHE_WAIT);
+	timeout_add_sec(&ic->ic_node_cache_timeout, IEEE80211_CACHE_WAIT);
 }
 #endif
 
@@ -379,7 +379,7 @@ ieee80211_add_ess(struct ieee80211com *ic, struct ieee80211_join *join)
 		if (ness > IEEE80211_CACHE_SIZE)
 			return (ERANGE);
 		new_value = 1;
-		ess = (struct ieee80211_ess *)IOMallocZero(sizeof(*ess));
+		ess = (struct ieee80211_ess *)_MallocZero(sizeof(*ess));
 		if (ess == NULL)
 			return (ENOMEM);
 		memcpy(ess->essid, join->i_nwid, join->i_len);
@@ -693,7 +693,7 @@ ieee80211_node_attach(struct ifnet *ifp)
 		ic->ic_max_aid = IEEE80211_AID_MAX;
 #ifndef IEEE80211_STA_ONLY
 	size = howmany(ic->ic_max_aid, 32) * sizeof(u_int32_t);
-	ic->ic_aid_bitmap = (u_int32_t *)IOMallocZero(size);
+	ic->ic_aid_bitmap = (u_int32_t *)_MallocZero(size);
 	if (ic->ic_aid_bitmap == NULL) {
 		/* XXX no way to recover */
 		printf("%s: no memory for AID bitmap!\n", __func__);
@@ -701,17 +701,17 @@ ieee80211_node_attach(struct ifnet *ifp)
 	}
 	if (ic->ic_caps & (IEEE80211_C_HOSTAP | IEEE80211_C_IBSS)) {
 		ic->ic_tim_len = howmany(ic->ic_max_aid, 8);
-		ic->ic_tim_bitmap = (u_int8_t*)IOMallocZero(ic->ic_tim_len);
+		ic->ic_tim_bitmap = (u_int8_t*)_MallocZero(ic->ic_tim_len);
 		if (ic->ic_tim_bitmap == NULL) {
 			printf("%s: no memory for TIM bitmap!\n", __func__);
 			ic->ic_tim_len = 0;
 		} else
 			ic->ic_set_tim = ieee80211_set_tim;
-		timeout::timeout_set(&ic->ic_rsn_timeout,
+		timeout_set(&ic->ic_rsn_timeout,
 		    ieee80211_gtk_rekey_timeout, ic);
-		timeout::timeout_set(&ic->ic_inact_timeout,
+		timeout_set(&ic->ic_inact_timeout,
 		    ieee80211_inact_timeout, ic);
-		timeout::timeout_set(&ic->ic_node_cache_timeout,
+		timeout_set(&ic->ic_node_cache_timeout,
 		    ieee80211_node_cache_timeout, ic);
 	}
 #endif
@@ -762,11 +762,11 @@ ieee80211_node_detach(struct ifnet *ifp)
 	IOFree(ic->ic_aid_bitmap,
 	    howmany(ic->ic_max_aid, 32) * sizeof(u_int32_t));
 	IOFree(ic->ic_tim_bitmap, ic->ic_tim_len);
-	timeout::timeout_del(&ic->ic_inact_timeout);
-	timeout::timeout_del(&ic->ic_node_cache_timeout);
-	timeout::timeout_del(&ic->ic_tkip_micfail_timeout);
+	timeout_del(&ic->ic_inact_timeout);
+	timeout_del(&ic->ic_node_cache_timeout);
+	timeout_del(&ic->ic_tkip_micfail_timeout);
 #endif
-	timeout::timeout_del(&ic->ic_rsn_timeout);
+	timeout_del(&ic->ic_rsn_timeout);
 }
 
 /*
@@ -994,10 +994,10 @@ ieee80211_create_ibss(struct ieee80211com* ic, struct ieee80211_channel *chan)
 		ni->ni_flags |= IEEE80211_NODE_TXPROT;
 
 		/* schedule a GTK/IGTK rekeying after 3600s */
-		timeout::timeout_add_sec(&ic->ic_rsn_timeout, 3600);
+		timeout_add_sec(&ic->ic_rsn_timeout, 3600);
 	}
-	timeout::timeout_add_sec(&ic->ic_inact_timeout, IEEE80211_INACT_WAIT);
-	timeout::timeout_add_sec(&ic->ic_node_cache_timeout, IEEE80211_CACHE_WAIT);
+	timeout_add_sec(&ic->ic_inact_timeout, IEEE80211_INACT_WAIT);
+	timeout_add_sec(&ic->ic_node_cache_timeout, IEEE80211_CACHE_WAIT);
 	ieee80211_new_state(ic, IEEE80211_S_RUN, -1);
 }
 #endif	/* IEEE80211_STA_ONLY */
@@ -1231,7 +1231,7 @@ ieee80211_node_join_bss(struct ieee80211com *ic, struct ieee80211_node *selbs)
 		    ic->ic_state == IEEE80211_S_AUTH);
 		int mgt = -1;
 
-		timeout::timeout_del(&ic->ic_bgscan_timeout);
+		timeout_del(&ic->ic_bgscan_timeout);
 		ic->ic_flags &= ~IEEE80211_F_BGSCAN;
 
 		/* 
@@ -1425,7 +1425,7 @@ ieee80211_end_scan(struct ifnet *ifp)
 			return;
 		}
 	
-		arg = (struct ieee80211_node_switch_bss_arg *)IOMallocZero(sizeof(*arg));
+		arg = (struct ieee80211_node_switch_bss_arg *)_MallocZero(sizeof(*arg));
 		if (arg == NULL) {
 			ic->ic_flags &= ~IEEE80211_F_BGSCAN;
 			return;
@@ -1545,7 +1545,7 @@ ieee80211_get_rate(struct ieee80211com *ic)
 struct ieee80211_node *
 ieee80211_node_alloc(struct ieee80211com *ic)
 {
-	return (struct ieee80211_node *)IOMallocZero(sizeof(struct ieee80211_node));
+	return (struct ieee80211_node *)_MallocZero(sizeof(struct ieee80211_node));
 }
 
 void
@@ -1618,16 +1618,16 @@ ieee80211_node_set_timeouts(struct ieee80211_node *ni)
 	int i;
 
 #ifndef IEEE80211_STA_ONLY
-	timeout::timeout_set(&ni->ni_eapol_to, ieee80211_eapol_timeout, ni);
-	timeout::timeout_set(&ni->ni_sa_query_to, ieee80211_sa_query_timeout, ni);
+	timeout_set(&ni->ni_eapol_to, ieee80211_eapol_timeout, ni);
+	timeout_set(&ni->ni_sa_query_to, ieee80211_sa_query_timeout, ni);
 #endif
-	timeout::timeout_set(&ni->ni_addba_req_to[EDCA_AC_BE],
+	timeout_set(&ni->ni_addba_req_to[EDCA_AC_BE],
 	    ieee80211_node_addba_request_ac_be_to, ni);
-	timeout::timeout_set(&ni->ni_addba_req_to[EDCA_AC_BK],
+	timeout_set(&ni->ni_addba_req_to[EDCA_AC_BK],
 	    ieee80211_node_addba_request_ac_bk_to, ni);
-	timeout::timeout_set(&ni->ni_addba_req_to[EDCA_AC_VI],
+	timeout_set(&ni->ni_addba_req_to[EDCA_AC_VI],
 	    ieee80211_node_addba_request_ac_vi_to, ni);
-	timeout::timeout_set(&ni->ni_addba_req_to[EDCA_AC_VO],
+	timeout_set(&ni->ni_addba_req_to[EDCA_AC_VO],
 	    ieee80211_node_addba_request_ac_vo_to, ni);
 	for (i = 0; i < nitems(ni->ni_addba_req_intval); i++)
 		ni->ni_addba_req_intval[i] = 1;
@@ -1653,10 +1653,10 @@ ieee80211_setup_node(struct ieee80211com *ic,
 #endif
 	ieee80211_node_set_timeouts(ni);
 
-	s = timeout::splnet();
+	s = splnet();
 	RB_INSERT(ieee80211_tree, &ic->ic_tree, ni);
 	ic->ic_nnodes++;
-	timeout::splx(s);
+	splx(s);
 }
 
 struct ieee80211_node *
@@ -1730,9 +1730,9 @@ ieee80211_find_txnode(struct ieee80211com *ic, const u_int8_t *macaddr)
 		return ieee80211_ref_node(ic->ic_bss);
 
 #ifndef IEEE80211_STA_ONLY
-	s = timeout::splnet();
+	s = splnet();
 	ni = ieee80211_find_node(ic, macaddr);
-	timeout::splx(s);
+	splx(s);
 	if (ni == NULL) {
 		if (ic->ic_opmode != IEEE80211_M_IBSS &&
 		    ic->ic_opmode != IEEE80211_M_AHDEMO)
@@ -1866,9 +1866,9 @@ ieee80211_find_rxnode(struct ieee80211com *ic,
 	if (!ieee80211_needs_rxnode(ic, wh, &bssid))
 		return ieee80211_ref_node(ic->ic_bss);
 
-	s = timeout::splnet();
+	s = splnet();
 	ni = ieee80211_find_node(ic, wh->i_addr2);
-	timeout::splx(s);
+	splx(s);
 
 	if (ni != NULL)
 		return ieee80211_ref_node(ni);
@@ -1903,7 +1903,7 @@ ieee80211_find_node_for_beacon(struct ieee80211com *ic,
 	int s, score = 0;
 
 	if ((ni = ieee80211_find_node(ic, macaddr)) != NULL) {
-		s = timeout::splnet();
+		s = splnet();
 
 		if (ni->ni_chan != chan && ni->ni_rssi >= rssi)
 			score++;
@@ -1912,7 +1912,7 @@ ieee80211_find_node_for_beacon(struct ieee80211com *ic,
 		if (score > 0)
 			keep = ni;
 
-		timeout::splx(s);
+		splx(s);
 	}
 
 	return (keep);
@@ -1926,10 +1926,10 @@ ieee80211_ba_del(struct ieee80211_node *ni)
 	for (tid = 0; tid < nitems(ni->ni_rx_ba); tid++) {
 		struct ieee80211_rx_ba *ba = &ni->ni_rx_ba[tid];
 		if (ba->ba_state != IEEE80211_BA_INIT) {
-			if (timeout::timeout_pending(&ba->ba_to))
-				timeout::timeout_del(&ba->ba_to);
-			if (timeout::timeout_pending(&ba->ba_gap_to))
-				timeout::timeout_del(&ba->ba_gap_to);
+			if (timeout_pending(&ba->ba_to))
+				timeout_del(&ba->ba_to);
+			if (timeout_pending(&ba->ba_gap_to))
+				timeout_del(&ba->ba_gap_to);
 			ba->ba_state = IEEE80211_BA_INIT;
 		}
 	}
@@ -1937,16 +1937,16 @@ ieee80211_ba_del(struct ieee80211_node *ni)
 	for (tid = 0; tid < nitems(ni->ni_tx_ba); tid++) {
 		struct ieee80211_tx_ba *ba = &ni->ni_tx_ba[tid];
 		if (ba->ba_state != IEEE80211_BA_INIT) {
-			if (timeout::timeout_pending(&ba->ba_to))
-				timeout::timeout_del(&ba->ba_to);
+			if (timeout_pending(&ba->ba_to))
+				timeout_del(&ba->ba_to);
 			ba->ba_state = IEEE80211_BA_INIT;
 		}
 	}
 
-	timeout::timeout_del(&ni->ni_addba_req_to[EDCA_AC_BE]);
-	timeout::timeout_del(&ni->ni_addba_req_to[EDCA_AC_BK]);
-	timeout::timeout_del(&ni->ni_addba_req_to[EDCA_AC_VI]);
-	timeout::timeout_del(&ni->ni_addba_req_to[EDCA_AC_VO]);
+	timeout_del(&ni->ni_addba_req_to[EDCA_AC_BE]);
+	timeout_del(&ni->ni_addba_req_to[EDCA_AC_BK]);
+	timeout_del(&ni->ni_addba_req_to[EDCA_AC_VI]);
+	timeout_del(&ni->ni_addba_req_to[EDCA_AC_VO]);
 }
 
 void
@@ -1959,8 +1959,8 @@ ieee80211_free_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 
 	DPRINTF(("%s\n", ether_sprintf(ni->ni_macaddr)));
 #ifndef IEEE80211_STA_ONLY
-	timeout::timeout_del(&ni->ni_eapol_to);
-	timeout::timeout_del(&ni->ni_sa_query_to);
+	timeout_del(&ni->ni_eapol_to);
+	timeout_del(&ni->ni_sa_query_to);
 	IEEE80211_AID_CLR(ni->ni_associd, ic->ic_aid_bitmap);
 #endif
 	ieee80211_ba_del(ni);
@@ -1983,7 +1983,7 @@ ieee80211_release_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 
 	DPRINTF(("%s refcnt %u\n", ether_sprintf(ni->ni_macaddr),
 	    ni->ni_refcnt));
-	s = timeout::splnet();
+	s = splnet();
 	if (ieee80211_node_decref(ni) == 0) {
 		if (ni->ni_unref_cb) {
 			(*ni->ni_unref_cb)(ic, ni);
@@ -1995,7 +1995,7 @@ ieee80211_release_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 	    	if (ni->ni_state == IEEE80211_STA_COLLECT)
 			ieee80211_free_node(ic, ni);
 	}
-	timeout::splx(s);
+	splx(s);
 }
 
 void
@@ -2005,10 +2005,10 @@ ieee80211_free_allnodes(struct ieee80211com *ic, int clear_ic_bss)
 	int s;
 
 	DPRINTF(("freeing all nodes\n"));
-	s = timeout::splnet();
+	s = splnet();
 	while ((ni = RB_MIN(ieee80211_tree, &ic->ic_tree)) != NULL)
 		ieee80211_free_node(ic, ni);
-	timeout::splx(s);
+	splx(s);
 
 	if (clear_ic_bss && ic->ic_bss != NULL)
 		ieee80211_node_cleanup(ic, ic->ic_bss);	/* for station mode */
@@ -2020,14 +2020,14 @@ ieee80211_clean_cached(struct ieee80211com *ic)
 	struct ieee80211_node *ni, *next_ni;
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	for (ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
 	    ni != NULL; ni = next_ni) {
 		next_ni = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
 		if (ni->ni_state == IEEE80211_STA_CACHE)
 			ieee80211_free_node(ic, ni);
 	}
-	timeout::splx(s);
+	splx(s);
 }
 /*
  * Timeout inactive nodes.
@@ -2055,7 +2055,7 @@ ieee80211_clean_nodes(struct ieee80211com *ic, int cache_timeout)
 	enum ieee80211_protmode protmode = IEEE80211_PROT_NONE;
 #endif
 
-	s = timeout::splnet();
+	s = splnet();
 	for (ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
 	    ni != NULL; ni = next_ni) {
 		next_ni = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
@@ -2172,7 +2172,7 @@ ieee80211_clean_nodes(struct ieee80211com *ic, int cache_timeout)
 		    "possible nodes leak\n", ifp->if_xname, nnodes,
 		    ic->ic_nnodes);
 #endif
-	timeout::splx(s);
+	splx(s);
 }
 
 void
@@ -2182,7 +2182,7 @@ ieee80211_clean_inactive_nodes(struct ieee80211com *ic, int inact_max)
 	u_int gen = ic->ic_scangen++;	/* NB: ok 'cuz single-threaded*/
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	for (ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
 	    ni != NULL; ni = next_ni) {
 		next_ni = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
@@ -2195,7 +2195,7 @@ ieee80211_clean_inactive_nodes(struct ieee80211com *ic, int inact_max)
 		ic->ic_stats.is_node_timeout++;
 	}
 
-	timeout::splx(s);
+	splx(s);
 }
 
 void
@@ -2205,10 +2205,10 @@ ieee80211_iterate_nodes(struct ieee80211com *ic, ieee80211_iter_func *f,
 	struct ieee80211_node *ni;
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	RB_FOREACH(ni, ieee80211_tree, &ic->ic_tree)
 		(*f)(arg, ni);
-	timeout::splx(s);
+	splx(s);
 }
 
 
@@ -2331,8 +2331,8 @@ void
 ieee80211_node_trigger_addba_req(struct ieee80211_node *ni, int tid)
 {
 	if (ni->ni_tx_ba[tid].ba_state == IEEE80211_BA_INIT &&
-	    !timeout::timeout_pending(&ni->ni_addba_req_to[tid])) {
-		timeout::timeout_add_sec(&ni->ni_addba_req_to[tid],
+	    !timeout_pending(&ni->ni_addba_req_to[tid])) {
+		timeout_add_sec(&ni->ni_addba_req_to[tid],
 		    ni->ni_addba_req_intval[tid]);
 	}
 }
@@ -2676,8 +2676,8 @@ ieee80211_node_leave_rsn(struct ieee80211com *ic, struct ieee80211_node *ni)
 	ni->ni_flags &= ~IEEE80211_NODE_PMK;
 	ni->ni_rsn_gstate = RSNA_IDLE;
 
-	timeout::timeout_del(&ni->ni_eapol_to);
-	timeout::timeout_del(&ni->ni_sa_query_to);
+	timeout_del(&ni->ni_eapol_to);
+	timeout_del(&ni->ni_sa_query_to);
 
 	ni->ni_rsn_retries = 0;
 	ni->ni_flags &= ~IEEE80211_NODE_TXRXPROT;
@@ -2918,7 +2918,8 @@ ieee80211_notify_dtim(struct ieee80211com *ic)
 			wh = mtod(m, struct ieee80211_frame *);
 			wh->i_fc[1] |= IEEE80211_FC1_MORE_DATA;
 		}
-		mq_enqueue(&ic->ic_pwrsaveq, m);
+        ifp->output_queue->enqueue(m, NULL);
+//		mq_enqueue(&ic->ic_pwrsaveq, m);
 //		if_start(ifp);
         ifp->output_queue->service();
 	}

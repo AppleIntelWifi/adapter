@@ -37,7 +37,7 @@ typedef struct _HMAC_SHA256_CTX {
 	u_int		key_len;
 } HMAC_SHA256_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 
 void	 HMAC_MD5_Init(HMAC_MD5_CTX *, const u_int8_t *, u_int)
 		__attribute__((__bounded__(__string__,2,3)));
@@ -60,6 +60,6 @@ void	 HMAC_SHA256_Update(HMAC_SHA256_CTX *, const u_int8_t *, u_int)
 void	 HMAC_SHA256_Final(u_int8_t [SHA256_DIGEST_LENGTH], HMAC_SHA256_CTX *)
 		__attribute__((__bounded__(__minbytes__,1,SHA256_DIGEST_LENGTH)));
 
-__END_DECLS
+//__END_DECLS
 
 #endif	/* _HMAC_H_ */

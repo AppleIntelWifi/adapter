@@ -24,7 +24,7 @@ typedef struct MD5Context {
 	u_int8_t buffer[MD5_BLOCK_LENGTH];	/* input buffer */
 } MD5_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 void	 MD5Init(MD5_CTX *);
 void	 MD5Update(MD5_CTX *, const void *, size_t)
 		__attribute__((__bounded__(__string__,2,3)));
@@ -33,6 +33,6 @@ void	 MD5Final(u_int8_t [MD5_DIGEST_LENGTH], MD5_CTX *)
 void	 MD5Transform(u_int32_t [4], const u_int8_t [MD5_BLOCK_LENGTH])
 		__attribute__((__bounded__(__minbytes__,1,4)))
 		__attribute__((__bounded__(__minbytes__,2,MD5_BLOCK_LENGTH)));
-__END_DECLS
+//__END_DECLS
 
 #endif /* _MD5_H_ */

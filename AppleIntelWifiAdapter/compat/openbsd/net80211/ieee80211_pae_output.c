@@ -122,7 +122,7 @@ ieee80211_send_eapol_key(struct ieee80211com *ic, mbuf_t m,
 #ifndef IEEE80211_STA_ONLY
     /* start a 100ms timeout if an answer is expected from supplicant */
     if (info & EAPOL_KEY_KEYACK)
-        timeout::timeout_add_msec(&ni->ni_eapol_to, 100);
+        timeout_add_msec(&ni->ni_eapol_to, 100);
 #endif
     
     ifp->output_queue->enqueue(m, NULL);
@@ -148,7 +148,7 @@ ieee80211_eapol_timeout(void *arg)
     DPRINTF(("no answer from station %s in state %d\n",
              ether_sprintf(ni->ni_macaddr), ni->ni_rsn_state));
     
-    s = timeout::splnet();
+    s = splnet();
     
     switch (ni->ni_rsn_state) {
         case RSNA_PTKSTART:
@@ -166,7 +166,7 @@ ieee80211_eapol_timeout(void *arg)
             break;
     }
     
-    timeout::splx(s);
+    splx(s);
 }
 
 /*

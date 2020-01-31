@@ -129,6 +129,22 @@ public:
     
     IWLTransOps *getTransOps();
     
+    ///fw
+    void loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt);
+
+    int loadFWChunk(u32 dst_addr, dma_addr_t phy_addr,
+                    u32 byte_cnt);
+    
+    int loadSection(u8 section_num, const struct fw_desc *section);
+    
+    int loadCPUSections8000(const struct fw_img *image, int cpu, int *first_ucode_section);
+    
+    int loadCPUSections(const struct fw_img *image, int cpu, int *first_ucode_section);
+    
+    int loadGivenUcode(const struct fw_img *image);
+    
+    int loadGivenUcode8000(const struct fw_img *image);
+    
     ///
     ///power
     void setPMI(bool state);
@@ -154,6 +170,9 @@ private:
     
     IOSimpleLock *irq_lock;
     bool msix_enabled;
+    
+    ///fw
+    bool ucode_write_complete;
     
 };
 

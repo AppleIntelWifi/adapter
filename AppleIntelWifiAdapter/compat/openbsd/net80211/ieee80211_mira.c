@@ -169,6 +169,7 @@ ieee80211_mira_get_rateset(int mcs, int sgi)
 	}
 
 	panic("MCS %d is not part of any rateset", mcs);
+    return NULL;
 }
 
 /*
@@ -185,10 +186,10 @@ ieee80211_mira_probe_timeout_up(void *arg)
 	struct ieee80211_mira_node *mn = (struct ieee80211_mira_node *)arg;
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	mn->probe_timer_expired[IEEE80211_MIRA_PROBE_TO_UP] = 1;
 	DPRINTFN(3, ("probe up timeout fired\n"));
-	timeout::splx(s);
+	splx(s);
 }
 
 void
@@ -197,10 +198,10 @@ ieee80211_mira_probe_timeout_down(void *arg)
 	struct ieee80211_mira_node *mn = (struct ieee80211_mira_node *)arg;
 	int s;
 
-	s = timeout::splnet();
+	s = splnet();
 	mn->probe_timer_expired[IEEE80211_MIRA_PROBE_TO_DOWN] = 1;
 	DPRINTFN(3, ("probe down timeout fired\n"));
-	timeout::splx(s);
+	splx(s);
 }
 
 /*
@@ -892,15 +893,15 @@ ieee80211_mira_schedule_probe_timers(struct ieee80211_mira_node *mn,
     struct ieee80211_node *ni)
 {
 	struct ieee80211_mira_goodput_stats *g;
-	timeout *to;
+	CTimeout *to;
 	int mcs;
 
 	mcs = ieee80211_mira_next_intra_rate(mn, ni);
 	to = mn->probe_to[IEEE80211_MIRA_PROBE_TO_UP];
 	g = &mn->g[mcs];
-	if (mcs != ni->ni_txmcs && !timeout::timeout_pending(&to) &&
+	if (mcs != ni->ni_txmcs && !timeout_pending(&to) &&
 	    !mn->probe_timer_expired[IEEE80211_MIRA_PROBE_TO_UP]) {
-		timeout::timeout_add_msec(&to, g->probe_interval);
+		timeout_add_msec(&to, g->probe_interval);
 		DPRINTFN(3, ("start probing up for node %s at MCS %d in at "
 		    "least %d msec\n",
 		    ether_sprintf(ni->ni_macaddr), mcs, g->probe_interval));
@@ -909,9 +910,9 @@ ieee80211_mira_schedule_probe_timers(struct ieee80211_mira_node *mn,
 	mcs = ieee80211_mira_next_lower_intra_rate(mn, ni);
 	to = mn->probe_to[IEEE80211_MIRA_PROBE_TO_DOWN];
 	g = &mn->g[mcs];
-	if (mcs != ni->ni_txmcs && !timeout::timeout_pending(&to) &&
+	if (mcs != ni->ni_txmcs && !timeout_pending(&to) &&
 	    !mn->probe_timer_expired[IEEE80211_MIRA_PROBE_TO_DOWN]) {
-		timeout::timeout_add_msec(&to, g->probe_interval);
+		timeout_add_msec(&to, g->probe_interval);
 		DPRINTFN(3, ("start probing down for node %s at MCS %d in at "
 		    "least %d msec\n",
 		    ether_sprintf(ni->ni_macaddr), mcs, g->probe_interval));
@@ -1139,7 +1140,7 @@ ieee80211_mira_choose(struct ieee80211_mira_node *mn, struct ieee80211com *ic,
 	struct ieee80211_mira_goodput_stats *g = &mn->g[ni->ni_txmcs];
 	int s, sgi = (ni->ni_flags & IEEE80211_NODE_HT_SGI20) ? 1 : 0;
 
-	s = timeout::splnet();
+	s = splnet();
 
 	if (mn->valid_rates == 0)
 		mn->valid_rates = ieee80211_mira_valid_rates(ic, ni);
@@ -1173,7 +1174,7 @@ ieee80211_mira_choose(struct ieee80211_mira_node *mn, struct ieee80211com *ic,
 			ieee80211_mira_probe_done(mn);
 		}
 
-		timeout::splx(s);
+		splx(s);
 		return;
 	} else {
 		ieee80211_mira_set_rts_threshold(mn, ic, ni);
@@ -1183,7 +1184,7 @@ ieee80211_mira_choose(struct ieee80211_mira_node *mn, struct ieee80211com *ic,
 
 	if (ieee80211_mira_check_probe_timers(mn, ni)) {
 		/* Time-based probing has triggered. */
-		timeout::splx(s);
+		splx(s);
 		return;
 	}
 
@@ -1229,7 +1230,7 @@ ieee80211_mira_choose(struct ieee80211_mira_node *mn, struct ieee80211com *ic,
 		mn->candidate_rates = 0;
 	}
 
-	timeout::splx(s);
+	splx(s);
 }
 
 void
@@ -1241,9 +1242,9 @@ ieee80211_mira_node_init(struct ieee80211_mira_node *mn)
 	ieee80211_mira_reset_goodput_stats(mn);
 	ieee80211_mira_reset_collision_stats(mn);
 
-	timeout::timeout_set(&mn->probe_to[IEEE80211_MIRA_PROBE_TO_UP],
+	timeout_set(&mn->probe_to[IEEE80211_MIRA_PROBE_TO_UP],
 	    ieee80211_mira_probe_timeout_up, mn);
-	timeout::timeout_set(&mn->probe_to[IEEE80211_MIRA_PROBE_TO_DOWN],
+	timeout_set(&mn->probe_to[IEEE80211_MIRA_PROBE_TO_DOWN],
 	    ieee80211_mira_probe_timeout_down, mn);
 }
 
@@ -1253,5 +1254,5 @@ ieee80211_mira_cancel_timeouts(struct ieee80211_mira_node *mn)
 	int t;
 
 	for (t = 0; t < nitems(mn->probe_to); t++)
-		timeout::timeout_del(&mn->probe_to[t]);
+		timeout_del(&mn->probe_to[t]);
 }

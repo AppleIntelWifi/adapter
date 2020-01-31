@@ -19,11 +19,13 @@
 #ifndef _KEY_WRAP_H_
 #define _KEY_WRAP_H_
 
+extern int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
+
 typedef struct _aes_key_wrap_ctx {
 	AES_CTX		ctx;
 } aes_key_wrap_ctx;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 
 void	aes_key_wrap_set_key(aes_key_wrap_ctx *, const u_int8_t *, size_t);
 void	aes_key_wrap_set_key_wrap_only(aes_key_wrap_ctx *, const u_int8_t *,
@@ -31,6 +33,6 @@ void	aes_key_wrap_set_key_wrap_only(aes_key_wrap_ctx *, const u_int8_t *,
 void	aes_key_wrap(aes_key_wrap_ctx *, const u_int8_t *, size_t, u_int8_t *);
 int	aes_key_unwrap(aes_key_wrap_ctx *, const u_int8_t *, u_int8_t *,
 	    size_t);
-__END_DECLS
+//__END_DECLS
 
 #endif /* _KEY_WRAP_H_ */

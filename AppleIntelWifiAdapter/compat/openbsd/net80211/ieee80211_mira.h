@@ -68,7 +68,7 @@ struct ieee80211_mira_node {
 	uint32_t probed_rates;
 
 	/* Timeouts which trigger time-driven probing. */
-	timeout* probe_to[2];
+	CTimeout* probe_to[2];
 #define IEEE80211_MIRA_PROBE_TO_INVALID	-1
 #define IEEE80211_MIRA_PROBE_TO_UP	0
 #define IEEE80211_MIRA_PROBE_TO_DOWN	1

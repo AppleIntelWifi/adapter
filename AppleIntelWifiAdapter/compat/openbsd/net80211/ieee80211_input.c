@@ -253,11 +253,11 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
 		if (ic->ic_state == IEEE80211_S_RUN && ic->ic_bgscan_start) {
 			/* Cancel or start background scan based on RSSI. */
 			if ((*ic->ic_node_checkrssi)(ic, ni))
-				timeout::timeout_del(&ic->ic_bgscan_timeout);
-			else if (!timeout::timeout_pending(&ic->ic_bgscan_timeout) &&
+				timeout_del(&ic->ic_bgscan_timeout);
+			else if (!timeout_pending(&ic->ic_bgscan_timeout) &&
 			    (ic->ic_flags & IEEE80211_F_BGSCAN) == 0 &&
 			    (ic->ic_flags & IEEE80211_F_DESBSSID) == 0)
-				timeout::timeout_add_msec(&ic->ic_bgscan_timeout,
+				timeout_add_msec(&ic->ic_bgscan_timeout,
 				    500 * (ic->ic_bgscan_fail + 1));
 		}
 	}
@@ -285,7 +285,8 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
 
 			/* dequeue buffered unicast frames */
 			while ((m = mq_dequeue(&ni->ni_savedq)) != NULL) {
-				mq_enqueue(&ic->ic_pwrsaveq, m);
+//				mq_enqueue(&ic->ic_pwrsaveq, m);
+                ifp->output_queue->enqueue(m, NULL);
 //				if_start(ifp);
                 ifp->output_queue->service();
 			}
@@ -567,7 +568,7 @@ ieee80211_defrag(struct ieee80211com *ic, mbuf_t m, int hdrlen)
 		df->df_frag = 0;
 		df->df_m = m;
 		/* start receive MSDU timer of aMaxReceiveLifetime */
-		timeout::timeout_add_sec(&df->df_to, 1);
+		timeout_add_sec(&df->df_to, 1);
 		return NULL;	/* MSDU or MMPDU not yet complete */
 	}
 
@@ -604,7 +605,7 @@ ieee80211_defrag(struct ieee80211com *ic, mbuf_t m, int hdrlen)
 		return NULL;	/* MSDU or MMPDU not yet complete */
 
 	/* MSDU or MMPDU complete */
-	timeout::timeout_del(&df->df_to);
+	timeout_del(&df->df_to);
 	m = df->df_m;
 	df->df_m = NULL;
 	return m;
@@ -617,13 +618,13 @@ void
 ieee80211_defrag_timeout(void *arg)
 {
 	struct ieee80211_defrag *df = (struct ieee80211_defrag *)arg;
-	int s = timeout::splnet();
+	int s = splnet();
 
 	/* discard all received fragments */
 	mbuf_freem(df->df_m);
 	df->df_m = NULL;
 
-	timeout::splx(s);
+	splx(s);
 }
 
 /*
@@ -646,7 +647,7 @@ ieee80211_input_ba(struct ieee80211com *ic, mbuf_t m,
 
 	/* reset Block Ack inactivity timer */
 	if (ba->ba_timeout_val != 0)
-		timeout::timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
+		timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
 
 	if (SEQ_LT(sn, ba->ba_winstart)) {	/* SN < WinStartB */
 		ic->ic_stats.is_ht_rx_frame_below_ba_winstart++;
@@ -703,9 +704,9 @@ ieee80211_input_ba(struct ieee80211com *ic, mbuf_t m,
 	ba->ba_buf[idx].rxi = *rxi;
 
 	if (ba->ba_buf[ba->ba_head].m == NULL)
-		timeout::timeout_add_msec(&ba->ba_gap_to, IEEE80211_BA_GAP_TIMEOUT);
-	else if (timeout::timeout_pending(&ba->ba_gap_to))
-		timeout::timeout_del(&ba->ba_gap_to);
+		timeout_add_msec(&ba->ba_gap_to, IEEE80211_BA_GAP_TIMEOUT);
+	else if (timeout_pending(&ba->ba_gap_to))
+		timeout_del(&ba->ba_gap_to);
 
 	ieee80211_input_ba_flush(ic, ni, ba, ml);
 }
@@ -781,7 +782,7 @@ ieee80211_input_ba_gap_timeout(void *arg)
 
 	ic->ic_stats.is_ht_rx_ba_window_gap_timeout++;
 
-	s = timeout::splnet();
+	s = splnet();
 
 	skipped = 0;
 	while (skipped < ba->ba_winsize && ba->ba_buf[ba->ba_head].m == NULL) {
@@ -797,7 +798,7 @@ ieee80211_input_ba_gap_timeout(void *arg)
 	ieee80211_input_ba_flush(ic, ni, ba, &ml);
 	if_input(&ic->ic_if, &ml);
 
-	timeout::splx(s);	
+	splx(s);	
 }
 
 
@@ -2544,7 +2545,7 @@ ieee80211_recv_addba_req(struct ieee80211com *ic, mbuf_t m,
 		/* XXX should we update the timeout value? */
 		/* reset Block Ack inactivity timer */
 		if (ba->ba_timeout_val != 0)
-			timeout::timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
+			timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
 
 		/* check if it's a Protected Block Ack agreement */
 		if (!(ni->ni_flags & IEEE80211_NODE_MFP) ||
@@ -2582,8 +2583,8 @@ ieee80211_recv_addba_req(struct ieee80211com *ic, mbuf_t m,
 	ba->ba_timeout_val = timeout * IEEE80211_DUR_TU;
 	ba->ba_ni = ni;
 	ba->ba_token = token;
-	timeout::timeout_set(&ba->ba_to, ieee80211_rx_ba_timeout, ba);
-	timeout::timeout_set(&ba->ba_gap_to, ieee80211_input_ba_gap_timeout, ba);
+	timeout_set(&ba->ba_to, ieee80211_rx_ba_timeout, ba);
+	timeout_set(&ba->ba_gap_to, ieee80211_input_ba_gap_timeout, ba);
 	ba->ba_winsize = bufsz;
 	if (ba->ba_winsize == 0 || ba->ba_winsize > IEEE80211_BA_MAX_WINSZ)
 		ba->ba_winsize = IEEE80211_BA_MAX_WINSZ;
@@ -2602,7 +2603,7 @@ ieee80211_recv_addba_req(struct ieee80211com *ic, mbuf_t m,
 	ba->ba_winstart = ssn;
 	ba->ba_winend = (ba->ba_winstart + ba->ba_winsize - 1) & 0xfff;
 	/* allocate and setup our reordering buffer */
-	ba->ba_buf = (typeof(ba->ba_buf))IOMallocZero(IEEE80211_BA_MAX_WINSZ * sizeof(*ba->ba_buf));
+	ba->ba_buf = (typeof(ba->ba_buf))_MallocZero(IEEE80211_BA_MAX_WINSZ * sizeof(*ba->ba_buf));
 	if (ba->ba_buf == NULL)
 		goto refuse;
 
@@ -2638,7 +2639,7 @@ ieee80211_addba_req_accept(struct ieee80211com *ic, struct ieee80211_node *ni,
 	ic->ic_stats.is_ht_rx_ba_agreements++;
 	/* start Block Ack inactivity timer */
 	if (ba->ba_timeout_val != 0)
-		timeout::timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
+		timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
 
 	/* MLME-ADDBA.response */
 	IEEE80211_SEND_ACTION(ic, ni, IEEE80211_CATEG_BA,
@@ -2714,7 +2715,7 @@ ieee80211_recv_addba_resp(struct ieee80211com *ic, mbuf_t m,
 		return;
 	}
 	/* we got an ADDBA Response matching our request, stop timeout */
-	timeout::timeout_del(&ba->ba_to);
+	timeout_del(&ba->ba_to);
 
 	if (status != IEEE80211_STATUS_SUCCESS) {
 		if (ni->ni_addba_req_intval[tid] <
@@ -2763,7 +2764,7 @@ ieee80211_addba_resp_accept(struct ieee80211com *ic,
 
 	/* start Block Ack inactivity timeout */
 	if (ba->ba_timeout_val != 0)
-		timeout::timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
+		timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
 }
 
 void
@@ -2821,8 +2822,8 @@ ieee80211_recv_delba(struct ieee80211com *ic, mbuf_t m,
 
 		ba->ba_state = IEEE80211_BA_INIT;
 		/* stop Block Ack inactivity timer */
-		timeout::timeout_del(&ba->ba_to);
-		timeout::timeout_del(&ba->ba_gap_to);
+		timeout_del(&ba->ba_to);
+		timeout_del(&ba->ba_gap_to);
 
 		if (ba->ba_buf != NULL) {
 			/* free all MSDUs stored in reordering buffer */
@@ -2847,7 +2848,7 @@ ieee80211_recv_delba(struct ieee80211com *ic, mbuf_t m,
 
 		ba->ba_state = IEEE80211_BA_INIT;
 		/* stop Block Ack inactivity timer */
-		timeout::timeout_del(&ba->ba_to);
+		timeout_del(&ba->ba_to);
 	}
 }
 
@@ -2920,7 +2921,7 @@ ieee80211_recv_sa_query_resp(struct ieee80211com *ic, mbuf_t m,
 		return;
 	}
 	/* MLME-SAQuery.confirm */
-	timeout::timeout_del(&ni->ni_sa_query_to);
+	timeout_del(&ni->ni_sa_query_to);
 	ni->ni_flags &= ~IEEE80211_NODE_SA_QUERY;
 }
 #endif
@@ -3075,7 +3076,8 @@ ieee80211_recv_pspoll(struct ieee80211com *ic, mbuf_t m,
 		wh = mtod(m, struct ieee80211_frame *);
 		wh->i_fc[1] |= IEEE80211_FC1_MORE_DATA;
 	}
-	mq_enqueue(&ic->ic_pwrsaveq, m);
+    ifp->output_queue->enqueue(m, NULL);
+//	mq_enqueue(&ic->ic_pwrsaveq, m);
 //	if_start(ifp);
     ifp->output_queue->service();
 }
@@ -3163,7 +3165,7 @@ ieee80211_bar_tid(struct ieee80211com *ic, struct ieee80211_node *ni,
 	}
 	/* reset Block Ack inactivity timer */
 	if (ba->ba_timeout_val != 0)
-		timeout::timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
+		timeout_add_usec(&ba->ba_to, ba->ba_timeout_val);
 
 	if (SEQ_LT(ba->ba_winstart, ssn)) {
 		struct mbuf_list ml = MBUF_LIST_INITIALIZER();

@@ -159,7 +159,7 @@ struct ifnet {                /* and the entries */
     u_short    if_rtlabelid;        /* [c] next route label */
     uint8_t if_priority;        /* [c] route priority offset */
     uint8_t if_llprio;        /* [N] link layer priority */
-    struct    timeout if_slowtimo;    /* [I] watchdog timeout */
+    CTimeout* if_slowtimo;    /* [I] watchdog timeout */
 //    struct    task if_watchdogtask;    /* [I] watchdog task */
 //    struct    task if_linkstatetask;    /* [I] task to do route updates */
 //

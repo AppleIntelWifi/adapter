@@ -36,7 +36,7 @@ typedef struct _AES_GMAC_CTX {
 	uint8_t		J[GMAC_BLOCK_LEN];		/* counter block */
 } AES_GMAC_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 extern void (*ghash_update)(GHASH_CTX *, uint8_t *, size_t);
 
 void	AES_GMAC_Init(void *);
@@ -44,6 +44,6 @@ void	AES_GMAC_Setkey(void *, const uint8_t *, uint16_t);
 void	AES_GMAC_Reinit(void *, const uint8_t *, uint16_t);
 int	AES_GMAC_Update(void *, const uint8_t *, uint16_t);
 void	AES_GMAC_Final(uint8_t [GMAC_DIGEST_LEN], void *);
-__END_DECLS
+//__END_DECLS
 
 #endif /* _GMAC_H_ */

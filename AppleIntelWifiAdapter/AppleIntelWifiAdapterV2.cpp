@@ -8,10 +8,14 @@
 
 OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
 
-
 void AppleIntelWifiAdapterV2::free() {
     super::free();
-    OSSafeReleaseNULL(drv);
+    if (drv) {
+        drv->release();
+        delete drv;
+        drv = NULL;
+    }
+    releaseTimeout();
     IOLog("Driver free()");
 }
 
@@ -19,6 +23,7 @@ bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
     IOLog("Driver init()");
     drv = new IWLMvmDriver();
+    initTimeout(NULL);
     return super::init(properties);
 }
 

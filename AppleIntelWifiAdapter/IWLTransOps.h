@@ -197,11 +197,6 @@ public:
     bool apmInit();
     
     void apmStop();
-
-    void loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt);
-
-    int loadFWChunk(u32 dst_addr, dma_addr_t phy_addr,
-                    u32 byte_cnt);
     
     virtual bool startHW() = 0;
     
@@ -219,6 +214,10 @@ private:
     
 protected:
     IWLIO *io;
+    
+    
+private:
+    
 };
 
 #endif /* IWLTransOps_h */

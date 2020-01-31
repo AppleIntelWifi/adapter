@@ -30,7 +30,7 @@ typedef struct michael_context {
 	u_int		michael_count;
 } MICHAEL_CTX;
 
-__BEGIN_DECLS
+//__BEGIN_DECLS
 void	 michael_init(MICHAEL_CTX *);
 void	 michael_update(MICHAEL_CTX *, const u_int8_t *, u_int)
 	    __attribute__((__bounded__(__buffer__, 2, 3)));
@@ -40,6 +40,6 @@ void	 michael_final(u_int8_t [MICHAEL_DIGEST_LENGTH], MICHAEL_CTX *)
 void	 michael_key(const u_int8_t *, MICHAEL_CTX *)
 	    __attribute__((__bounded__(__minbytes__, 1,
 	    MICHAEL_BLOCK_LENGTH)));
-__END_DECLS
+//__END_DECLS
 
 #endif /* _MICHAEL_H_ */

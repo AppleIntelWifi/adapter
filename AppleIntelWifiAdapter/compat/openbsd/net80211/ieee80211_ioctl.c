@@ -293,7 +293,7 @@ ieee80211_ioctl_setwpaparms(struct ieee80211com *ic,
 		ic->ic_flags &= ~IEEE80211_F_RSNON;
 		ic->ic_rsnprotos = 0;
 		ic->ic_rsnakms = 0;
-		ic->ic_rsngroupcipher = (typeof(ic->ic_rsngroupcipher))0;
+		ic->ic_rsngroupcipher = (enum ieee80211_cipher)0;
 		ic->ic_rsnciphers = 0;
 		return ENETRESET;
 	}

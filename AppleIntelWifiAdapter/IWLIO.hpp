@@ -69,6 +69,12 @@ public:
     
     int iwlPollPRPHBit(u32 addr, u32 bits, u32 mask, int timeout);
     
+    void iwlSetBitsPRPH(u32 ofs, u32 mask);
+    
+    void iwlSetBitsMaskPRPH(u32 ofs, u32 bits, u32 mask);
+    
+    void iwlClearBitsPRPH(u32 ofs, u32 mask);
+    
     int iwlPollDirectBit(u32 addr, u32 mask, int timeout);
     
     u32 iwlReadPRPH(u32 ofs);
@@ -78,6 +84,8 @@ public:
     void iwlWritePRPH(u32 addr, u32 val);
     
     void iwlWritePRPHNoGrab(u32 addr, u32 val);
+    
+    void iwlWritePRPH64NoGrab(u64 ofs, u64 val);
     
     /*
     * UMAC periphery address space changed from 0xA00000 to 0xD00000 starting from
@@ -95,6 +103,10 @@ public:
     void iwlWriteUmacPRPH(u32 ofs, u32 val);
     
     int iwlPollUmacPRPHBit(u32 addr, u32 bits, u32 mask, int timeout);
+    
+    u32 iwlReadShr(u32 reg);
+    
+    void iwlWriteShr(u32 reg, u32 val);
     
 protected:
     

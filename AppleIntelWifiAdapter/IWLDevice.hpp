@@ -129,17 +129,22 @@ public:
 public:
     
     IOPCIDevice *pciDevice;
-    ieee80211com *ie_ic;
-    ieee80211_state *ie_state;
-    ieee80211_amrr *ie_amrr;
     
+    //80211
+    ieee80211_state ie_state;
+    ieee80211_amrr ie_amrr;
+    ieee80211com ie_ic;
+    
+    //firmware
     bool firmwareLoadToBuf;
     iwl_fw fw;
     iwl_firmware_pieces pieces;
     bool usniffer_images;
     
+    //device config
     const struct iwl_cfg *cfg;
     const char *name;
+    
     /* shared module parameters */
     struct iwl_mod_params iwlwifi_mod_params = {
         .fw_restart = true,

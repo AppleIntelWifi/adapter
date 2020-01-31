@@ -188,7 +188,7 @@ struct ieee80211_rxinfo {
 /* Block Acknowledgement Record */
 struct ieee80211_tx_ba {
 	struct ieee80211_node	*ba_ni;	/* backpointer for callbacks */
-	timeout*		ba_to;
+	CTimeout*		ba_to;
 	int			ba_timeout_val;
 	int			ba_state;
 #define IEEE80211_BA_INIT	0
@@ -218,7 +218,7 @@ struct ieee80211_rx_ba {
 		mbuf_t m;
 		struct ieee80211_rxinfo	rxi;
 	}			*ba_buf;
-	timeout*		ba_to;
+	CTimeout*		ba_to;
 	int			ba_timeout_val;
 	int			ba_state;
 	u_int16_t		ba_params;
@@ -226,7 +226,7 @@ struct ieee80211_rx_ba {
 	u_int16_t		ba_winend;
 	u_int16_t		ba_winsize;
 	u_int16_t		ba_head;
-	timeout*		ba_gap_to;
+	CTimeout*		ba_gap_to;
 #define IEEE80211_BA_GAP_TIMEOUT	300 /* msec */
 	/* Counter for consecutive frames which missed the BA window. */
 	int			ba_winmiss;
@@ -287,7 +287,7 @@ struct ieee80211_node {
 	struct mbuf_queue	ni_savedq;	/* packets queued for pspoll */
 
 	/* RSN */
-	timeout*		ni_eapol_to;
+	CTimeout*		ni_eapol_to;
 	u_int			ni_rsn_state;
 	u_int			ni_rsn_supp_state;
 	u_int			ni_rsn_gstate;
@@ -316,7 +316,7 @@ struct ieee80211_node {
 
 	/* SA Query */
 	u_int16_t		ni_sa_query_trid;
-	timeout*		ni_sa_query_to;
+	CTimeout*		ni_sa_query_to;
 	int			ni_sa_query_count;
 
 	/* HT capabilities */
@@ -337,7 +337,7 @@ struct ieee80211_node {
 	uint8_t			ni_basic_mcs[howmany(128,NBBY)];
 
 	/* Timeout handlers which trigger Tx Block Ack negotiation. */
-	timeout*		ni_addba_req_to[IEEE80211_NUM_TID];
+	CTimeout*		ni_addba_req_to[IEEE80211_NUM_TID];
 	int			ni_addba_req_intval[IEEE80211_NUM_TID];
 #define IEEE80211_ADDBA_REQ_INTVAL_MAX 30	/* in seconds */
 

@@ -59,6 +59,8 @@
 #include <net80211/ieee80211_node.h>
 #include <net80211/ieee80211_proto.h>
 
+#include <IOKit/IOLib.h>
+
 #define IEEE80211_DEBUG
 
 #define _KASSERT(exp) KASSERT(exp, "")
@@ -66,6 +68,19 @@
 #define CLUSTER_SIZE 4096
 
 #define    ALIGNED_POINTER(p,t)    1
+
+extern int _stop(struct kmod_info*, void*);
+
+extern int _start(struct kmod_info*, void*);
+
+extern int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
+
+static inline void* _MallocZero(vm_size_t size)
+{
+    void *ret = IOMalloc(size);
+    bzero(ret, size);
+    return ret;
+}
 
 /*
  * ppsratecheck(): packets (or events) per second limitation.
@@ -305,7 +320,7 @@ extern const struct ieee80211_edca_ac_params
  * Entry in the fragment cache.
  */
 struct ieee80211_defrag {
-	timeout*	df_to;
+	CTimeout*	df_to;
 	mbuf_t df_m;
 	u_int16_t	df_seq;
 	u_int8_t	df_frag;
@@ -358,7 +373,7 @@ struct ieee80211com {
 	void			(*ic_update_htprot)(struct ieee80211com *,
 					struct ieee80211_node *);
 	int			(*ic_bgscan_start)(struct ieee80211com *);
-	timeout*		ic_bgscan_timeout;
+	CTimeout*		ic_bgscan_timeout;
 	uint32_t		ic_bgscan_fail;
 	u_int8_t		ic_myaddr[IEEE80211_ADDR_LEN];
 	struct ieee80211_rateset ic_sup_rates[IEEE80211_MODE_MAX];
@@ -408,8 +423,8 @@ struct ieee80211com {
 	int			ic_bmissthres;	/* beacon miss threshold */
 	int			ic_mgt_timer;	/* mgmt timeout */
 #ifndef IEEE80211_STA_ONLY
-	timeout*		ic_inact_timeout; /* node inactivity timeout */
-	timeout*		ic_node_cache_timeout;
+	CTimeout*		ic_inact_timeout; /* node inactivity timeout */
+	CTimeout*		ic_node_cache_timeout;
 #endif
 	int			ic_des_esslen;
 	u_int8_t		ic_des_essid[IEEE80211_NWID_LEN];
@@ -430,11 +445,11 @@ struct ieee80211com {
 	u_int8_t		ic_globalcnt[EAPOL_KEY_NONCE_LEN];
 	u_int8_t		ic_nonce[EAPOL_KEY_NONCE_LEN];
 	u_int8_t		ic_psk[IEEE80211_PMK_LEN];
-	timeout*		ic_rsn_timeout;
+	CTimeout*		ic_rsn_timeout;
 	int			ic_tkip_micfail;
 	u_int64_t		ic_tkip_micfail_last_tsc;
 #ifndef IEEE80211_STA_ONLY
-	timeout*		ic_tkip_micfail_timeout;
+	CTimeout*		ic_tkip_micfail_timeout;
 #endif
 
 	TAILQ_HEAD(, ieee80211_pmk) ic_pmksa;	/* PMKSA cache */

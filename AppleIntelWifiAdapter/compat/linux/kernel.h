@@ -41,7 +41,7 @@
 
 
 
-
+#define OS_EXPECT(x, v) __builtin_expect((x), (v))
 
 #define likely(x)       OS_EXPECT(!!(x), 1)
 #define unlikely(x)     OS_EXPECT(!!(x), 0)
@@ -184,7 +184,11 @@ static inline void* kcalloc(size_t n, size_t size) {
     if (size != 0 && n > SIZE_MAX / size) {
         return NULL;
     }
-    return IOMallocZero(n * size);
+    void *ret = IOMalloc(n * size);
+    if (!ret) {
+        memset(ret, 0, n * size);
+    }
+    return ret;
 }
 
 static inline int atomic_dec_and_test(volatile SInt32 * addr)

@@ -69,7 +69,7 @@ ieee80211_crypto_attach(struct ifnet *ifp)
 	ic->ic_set_key = ieee80211_set_key;
 	ic->ic_delete_key = ieee80211_delete_key;
 #ifndef IEEE80211_STA_ONLY
-	timeout::timeout_set(&ic->ic_tkip_micfail_timeout,
+	timeout_set(&ic->ic_tkip_micfail_timeout,
 	    ieee80211_michael_mic_failure_timeout, ic);
 #endif
 }
@@ -94,7 +94,7 @@ ieee80211_crypto_detach(struct ifnet *ifp)
 	explicit_bzero(ic->ic_psk, IEEE80211_PMK_LEN);
 
 #ifndef IEEE80211_STA_ONLY
-	timeout::timeout_del(&ic->ic_tkip_micfail_timeout);
+	timeout_del(&ic->ic_tkip_micfail_timeout);
 #endif
 }
 

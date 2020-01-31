@@ -312,7 +312,7 @@ ieee80211_recv_4way_msg2(struct ieee80211com *ic,
 		return;	/* will timeout.. */
 	}
 
-	timeout::timeout_del(&ni->ni_eapol_to);
+	timeout_del(&ni->ni_eapol_to);
 	ni->ni_rsn_state = RSNA_PTKCALCNEGOTIATING_2;
 	ni->ni_rsn_retries = 0;
 
@@ -689,7 +689,7 @@ ieee80211_recv_4way_msg4(struct ieee80211com *ic,
 		return;	/* will timeout.. */
 	}
 
-	timeout::timeout_del(&ni->ni_eapol_to);
+	timeout_del(&ni->ni_eapol_to);
 	ni->ni_rsn_state = RSNA_PTKINITDONE;
 	ni->ni_rsn_retries = 0;
 
@@ -1067,7 +1067,7 @@ ieee80211_recv_group_msg2(struct ieee80211com *ic,
 		return;
 	}
 
-	timeout::timeout_del(&ni->ni_eapol_to);
+	timeout_del(&ni->ni_eapol_to);
 	ni->ni_rsn_gstate = RSNA_REKEYESTABLISHED;
 
 	if (ni->ni_flags & IEEE80211_NODE_REKEY) {
