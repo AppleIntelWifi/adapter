@@ -54,7 +54,28 @@ __rem = ((uint64_t)(n)) % __base;            \
 __rem;                            \
 })
 
+#define MAX_ERRNO 4095
 
+//判断x是不是在（0xfffff000，0xffffffff)之间，注意这里用unlikely()的用意
+#define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
+  
+//由错误码求指针，-1 -> 0xFFFFFFFF
+static inline void *ERR_PTR(long error)
+{
+    return (void *) error;
+}
+
+//由指针求错误码，0xFFFFFFFF -> -1 ,依次类推
+static inline long PTR_ERR(const void *ptr)
+{
+    return (long) ptr;
+}
+  
+//判断x是不是在（0xfffff000，0xffffffff)之间，x是不是一个有效的指针
+ static inline long IS_ERR(const void *ptr)
+{
+    return IS_ERR_VALUE((unsigned long)ptr);
+}
 
 static inline int fls64(UInt64 x)
 {
@@ -133,12 +154,6 @@ pointer_t __mptr = (pointer_t)(ptr);                    \
 ((type *)(__mptr - offsetof(type, member))); })
 
 
-
-static inline void * ERR_PTR(long error)
-{
-    return (void *) error;
-}
-
 /*
  * This looks more complex than it should be. But we need to
  * get the type for the ~ right in round_down (it needs to be
@@ -152,6 +167,7 @@ static inline void * ERR_PTR(long error)
 
 #define DMA_BIT_MASK(n)    (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
 
+#define struct_size(x, y, l) (sizeof(*x) + sizeof(*y) * l)
 
 // log2.h
 /*
@@ -180,13 +196,23 @@ static inline void *kmemdup(const void *src, size_t len) {
     return p;
 }
 
-static inline void* kcalloc(size_t n, size_t size) {
+static inline void* kcalloc(size_t n, size_t size)
+{
     if (size != 0 && n > SIZE_MAX / size) {
         return NULL;
     }
     void *ret = IOMalloc(n * size);
     if (!ret) {
         memset(ret, 0, n * size);
+    }
+    return ret;
+}
+
+static inline void* kzalloc(size_t size)
+{
+    void *ret = IOMalloc(size);
+    if (ret) {
+        bzero(ret, size);
     }
     return ret;
 }

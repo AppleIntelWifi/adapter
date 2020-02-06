@@ -61,6 +61,7 @@
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
+#define XYLog(args...) IOLog("%s %s"AppleIntelWifiAdapter" args)
 
 typedef UInt8  u8;
 typedef UInt16 u16;
@@ -99,19 +100,6 @@ typedef u64 dma_addr_t;
 
 #define lower_32_bits(n) ((u32)(n))
 
-#define cpu_to_le64 __cpu_to_le64
-#define le64_to_cpu __le64_to_cpu
-#define cpu_to_le32 __cpu_to_le32
-#define le32_to_cpu __le32_to_cpu
-#define cpu_to_le16 __cpu_to_le16
-#define le16_to_cpu __le16_to_cpu
-#define cpu_to_be64 __cpu_to_be64
-#define be64_to_cpu __be64_to_cpu
-#define cpu_to_be32 __cpu_to_be32
-#define be32_to_cpu __be32_to_cpu
-#define cpu_to_be16 __cpu_to_be16
-#define be16_to_cpu __be16_to_cpu
-
 #define __cpu_to_le64(x) ((__force __le64)(__u64)(x))
 #define __le64_to_cpu(x) ((__force __u64)(__le64)(x))
 #define __cpu_to_le32(x) ((__force __le32)(__u32)(x))
@@ -124,6 +112,44 @@ typedef u64 dma_addr_t;
 #define __be32_to_cpu(x) __swab32((__force __u32)(__be32)(x))
 #define __cpu_to_be16(x) ((__force __be16)__swab16((x)))
 #define __be16_to_cpu(x) __swab16((__force __u16)(__be16)(x))
+
+#define cpu_to_le64 __cpu_to_le64
+#define le64_to_cpu __le64_to_cpu
+#define cpu_to_le32 __cpu_to_le32
+#define le32_to_cpu __le32_to_cpu
+#define cpu_to_le16 __cpu_to_le16
+#define le16_to_cpu __le16_to_cpu
+#define cpu_to_be64 OSSwapHostToBigInt64
+#define be64_to_cpu OSSwapBigToHostInt64
+#define cpu_to_be32 OSSwapHostToBigInt32
+#define be32_to_cpu OSSwapBigToHostInt32
+#define cpu_to_be16 OSSwapHostToBigInt16
+#define be16_to_cpu OSSwapBigToHostInt16
+
+static inline __u16 __be16_to_cpup(const __be16 *p)
+{
+    return (__force __u16)*p;
+}
+
+static inline __u32 __be32_to_cpup(const __be32 *p)
+{
+    return (__force __u32)*p;
+}
+
+static inline __be32 __cpu_to_be32p(const __u32 *p)
+{
+    return (__force __be32)*p;
+}
+
+static inline __u64 __be64_to_cpup(const __be64 *p)
+{
+    return (__force __u64)*p;
+}
+
+static inline __be64 __cpu_to_be64p(const __u64 *p)
+{
+    return (__force __be64)*p;
+}
 
 static inline __u32 __le32_to_cpup(const __le32 *p)
 {

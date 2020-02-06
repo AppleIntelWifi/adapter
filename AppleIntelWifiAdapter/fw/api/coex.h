@@ -65,7 +65,6 @@
 #define __iwl_fw_api_coex_h__
 
 #include <linux/types.h>
-#include <linux/bitops.h>
 
 #define BITS(nb) (BIT(nb) - 1)
 

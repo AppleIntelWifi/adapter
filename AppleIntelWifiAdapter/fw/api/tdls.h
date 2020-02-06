@@ -65,8 +65,8 @@
 #ifndef __iwl_fw_api_tdls_h__
 #define __iwl_fw_api_tdls_h__
 
-#include "fw/api/tx.h"
-#include "fw/api/phy-ctxt.h"
+#include "tx.h"
+#include "phy-ctxt.h"
 
 #define IWL_MVM_TDLS_STA_COUNT	4
 

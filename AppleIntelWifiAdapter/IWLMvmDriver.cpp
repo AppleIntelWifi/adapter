@@ -7,7 +7,11 @@
 //
 
 #include "IWLMvmDriver.hpp"
-#include "fw/IWLUcodeParse.hpp"
+#include "IWLUcodeParse.hpp"
+#include "IWLMvmTransOpsGen1.hpp"
+#include "IWLMvmTransOpsGen2.hpp"
+#include "MvmCmd.hpp"
+#include "txq.h"
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
@@ -16,9 +20,14 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
     if (!this->m_pDevice->init(pciDevice)) {
         return false;
     }
-    this->trans = new IWLTransport();
+    IWLTransport *trans = new IWLTransport();
     if (!trans->init(m_pDevice)) {
         return false;
+    }
+    if (m_pDevice->cfg->trans.gen2) {
+        this->trans_ops = new IWLMvmTransOpsGen2(trans);
+    } else {
+        this->trans_ops = new IWLMvmTransOpsGen1(trans);
     }
     return true;
 }
@@ -29,10 +38,10 @@ void IWLMvmDriver::release()
         IOLockFree(this->fwLoadLock);
         this->fwLoadLock = NULL;
     }
-    if (trans) {
-        trans->release();
-        delete trans;
-        trans = NULL;
+    if (trans_ops) {
+        trans_ops->release();
+        delete trans_ops;
+        trans_ops = NULL;
     }
     if (m_pDevice) {
         m_pDevice->release();
@@ -148,13 +157,13 @@ bool IWLMvmDriver::probe()
             !CSR_HW_RFID_TYPE(m_pDevice->hw_rf_id)) {
             IOInterruptState flags;
             
-            if (trans->grabNICAccess(&flags)) {
+            if (trans_ops->trans->grabNICAccess(&flags)) {
                 u32 val;
                 
-                val = trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
+                val = trans_ops->trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
                 val |= ENABLE_WFPM;
-                trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, val);
-                val = trans->iwlReadPRPHNoGrab(SD_REG_VER);
+                trans_ops->trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, val);
+                val = trans_ops->trans->iwlReadPRPHNoGrab(SD_REG_VER);
                 
                 val &= 0xff00;
                 switch (val) {
@@ -165,7 +174,7 @@ bool IWLMvmDriver::probe()
                     default:
                         m_pDevice->hw_rf_id = CSR_HW_RF_ID_TYPE_HR;
                 }
-                trans->releaseNICAccess(&flags);
+                trans_ops->trans->releaseNICAccess(&flags);
             }
         }
         
@@ -205,26 +214,26 @@ bool IWLMvmDriver::probe()
         //            if (!m_pDevice->cfg->num_rbds) {
         //                goto error;
         //            }
-        //            trans_pcie->num_rx_bufs = iwl_trans->cfg->num_rbds;
+        //            trans_pcie->num_rx_bufs = iwl_trans_ops->trans->cfg->num_rbds;
         //        } else {
         //            trans_pcie->num_rx_bufs = RX_QUEUE_SIZE;
         //        }
         
         if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000 &&
-            trans->grabNICAccess(&flags)) {
+            trans_ops->trans->grabNICAccess(&flags)) {
             u32 hw_step;
             
             IOLog("HW_STEP_LOCATION_BITS\n");
             
-            hw_step = trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
+            hw_step = trans_ops->trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
             hw_step |= ENABLE_WFPM;
-            trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, hw_step);
-            hw_step = trans->iwlReadPRPHNoGrab(CNVI_AUX_MISC_CHIP);
+            trans_ops->trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, hw_step);
+            hw_step = trans_ops->trans->iwlReadPRPHNoGrab(CNVI_AUX_MISC_CHIP);
             hw_step = (hw_step >> HW_STEP_LOCATION_BITS) & 0xF;
             if (hw_step == 0x3)
                 m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xFFFFFFF3) |
                 (SILICON_C_STEP << 2);
-            trans->releaseNICAccess(&flags);
+            trans_ops->trans->releaseNICAccess(&flags);
         }
     }
     return true;
@@ -359,7 +368,130 @@ bool IWLMvmDriver::drvStart()
     } else {
         
     }
-    
+    IWLTransport *trans = trans_ops->trans;
+    trans->wide_cmd_header = true;
+    trans->command_groups = iwl_mvm_groups;
+    trans->command_groups_size = ARRAY_SIZE(iwl_mvm_groups);
+    trans->cmd_queue = IWL_MVM_DQA_CMD_QUEUE;
+    trans->cmd_fifo = IWL_MVM_TX_FIFO_CMD;
     return true;
+}
+
+struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
+                 const struct iwl_fw *fw)
+{
+    struct iwl_nvm_get_info cmd = {};
+    struct iwl_nvm_data *nvm;
+    struct iwl_host_cmd hcmd = {
+        .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
+        .data = { &cmd, },
+        .len = { sizeof(cmd) },
+        .id = WIDE_ID(REGULATORY_AND_NVM_GROUP, NVM_GET_INFO)
+    };
+    int  ret;
+    bool empty_otp;
+    u32 mac_flags;
+    u32 sbands_flags = 0;
+    /*
+     * All the values in iwl_nvm_get_info_rsp v4 are the same as
+     * in v3, except for the channel profile part of the
+     * regulatory.  So we can just access the new struct, with the
+     * exception of the latter.
+     */
+    struct iwl_nvm_get_info_rsp *rsp;
+    struct iwl_nvm_get_info_rsp_v3 *rsp_v3;
+    bool v4 = fw_has_api(&fw->ucode_capa,
+                 IWL_UCODE_TLV_API_REGULATORY_NVM_INFO);
+    size_t rsp_size = v4 ? sizeof(*rsp) : sizeof(*rsp_v3);
+    void *channel_profile;
+
+//    ret = iwl_trans_send_cmd(trans, &hcmd);
+    ret = trans->sendCmd(&hcmd);
+    if (ret)
+        return (iwl_nvm_data *)ERR_PTR(ret);
+
+    if (iwl_rx_packet_payload_len(hcmd.resp_pkt) != rsp_size) {
+        IWL_ERR(0, "Invalid payload len in NVM response from FW %d", iwl_rx_packet_payload_len(hcmd.resp_pkt));
+        ret = -EINVAL;
+        trans->freeResp(&hcmd);
+        return (struct iwl_nvm_data *)ERR_PTR(ret);
+    }
+
+    rsp = (struct iwl_nvm_get_info_rsp *)hcmd.resp_pkt->data;
+    empty_otp = !!(le32_to_cpu(rsp->general.flags) &
+               NVM_GENERAL_FLAGS_EMPTY_OTP);
+    if (empty_otp)
+        IWL_INFO(trans, "OTP is empty\n");
+
+//    nvm = (struct iwl_nvm_data *)kzalloc(struct_size(nvm, channels, IWL_NUM_CHANNELS));
+    size_t nvm_size = sizeof(*nvm) + sizeof(ieee80211_channel) * IWL_NUM_CHANNELS;
+    nvm = (struct iwl_nvm_data *)kzalloc(nvm_size);
+    if (!nvm) {
+        ret = -ENOMEM;
+        goto out;
+    }
+
+    iwl_set_hw_address_from_csr(trans, nvm);
+    /* TODO: if platform NVM has MAC address - override it here */
+
+    if (!is_valid_ether_addr(nvm->hw_addr)) {
+        IWL_ERR(trans, "no valid mac address was found\n");
+        ret = -EINVAL;
+        goto err_free;
+    }
+
+    IWL_INFO(trans, "base HW address: %pM\n", nvm->hw_addr);
+
+    /* Initialize general data */
+    nvm->nvm_version = le16_to_cpu(rsp->general.nvm_version);
+    nvm->n_hw_addrs = rsp->general.n_hw_addrs;
+    if (nvm->n_hw_addrs == 0)
+        IWL_WARN(trans,
+             "Firmware declares no reserved mac addresses. OTP is empty: %d\n",
+             empty_otp);
+
+    /* Initialize MAC sku data */
+    mac_flags = le32_to_cpu(rsp->mac_sku.mac_sku_flags);
+    nvm->sku_cap_11ac_enable =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11AC_ENABLED);
+    nvm->sku_cap_11n_enable =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11N_ENABLED);
+    nvm->sku_cap_11ax_enable =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11AX_ENABLED);
+    nvm->sku_cap_band_24ghz_enable =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_BAND_2_4_ENABLED);
+    nvm->sku_cap_band_52ghz_enable =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_BAND_5_2_ENABLED);
+    nvm->sku_cap_mimo_disabled =
+        !!(mac_flags & NVM_MAC_SKU_FLAGS_MIMO_DISABLED);
+
+    /* Initialize PHY sku data */
+    nvm->valid_tx_ant = (u8)le32_to_cpu(rsp->phy_sku.tx_chains);
+    nvm->valid_rx_ant = (u8)le32_to_cpu(rsp->phy_sku.rx_chains);
+
+    if (le32_to_cpu(rsp->regulatory.lar_enabled) &&
+        fw_has_capa(&fw->ucode_capa,
+            IWL_UCODE_TLV_CAPA_LAR_SUPPORT)) {
+        nvm->lar_enabled = true;
+        sbands_flags |= IWL_NVM_SBANDS_FLAGS_LAR;
+    }
+
+    rsp_v3 = (struct iwl_nvm_get_info_rsp_v3 *)rsp;
+    channel_profile = v4 ? (void *)rsp->regulatory.channel_profile :
+              (void *)rsp_v3->regulatory.channel_profile;
+
+    iwl_init_sbands(trans, nvm, channel_profile,
+            nvm->valid_tx_ant & fw->valid_tx_ant,
+            nvm->valid_rx_ant & fw->valid_rx_ant,
+            sbands_flags, v4);
+
+    trans->freeResp(&hcmd);
+    return nvm;
+
+err_free:
+    IOFree(nvm, nvm_size);
+out:
+    trans->freeResp(&hcmd);
+    return (struct iwl_nvm_data *)ERR_PTR(ret);
 }
 

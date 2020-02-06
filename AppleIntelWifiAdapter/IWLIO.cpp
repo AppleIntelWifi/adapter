@@ -56,7 +56,7 @@ bool IWLIO::grabNICAccess(IOInterruptState *state)
         u32 cntrl = iwlRead32(CSR_GP_CNTRL);
         IWL_WARN(0, "Timeout waiting for hardware access (CSR_GP_CNTRL 0x%08x)\n",
                  cntrl);
-        //TODO iwl_trans_pcie_dump_regs
+        //TODO iwl_trans_pcie_dump_regs now ignore it
         //iwl_trans_pcie_dump_regs
         if (cntrl == ~0U) {
             IWL_ERR(trans, "Device gone - scheduling removal!\n");

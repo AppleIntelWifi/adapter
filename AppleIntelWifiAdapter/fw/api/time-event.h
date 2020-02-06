@@ -65,7 +65,7 @@
 #ifndef __iwl_fw_api_time_event_h__
 #define __iwl_fw_api_time_event_h__
 
-#include "fw/api/phy-ctxt.h"
+#include "phy-ctxt.h"
 
 /* Time Event types, according to MAC type */
 enum iwl_time_event_type {

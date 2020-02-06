@@ -64,6 +64,8 @@
 #ifndef __iwl_fw_api_d3_h__
 #define __iwl_fw_api_d3_h__
 
+#include <netinet/in.h>
+
 /**
  * enum iwl_d0i3_flags - d0i3 flags
  * @IWL_D0I3_RESET_REQUIRE: FW require reset upon resume

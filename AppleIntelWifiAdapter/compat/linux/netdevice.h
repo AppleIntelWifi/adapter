@@ -225,4 +225,140 @@ static inline void eth_addr_inc(u8 *addr)
     u64_to_ether_addr(u, addr);
 }
 
+/* Reserved Ethernet Addresses per IEEE 802.1Q */
+static const u8 eth_reserved_addr_base[ETH_ALEN] __aligned(2) =
+{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
+#define eth_stp_addr eth_reserved_addr_base
+
+/**
+ * is_link_local_ether_addr - Determine if given Ethernet address is link-local
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if address is link local reserved addr (01:80:c2:00:00:0X) per
+ * IEEE 802.1Q 8.6.3 Frame filtering.
+ *
+ * Please note: addr must be aligned to u16.
+ */
+static inline bool is_link_local_ether_addr(const u8 *addr)
+{
+    __be16 *a = (__be16 *)addr;
+    static const __be16 *b = (const __be16 *)eth_reserved_addr_base;
+    static const __be16 m = cpu_to_be16(0xfff0);
+
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+    return (((*(const u32 *)addr) ^ (*(const u32 *)b)) |
+        (__force int)((a[2] ^ b[2]) & m)) == 0;
+#else
+    return ((a[0] ^ b[0]) | (a[1] ^ b[1]) | ((a[2] ^ b[2]) & m)) == 0;
+#endif
+}
+
+/**
+ * is_zero_ether_addr - Determine if give Ethernet address is all zeros.
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if the address is all zeroes.
+ *
+ * Please note: addr must be aligned to u16.
+ */
+static inline bool is_zero_ether_addr(const u8 *addr)
+{
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+    return ((*(const u32 *)addr) | (*(const u16 *)(addr + 4))) == 0;
+#else
+    return (*(const u16 *)(addr + 0) |
+        *(const u16 *)(addr + 2) |
+        *(const u16 *)(addr + 4)) == 0;
+#endif
+}
+
+/**
+ * is_multicast_ether_addr - Determine if the Ethernet address is a multicast.
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if the address is a multicast address.
+ * By definition the broadcast address is also a multicast address.
+ */
+static inline bool is_multicast_ether_addr(const u8 *addr)
+{
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+    u32 a = *(const u32 *)addr;
+#else
+    u16 a = *(const u16 *)addr;
+#endif
+#ifdef __BIG_ENDIAN
+    return 0x01 & (a >> ((sizeof(a) * 8) - 8));
+#else
+    return 0x01 & a;
+#endif
+}
+
+static inline bool is_multicast_ether_addr_64bits(const u8 addr[6+2])
+{
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS) && BITS_PER_LONG == 64
+#ifdef __BIG_ENDIAN
+    return 0x01 & ((*(const u64 *)addr) >> 56);
+#else
+    return 0x01 & (*(const u64 *)addr);
+#endif
+#else
+    return is_multicast_ether_addr(addr);
+#endif
+}
+
+/**
+ * is_local_ether_addr - Determine if the Ethernet address is locally-assigned one (IEEE 802).
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if the address is a local address.
+ */
+static inline bool is_local_ether_addr(const u8 *addr)
+{
+    return 0x02 & addr[0];
+}
+
+/**
+ * is_broadcast_ether_addr - Determine if the Ethernet address is broadcast
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if the address is the broadcast address.
+ *
+ * Please note: addr must be aligned to u16.
+ */
+static inline bool is_broadcast_ether_addr(const u8 *addr)
+{
+    return (*(const u16 *)(addr + 0) &
+        *(const u16 *)(addr + 2) &
+        *(const u16 *)(addr + 4)) == 0xffff;
+}
+
+/**
+ * is_unicast_ether_addr - Determine if the Ethernet address is unicast
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Return true if the address is a unicast address.
+ */
+static inline bool is_unicast_ether_addr(const u8 *addr)
+{
+    return !is_multicast_ether_addr(addr);
+}
+
+/**
+ * is_valid_ether_addr - Determine if the given Ethernet address is valid
+ * @addr: Pointer to a six-byte array containing the Ethernet address
+ *
+ * Check that the Ethernet address (MAC) is not 00:00:00:00:00:00, is not
+ * a multicast address, and is not FF:FF:FF:FF:FF:FF.
+ *
+ * Return true if the address is valid.
+ *
+ * Please note: addr must be aligned to u16.
+ */
+static inline bool is_valid_ether_addr(const u8 *addr)
+{
+    /* FF:FF:FF:FF:FF:FF is a multicast address so we don't need to
+     * explicitly check for it here. */
+    return !is_multicast_ether_addr(addr) && !is_zero_ether_addr(addr);
+}
+
 #endif /* netdevice_h */

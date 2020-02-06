@@ -32,7 +32,7 @@ do { TraceLog("AppleIntelWifiAdapter CRIT: " args); } while (0)
 do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); } while (0)
 
 #define __iwl_dbg(level, limit, args...) \
-do { if (iwl_have_debug_level(level) && (!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);
+do { ((!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);
 
 /* No matter what is m (priv, bus, trans), this will work */
 #define IWL_ERR_DEV(m, f, a...)                        \

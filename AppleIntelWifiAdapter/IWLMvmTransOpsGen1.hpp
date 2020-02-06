@@ -18,18 +18,31 @@ class IWLMvmTransOpsGen1 : public IWLTransOps {
 public:
     
     IWLMvmTransOpsGen1() {}
-    IWLMvmTransOpsGen1(IWLIO *io) : IWLTransOps(io) {}
-    ~IWLMvmTransOpsGen1() {}
+    IWLMvmTransOpsGen1(IWLTransport *trans) : IWLTransOps(trans) {}
+    virtual ~IWLMvmTransOpsGen1() {}
     
-    bool startHW() override;
+    int nicInit() override;
     
     void fwAlive(UInt32 scd_addr) override;
     
-    bool startFW() override;
+    int startFW() override;
     
     void stopDevice() override;
     
-    void sendCmd(iwl_host_cmd *cmd) override;
+    void stopDeviceDirectly() override;
+    
+    int apmInit() override;
+    
+    void apmStop(bool op_mode_leave) override;
+    
+    int forcePowerGating() override {return 0;};
+    
+private:
+    int txInit();
+    
+    int rxInit();
+    
+    void setPwr(bool vaux);
 };
 
 #endif /* IWLMvmTransOpsGen1_hpp */

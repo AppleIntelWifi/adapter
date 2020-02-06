@@ -115,7 +115,7 @@ private:
     
     void osWriteInt8(uintptr_t byteOffset, uint8_t data);
     
-protected:
+public:
     IWLDevice *m_pDevice;
     
     

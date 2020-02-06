@@ -14,6 +14,7 @@
 
 #include "IWLDeviceList.h"
 #include "fw/FWImg.h"
+#include "IWLeeprom.h"
 #include <net80211/ieee80211_var.h>
 #include <net80211/ieee80211_amrr.h>
 
@@ -144,6 +145,13 @@ public:
     //device config
     const struct iwl_cfg *cfg;
     const char *name;
+    
+    //mvm
+    unsigned long status;
+    bool rfkill_safe_init_done;
+    
+    //nvm
+    const struct iwl_nvm_data *nvm_data;
     
     /* shared module parameters */
     struct iwl_mod_params iwlwifi_mod_params = {

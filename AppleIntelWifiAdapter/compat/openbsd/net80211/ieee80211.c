@@ -269,19 +269,35 @@ ieee80211_ieee2mhz(u_int chan, u_int flags)
         if (chan == 14)
             return 2484;
         if (chan < 14)
-            return 2407 + chan*5;
+            return 2407 + chan * 5;
         else
-            return 2512 + ((chan-15)*20);
+            return 2512 + ((chan-15) * 20);
     } else if (flags & IEEE80211_CHAN_5GHZ) {/* 5GHz band */
-        return 5000 + (chan*5);
-    } else {				/* either, guess */
+        if (chan >= 182 && chan <= 196)
+            return 4000 + chan * 5;
+        else
+            return 5000 + chan * 5;
+    } else if (flags & IEEE80211_CHAN_6GHZ) {
+        /* see 802.11ax D4.1 27.3.22.2 */
+        if (chan <= 253)
+            return 5940 + chan * 5;
+        else
+            goto defaultValue;
+    } else if (flags & IEEE80211_CHAN_60GHZ) {
+        if (chan < 7)
+            return 56160 + chan * 2160;
+        else
+            goto defaultValue;
+    } else {
+    defaultValue:
+        /* either, guess */
         if (chan == 14)
             return 2484;
         if (chan < 14)			/* 0-13 */
-            return 2407 + chan*5;
+            return 2407 + chan * 5;
         if (chan < 27)			/* 15-26 */
-            return 2512 + ((chan-15)*20);
-        return 5000 + (chan*5);
+            return 2512 + ((chan - 15) * 20);
+        return 5000 + (chan * 5);
     }
 }
 

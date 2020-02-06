@@ -246,6 +246,10 @@ enum ieee80211_protmode {
 struct ieee80211_channel {
 	u_int16_t	ic_freq;	/* setting in MHz */
 	u_int16_t	ic_flags;	/* see below */
+    //aditional by zxy
+    uint16_t hw_value;
+    int max_power;
+    int ic_band;
 };
 
 /*
@@ -260,6 +264,9 @@ struct ieee80211_channel {
 #define IEEE80211_CHAN_XR	0x1000	/* Extended range OFDM channel */
 #define IEEE80211_CHAN_HT	0x2000	/* 11n/HT channel */
 #define IEEE80211_CHAN_VHT	0x4000	/* 11ac/VHT channel */
+
+#define IEEE80211_CHAN_6GHZ 0x0300
+#define IEEE80211_CHAN_60GHZ 0x0500
 
 /*
  * Useful combinations of channel characteristics.

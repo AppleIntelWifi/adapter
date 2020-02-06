@@ -7,9 +7,8 @@
 //
 
 #include "IWLTransport.hpp"
-#include "IWLMvmTransOpsGen2.hpp"
-#include "IWLMvmTransOpsGen1.hpp"
 #include "IWLDebug.h"
+#include "IWLFH.h"
 
 #define super IWLIO
 
@@ -21,18 +20,62 @@ IWLTransport::~IWLTransport()
 {
 }
 
+bool IWLTransport::prepareCardHW()
+{
+    IWL_INFO(0, "prepareCardHW\n");
+    int t = 0;
+    int ret = setHWReady();
+    /* If the card is ready, exit 0 */
+    if (ret >= 0)
+        return false;
+    this->setBit(CSR_DBG_LINK_PWR_MGMT_REG, CSR_RESET_LINK_PWR_MGMT_DISABLED);
+    IODelay(2000);
+    for (int iter = 0; iter < 10; iter++) {
+        /* If HW is not ready, prepare the conditions to check again */
+        this->setBit(CSR_HW_IF_CONFIG_REG,
+                     CSR_HW_IF_CONFIG_REG_PREPARE);
+        do {
+            ret = setHWReady();
+            if (ret >= 0)
+                return false;
+            
+            IODelay(1000);
+            t += 200;
+        } while (t < 150000);
+        IODelay(25);
+    }
+    IWL_ERR(0, "Couldn't prepare the card\n");
+    return true;
+}
+
+#define HW_READY_TIMEOUT (50)
+
+int IWLTransport::setHWReady()
+{
+    int ret;
+    this->setBit(CSR_HW_IF_CONFIG_REG,
+                 CSR_HW_IF_CONFIG_REG_BIT_NIC_READY);
+    /* See if we got it */
+    ret = this->iwlPollBit(CSR_HW_IF_CONFIG_REG,
+                           CSR_HW_IF_CONFIG_REG_BIT_NIC_READY,
+                           CSR_HW_IF_CONFIG_REG_BIT_NIC_READY,
+                           HW_READY_TIMEOUT);
+    if (ret >= 0)
+        this->setBit(CSR_MBOX_SET_REG, CSR_MBOX_SET_REG_OS_ALIVE);
+    IWL_WARN(0, "hardware%s ready\n", ret < 0 ? " not" : "");
+    return ret;
+}
+
 bool IWLTransport::init(IWLDevice *device)
 {
     if (!super::init(device)) {
         IOLog("IWLTransport init fail\n");
         return false;
     }
-    if (m_pDevice->cfg->trans.gen2) {
-        trans_ops = new IWLMvmTransOpsGen2(this);
-    } else {
-        trans_ops = new IWLMvmTransOpsGen1(this);
-    }
+    
     this->irq_lock = IOSimpleLockAlloc();
+    this->mutex = IOLockAlloc();
+    this->syncCmdLock = IOLockAlloc();
     disableIntr();
     /*
      * In the 8000 HW family the format of the 4 bytes of CSR_HW_REV have
@@ -42,7 +85,7 @@ bool IWLTransport::init(IWLDevice *device)
      */
     if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000) {
         m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xfff0) | (CSR_HW_REV_STEP(m_pDevice->hw_rev << 2) << 2);
-        if (trans_ops->prepareCardHW()) {
+        if (this->prepareCardHW()) {
             IWL_ERR(0, "Error while preparing HW\n");
             return false;
         }
@@ -113,6 +156,14 @@ void IWLTransport::release()
         IOSimpleLockFree(this->irq_lock);
         this->irq_lock = NULL;
     }
+    if (this->mutex) {
+        IOLockFree(this->mutex);
+        this->mutex = NULL;
+    }
+    if (this->syncCmdLock) {
+        IOLockFree(this->syncCmdLock);
+        this->syncCmdLock = NULL;
+    }
     super::release();
 }
 
@@ -156,6 +207,34 @@ void IWLTransport::configMsixHw()
     //TODO
     //iwl_pcie_map_rx_causes(trans);
     //iwl_pcie_map_non_rx_causes(trans);
+}
+
+int IWLTransport::clearPersistenceBit()
+{
+    u32 hpm, wprot;
+    switch (m_pDevice->cfg->trans.device_family) {
+        case IWL_DEVICE_FAMILY_9000:
+            wprot = PREG_PRPH_WPROT_9000;
+            break;
+        case IWL_DEVICE_FAMILY_22000:
+            wprot = PREG_PRPH_WPROT_22000;
+            break;
+        default:
+            return 0;
+    }
+    hpm = iwlReadUmacPRPHNoGrab(HPM_DEBUG);
+    if (hpm != 0xa5a5a5a0 && (hpm & PERSISTENCE_BIT)) {
+        u32 wprot_val = iwlReadUmacPRPHNoGrab(wprot);
+        
+        if (wprot_val & PREG_WFPM_ACCESS) {
+            IWL_ERR(trans,
+                    "Error, can not clear persistence bit\n");
+            return -EPERM;
+        }
+        iwlWriteUmacPRPHNoGrab(HPM_DEBUG,
+                               hpm & ~PERSISTENCE_BIT);
+    }
+    return 0;
 }
 
 void IWLTransport::disableIntr()
@@ -203,9 +282,38 @@ void IWLTransport::enableIntr()
     IOSimpleLockUnlock(this->irq_lock);
 }
 
-IWLTransOps *IWLTransport::getTransOps()
+void IWLTransport::enableRFKillIntr()
 {
-    return trans_ops;
+    IWL_INFO(0, "Enabling rfkill interrupt\n");
+    if (!this->msix_enabled) {
+        this->inta_mask = CSR_INT_BIT_RF_KILL;
+        iwlWrite32(CSR_INT_MASK, this->inta_mask);
+    } else {
+        iwlWrite32(CSR_MSIX_FH_INT_MASK_AD,
+                   this->fh_init_mask);
+        enableHWIntrMskMsix(MSIX_HW_INT_CAUSES_REG_RF_KILL);
+    }
+    if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_9000) {
+        /*
+         * On 9000-series devices this bit isn't enabled by default, so
+         * when we power down the device we need set the bit to allow it
+         * to wake up the PCI-E bus for RF-kill interrupts.
+         */
+        setBit(CSR_GP_CNTRL,
+               CSR_GP_CNTRL_REG_FLAG_RFKILL_WAKE_L1A_EN);
+    }
+}
+
+void IWLTransport::enableHWIntrMskMsix(u32 msk)
+{
+    iwlWrite32(CSR_MSIX_HW_INT_MASK_AD, ~msk);
+    this->hw_mask = msk;
+}
+
+bool IWLTransport::isRFKikkSet()
+{
+    return !(iwlRead32(CSR_GP_CNTRL) &
+             CSR_GP_CNTRL_REG_FLAG_HW_RF_KILL_SW);
 }
 
 void IWLTransport::loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)
@@ -459,10 +567,6 @@ int IWLTransport::loadGivenUcode(const struct fw_img *image)
     //            iwl_pcie_apply_destination(trans);
     //        }
     
-#ifdef CPTCFG_IWLWIFI_DEVICE_TESTMODE
-    iwl_dnt_configure(trans, image);
-#endif
-    
     enableIntr();
     
     /* release CPU reset */
@@ -522,3 +626,146 @@ void IWLTransport::setPMI(bool state)
     }
 }
 
+void IWLTransport::apmConfig()
+{
+    /*
+     * L0S states have been found to be unstable with our devices
+     * and in newer hardware they are not officially supported at
+     * all, so we must always set the L0S_DISABLED bit.
+     */
+    this->setBit(CSR_GIO_REG, CSR_GIO_REG_VAL_L0S_DISABLED);
+    //TODO
+    //    pcie_capability_read_word(trans_pcie->pci_dev, PCI_EXP_LNKCTL, &lctl);
+    //        trans->pm_support = !(lctl & PCI_EXP_LNKCTL_ASPM_L0S);
+    //
+    //        pcie_capability_read_word(trans_pcie->pci_dev, PCI_EXP_DEVCTL2, &cap);
+    //        trans->ltr_enabled = cap & PCI_EXP_DEVCTL2_LTR_EN;
+    //        IWL_DEBUG_POWER(trans, "L1 %sabled - LTR %sabled\n",
+    //                (lctl & PCI_EXP_LNKCTL_ASPM_L1) ? "En" : "Dis",
+    //                trans->ltr_enabled ? "En" : "Dis");
+}
+
+void IWLTransport::swReset()
+{
+    /* Reset entire device - do controller reset (results in SHRD_HW_RST) */
+    setBit(CSR_RESET, CSR_RESET_REG_FLAG_SW_RESET);
+    usleep_range(5000, 6000);
+}
+
+void IWLTransport::apmStopMaster()
+{
+    int ret;
+    
+    /* stop device's busmaster DMA activity */
+    setBit(CSR_RESET, CSR_RESET_REG_FLAG_STOP_MASTER);
+    
+    ret = iwlPollBit(CSR_RESET,
+                     CSR_RESET_REG_FLAG_MASTER_DISABLED,
+                     CSR_RESET_REG_FLAG_MASTER_DISABLED, 100);
+    if (ret < 0)
+        IWL_WARN(0, "Master Disable Timed Out, 100 usec\n");
+    
+    IWL_INFO(0, "stop master\n");
+}
+
+void IWLTransport::apmLpXtalEnable()
+{
+    int ret;
+    u32 apmg_gp1_reg;
+    u32 apmg_xtal_cfg_reg;
+    u32 dl_cfg_reg;
+    
+    /* Force XTAL ON */
+    setBit(CSR_GP_CNTRL,
+           CSR_GP_CNTRL_REG_FLAG_XTAL_ON);
+    swReset();
+    ret = finishNicInit();
+    if (WARN_ON(ret)) {
+        /* Release XTAL ON request */
+        clearBit(CSR_GP_CNTRL,
+                 CSR_GP_CNTRL_REG_FLAG_XTAL_ON);
+        return;
+    }
+    /*
+     * Clear "disable persistence" to avoid LP XTAL resetting when
+     * SHRD_HW_RST is applied in S3.
+     */
+    iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
+                     APMG_PCIDEV_STT_VAL_PERSIST_DIS);
+    /*
+     * Force APMG XTAL to be active to prevent its disabling by HW
+     * caused by APMG idle state.
+     */
+    apmg_xtal_cfg_reg = iwlReadShr(SHR_APMG_XTAL_CFG_REG);
+    iwlWriteShr(SHR_APMG_XTAL_CFG_REG,
+                apmg_xtal_cfg_reg |
+                SHR_APMG_XTAL_CFG_XTAL_ON_REQ);
+    swReset();
+    /* Enable LP XTAL by indirect access through CSR */
+    apmg_gp1_reg = iwlReadShr(SHR_APMG_GP1_REG);
+    iwlWriteShr(SHR_APMG_GP1_REG, apmg_gp1_reg |
+                SHR_APMG_GP1_WF_XTAL_LP_EN |
+                SHR_APMG_GP1_CHICKEN_BIT_SELECT);
+    /* Clear delay line clock power up */
+    dl_cfg_reg = iwlReadShr(SHR_APMG_DL_CFG_REG);
+    iwlWriteShr(SHR_APMG_DL_CFG_REG, dl_cfg_reg &
+                ~SHR_APMG_DL_CFG_DL_CLOCK_POWER_UP);
+    /*
+     * Enable persistence mode to avoid LP XTAL resetting when
+     * SHRD_HW_RST is applied in S3.
+     */
+    setBit(CSR_HW_IF_CONFIG_REG,
+           CSR_HW_IF_CONFIG_REG_PERSIST_MODE);
+    /*
+     * Clear "initialization complete" bit to move adapter from
+     * D0A* (powered-up Active) --> D0U* (Uninitialized) state.
+     */
+    clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_INIT_DONE);
+    /* Activates XTAL resources monitor */
+    setBit(CSR_MONITOR_CFG_REG,
+           CSR_MONITOR_XTAL_RESOURCES);
+    /* Release XTAL ON request */
+    clearBit(CSR_GP_CNTRL,
+             CSR_GP_CNTRL_REG_FLAG_XTAL_ON);
+    _udelay(10);
+    /* Release APMG XTAL */
+    iwlWriteShr(SHR_APMG_XTAL_CFG_REG,
+                apmg_xtal_cfg_reg &
+                ~SHR_APMG_XTAL_CFG_XTAL_ON_REQ);
+}
+
+void IWLTransport::freeResp(struct iwl_host_cmd *cmd)
+{
+    if (cmd->resp_pkt) {
+        IOFree(cmd->resp_pkt, cmd->resp_pkt_len);
+    }
+    cmd->resp_pkt = NULL;
+}
+
+int IWLTransport::sendCmd(iwl_host_cmd *cmd)
+{
+    int ret;
+    if (unlikely(!(cmd->flags & CMD_SEND_IN_RFKILL) &&
+                 test_bit(STATUS_RFKILL_OPMODE, &this->status)))
+        return -ERFKILL;
+    if (unlikely(test_bit(STATUS_FW_ERROR, &this->status)))
+        return -EIO;
+    if (unlikely(this->state != IWL_TRANS_FW_ALIVE)) {
+        IWL_ERR(trans, "%s bad state = %d\n", __func__, this->state);
+        return -EIO;
+    }
+    if (WARN_ON((cmd->flags & CMD_WANT_ASYNC_CALLBACK) &&
+                !(cmd->flags & CMD_ASYNC)))
+        return -EINVAL;
+    if (this->wide_cmd_header && !iwl_cmd_groupid(cmd->id))
+        cmd->id = DEF_ID(cmd->id);
+    if (!(cmd->flags & CMD_ASYNC)) {
+        IOLockLock(this->syncCmdLock);
+    }
+    pcieSendHCmd(cmd);
+    if (!(cmd->flags & CMD_ASYNC)) {
+        IOLockSleep(this->syncCmdLock, this, 0);
+        IOLockUnlock(this->syncCmdLock);
+    }
+    return ret;
+}

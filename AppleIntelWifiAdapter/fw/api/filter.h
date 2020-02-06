@@ -63,7 +63,7 @@
 #ifndef __iwl_fw_api_filter_h__
 #define __iwl_fw_api_filter_h__
 
-#include "fw/api/mac.h"
+#include "mac.h"
 
 #define MAX_PORT_ID_NUM	2
 #define MAX_MCAST_FILTERING_ADDRESSES 256

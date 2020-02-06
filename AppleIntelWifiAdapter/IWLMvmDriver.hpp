@@ -12,8 +12,9 @@
 #include <libkern/OSKextLib.h>
 #include <IOKit/IOLib.h>
 
-#include "IWLTransport.hpp"
+#include "IWLTransOps.h"
 #include "fw/IWLUcodeParse.hpp"
+#include "IWLNvmParser.hpp"
 
 class IWLMvmDriver {
     
@@ -42,7 +43,19 @@ private:
     
     IWLDevice *m_pDevice;
     
-    IWLTransport *trans;
+    IWLTransOps *trans_ops;
+    
+    
+    
+    
+    /**
+     * iwl_get_nvm - retrieve NVM data from firmware
+     *
+     * Allocates a new iwl_nvm_data structure, fills it with
+     * NVM data, and returns it to caller.
+     */
+    struct iwl_nvm_data *getNvm(IWLTransport *trans,
+                     const struct iwl_fw *fw);
 };
 
 static inline bool iwl_mvm_has_new_rx_api(struct iwl_fw *fw)
