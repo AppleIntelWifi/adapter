@@ -22,9 +22,17 @@
 		0252C5DE23EC0B5C001975DB /* IWLTransportTx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0252C5DD23EC0B5C001975DB /* IWLTransportTx.cpp */; };
 		0252C5E223EC17CD001975DB /* MvmCmd.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 0252C5E023EC17CD001975DB /* MvmCmd.hpp */; };
 		0252C5E423EC1A51001975DB /* fw-api.h in Headers */ = {isa = PBXBuildFile; fileRef = 0252C5E323EC1A51001975DB /* fw-api.h */; };
+		02577D7723EE68F1003FF602 /* IWLPhyDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D7523EE68F1003FF602 /* IWLPhyDb.cpp */; };
+		02577D7823EE68F1003FF602 /* IWLPhyDb.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7623EE68F1003FF602 /* IWLPhyDb.hpp */; };
+		02577D7D23EEA4D9003FF602 /* NotificationWait.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D7B23EEA4D9003FF602 /* NotificationWait.cpp */; };
+		02577D7E23EEA4D9003FF602 /* NotificationWait.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7C23EEA4D9003FF602 /* NotificationWait.hpp */; };
+		02577D8023EEBC57003FF602 /* IWLCoex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D7F23EEBC57003FF602 /* IWLCoex.cpp */; };
+		02577D8223EEBCEF003FF602 /* IWLNvm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D8123EEBCEF003FF602 /* IWLNvm.cpp */; };
+		02577D8423EEBD07003FF602 /* IWLFw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D8323EEBD07003FF602 /* IWLFw.cpp */; };
+		02577D8623EEC385003FF602 /* IWLUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D8523EEC385003FF602 /* IWLUtils.cpp */; };
+		02577D8923EF98B6003FF602 /* IWLCtxtInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02577D8723EF98B6003FF602 /* IWLCtxtInfo.cpp */; };
+		02577D8A23EF98B6003FF602 /* IWLCtxtInfo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02577D8823EF98B6003FF602 /* IWLCtxtInfo.hpp */; };
 		0257B9A523E5A7E3005013A0 /* MvmTransOps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0257B9A423E5A7E3005013A0 /* MvmTransOps.cpp */; };
-		0257B9A923E679A6005013A0 /* IWLEepromParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0257B9A723E679A6005013A0 /* IWLEepromParser.cpp */; };
-		0257B9AA23E679A6005013A0 /* IWLEepromParser.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 0257B9A823E679A6005013A0 /* IWLEepromParser.hpp */; };
 		0257B9AD23E6DD2A005013A0 /* IWLNvmParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0257B9AB23E6DD2A005013A0 /* IWLNvmParser.cpp */; };
 		0257B9AE23E6DD2A005013A0 /* IWLNvmParser.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 0257B9AC23E6DD2A005013A0 /* IWLNvmParser.hpp */; };
 		0264965023E3CF6000914BB3 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0264964F23E3CF6000914BB3 /* IOKit.framework */; };
@@ -197,10 +205,20 @@
 		0252C64D23EC1B58001975DB /* phy-ctxt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "phy-ctxt.h"; sourceTree = "<group>"; };
 		0252C64E23EC1B58001975DB /* tdls.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tdls.h; sourceTree = "<group>"; };
 		0252C64F23EC1B58001975DB /* scan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scan.h; sourceTree = "<group>"; };
+		02577D7523EE68F1003FF602 /* IWLPhyDb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLPhyDb.cpp; sourceTree = "<group>"; };
+		02577D7623EE68F1003FF602 /* IWLPhyDb.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLPhyDb.hpp; sourceTree = "<group>"; };
+		02577D7923EE70D3003FF602 /* TransHdr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TransHdr.h; sourceTree = "<group>"; };
+		02577D7A23EE7A9F003FF602 /* IWLConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLConstants.h; sourceTree = "<group>"; };
+		02577D7B23EEA4D9003FF602 /* NotificationWait.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NotificationWait.cpp; sourceTree = "<group>"; };
+		02577D7C23EEA4D9003FF602 /* NotificationWait.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NotificationWait.hpp; sourceTree = "<group>"; };
+		02577D7F23EEBC57003FF602 /* IWLCoex.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLCoex.cpp; sourceTree = "<group>"; };
+		02577D8123EEBCEF003FF602 /* IWLNvm.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLNvm.cpp; sourceTree = "<group>"; };
+		02577D8323EEBD07003FF602 /* IWLFw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLFw.cpp; sourceTree = "<group>"; };
+		02577D8523EEC385003FF602 /* IWLUtils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLUtils.cpp; sourceTree = "<group>"; };
+		02577D8723EF98B6003FF602 /* IWLCtxtInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLCtxtInfo.cpp; sourceTree = "<group>"; };
+		02577D8823EF98B6003FF602 /* IWLCtxtInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLCtxtInfo.hpp; sourceTree = "<group>"; };
 		0257B9A423E5A7E3005013A0 /* MvmTransOps.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MvmTransOps.cpp; sourceTree = "<group>"; };
 		0257B9A623E5AC2F005013A0 /* IWLeeprom.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLeeprom.h; sourceTree = "<group>"; };
-		0257B9A723E679A6005013A0 /* IWLEepromParser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLEepromParser.cpp; sourceTree = "<group>"; };
-		0257B9A823E679A6005013A0 /* IWLEepromParser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLEepromParser.hpp; sourceTree = "<group>"; };
 		0257B9AB23E6DD2A005013A0 /* IWLNvmParser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLNvmParser.cpp; sourceTree = "<group>"; };
 		0257B9AC23E6DD2A005013A0 /* IWLNvmParser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLNvmParser.hpp; sourceTree = "<group>"; };
 		0264964D23E3CF4E00914BB3 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/System/Library/Frameworks/Kernel.framework; sourceTree = DEVELOPER_DIR; };
@@ -440,9 +458,11 @@
 				026E8CE32356FD4D000BFD46 /* firmware */,
 				026E8CD62356F2AD000BFD46 /* apple80211 */,
 				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */,
+				02577D7F23EEBC57003FF602 /* IWLCoex.cpp */,
 				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */,
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
 				0252C5DA23EBC513001975DB /* Mvm.h */,
+				02577D7923EE70D3003FF602 /* TransHdr.h */,
 				F8C2805923C1FFD9000827EA /* IWLDevice.cpp */,
 				F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */,
 				02DCDEE723C329C400997FA0 /* IWLDebug.h */,
@@ -462,14 +482,20 @@
 				02CEFCD223D4595E00B620E6 /* IWLFH.h */,
 				0257B9A423E5A7E3005013A0 /* MvmTransOps.cpp */,
 				0257B9A623E5AC2F005013A0 /* IWLeeprom.h */,
-				0257B9A723E679A6005013A0 /* IWLEepromParser.cpp */,
-				0257B9A823E679A6005013A0 /* IWLEepromParser.hpp */,
 				0257B9AB23E6DD2A005013A0 /* IWLNvmParser.cpp */,
 				0257B9AC23E6DD2A005013A0 /* IWLNvmParser.hpp */,
 				024FC26523EAD0010056A5BE /* TransOpsCommon.cpp */,
 				0252C5D623EBB7C0001975DB /* IWLInternal.cpp */,
 				0252C5D723EBB7C0001975DB /* IWLInternal.hpp */,
 				0252C5E023EC17CD001975DB /* MvmCmd.hpp */,
+				02577D7523EE68F1003FF602 /* IWLPhyDb.cpp */,
+				02577D7623EE68F1003FF602 /* IWLPhyDb.hpp */,
+				02577D7A23EE7A9F003FF602 /* IWLConstants.h */,
+				02577D8123EEBCEF003FF602 /* IWLNvm.cpp */,
+				02577D8323EEBD07003FF602 /* IWLFw.cpp */,
+				02577D8523EEC385003FF602 /* IWLUtils.cpp */,
+				02577D8723EF98B6003FF602 /* IWLCtxtInfo.cpp */,
+				02577D8823EF98B6003FF602 /* IWLCtxtInfo.hpp */,
 			);
 			path = AppleIntelWifiAdapter;
 			sourceTree = "<group>";
@@ -682,6 +708,8 @@
 				02CEFCE323D5F09600B620E6 /* IWLUcodeParse.cpp */,
 				02CEFCE423D5F09600B620E6 /* IWLUcodeParse.hpp */,
 				02CEFCE723D68DD400B620E6 /* FWImg.h */,
+				02577D7B23EEA4D9003FF602 /* NotificationWait.cpp */,
+				02577D7C23EEA4D9003FF602 /* NotificationWait.hpp */,
 			);
 			path = fw;
 			sourceTree = "<group>";
@@ -693,6 +721,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				02577D8A23EF98B6003FF602 /* IWLCtxtInfo.hpp in Headers */,
 				02CEFD6423D7DE8E00B620E6 /* sk.h in Headers */,
 				02CEFD8323D7DE8E00B620E6 /* rijndael.h in Headers */,
 				02CEFD5E23D7DE8E00B620E6 /* podd.h in Headers */,
@@ -709,6 +738,7 @@
 				02C2288223DBFA870016AD53 /* ieee80211_ioctl.h in Headers */,
 				026E8CDF2356F2AD000BFD46 /* IO80211WorkLoop.h in Headers */,
 				02CEFD9F23D7E30900B620E6 /* _null.h in Headers */,
+				02577D7E23EEA4D9003FF602 /* NotificationWait.hpp in Headers */,
 				024DDD5923CCAD26002716C8 /* IWLMvmTransOpsGen1.hpp in Headers */,
 				02CEFD8A23D7DE8E00B620E6 /* des_locl.h in Headers */,
 				02C2288623DBFA870016AD53 /* ieee80211_mira.h in Headers */,
@@ -738,10 +768,10 @@
 				0252C5E423EC1A51001975DB /* fw-api.h in Headers */,
 				02CEFD7E23D7DE8E00B620E6 /* aes.h in Headers */,
 				02CEFD7A23D7DE8E00B620E6 /* chacha_private.h in Headers */,
+				02577D7823EE68F1003FF602 /* IWLPhyDb.hpp in Headers */,
 				02CEFD9B23D7E24B00B620E6 /* timeout.h in Headers */,
 				026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */,
 				02C2287E23DBFA870016AD53 /* ieee80211_proto.h in Headers */,
-				0257B9AA23E679A6005013A0 /* IWLEepromParser.hpp in Headers */,
 				0252C5D923EBB7C0001975DB /* IWLInternal.hpp in Headers */,
 				02CEFD6823D7DE8E00B620E6 /* michael.h in Headers */,
 				02CEFD5D23D7DE8E00B620E6 /* cmac.h in Headers */,
@@ -839,27 +869,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				02577D7723EE68F1003FF602 /* IWLPhyDb.cpp in Sources */,
 				02E38D0D23E2EA0A00264FA9 /* timeout.c in Sources */,
+				02577D8223EEBCEF003FF602 /* IWLNvm.cpp in Sources */,
 				02CEFD7423D7DE8E00B620E6 /* md5.c in Sources */,
 				02CEFD7923D7DE8E00B620E6 /* rijndael.c in Sources */,
 				02CEFD6E23D7DE8E00B620E6 /* poly1305.c in Sources */,
 				02C2288423DBFA870016AD53 /* ieee80211_output.c in Sources */,
 				02CEFD6B23D7DE8E00B620E6 /* aes.c in Sources */,
+				02577D8423EEBD07003FF602 /* IWLFw.cpp in Sources */,
 				02CEFD7823D7DE8E00B620E6 /* sha2.c in Sources */,
 				0252C5D823EBB7C0001975DB /* IWLInternal.cpp in Sources */,
 				02CEFD8B23D7DE8E00B620E6 /* idgen.c in Sources */,
 				02CEFD6C23D7DE8E00B620E6 /* key_wrap.c in Sources */,
 				02CEFD8223D7DE8E00B620E6 /* set_key.c in Sources */,
+				02577D8623EEC385003FF602 /* IWLUtils.cpp in Sources */,
 				02C2287623DBFA870016AD53 /* ieee80211_mira.c in Sources */,
 				02E38D0A23E26E7200264FA9 /* _string.c in Sources */,
 				02CEFD7C23D7DE8E00B620E6 /* rmd160.c in Sources */,
 				0252C5DE23EC0B5C001975DB /* IWLTransportTx.cpp in Sources */,
-				0257B9A923E679A6005013A0 /* IWLEepromParser.cpp in Sources */,
 				02CEFD7523D7DE8E00B620E6 /* chachapoly.c in Sources */,
 				02C2287023DBFA870016AD53 /* ieee80211_ioctl.c in Sources */,
 				0257B9AD23E6DD2A005013A0 /* IWLNvmParser.cpp in Sources */,
 				02CEFD6123D7DE8E00B620E6 /* ecb_enc.c in Sources */,
 				024FC26623EAD0010056A5BE /* TransOpsCommon.cpp in Sources */,
+				02577D8023EEBC57003FF602 /* IWLCoex.cpp in Sources */,
 				024DDD5823CCAD26002716C8 /* IWLMvmTransOpsGen1.cpp in Sources */,
 				02C2287D23DBFA870016AD53 /* ieee80211_amrr.c in Sources */,
 				02CEFD8123D7DE8E00B620E6 /* cast.c in Sources */,
@@ -869,6 +903,7 @@
 				0252C5DC23EC00CA001975DB /* IWLTransportRx.cpp in Sources */,
 				02C2287123DBFA870016AD53 /* ieee80211.c in Sources */,
 				02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */,
+				02577D8923EF98B6003FF602 /* IWLCtxtInfo.cpp in Sources */,
 				02C2286E23DBFA870016AD53 /* ieee80211_proto.c in Sources */,
 				02CEFD8E23D7DE8E00B620E6 /* arc4.c in Sources */,
 				02CEFD6923D7DE8E00B620E6 /* ecb3_enc.c in Sources */,
@@ -888,6 +923,7 @@
 				02CEFD6A23D7DE8E00B620E6 /* michael.c in Sources */,
 				02C2288923DBFA870016AD53 /* ieee80211_pae_output.c in Sources */,
 				024DDD4E23CCA027002716C8 /* IWLIO.cpp in Sources */,
+				02577D7D23EEA4D9003FF602 /* NotificationWait.cpp in Sources */,
 				02C2287323DBFA870016AD53 /* ieee80211_input.c in Sources */,
 				02C2288323DBFA870016AD53 /* ieee80211_crypto_wep.c in Sources */,
 				02C2288823DBFA870016AD53 /* ieee80211_node.c in Sources */,

@@ -25,6 +25,7 @@ bool IWLDevice::init(IOPCIDevice *pciDevice)
         }
     }
     subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
+    this->rx_sync_waitq = IOLockAlloc();
     return this->cfg != NULL;
 }
 
@@ -33,6 +34,10 @@ void IWLDevice::release()
     if (this->registerRWLock) {
         IOSimpleLockFree(this->registerRWLock);
         this->registerRWLock = NULL;
+    }
+    if (this->rx_sync_waitq) {
+        IOLockFree(this->rx_sync_waitq);
+        this->rx_sync_waitq = NULL;
     }
 }
 

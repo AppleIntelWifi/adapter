@@ -25,7 +25,7 @@ public:
     
     void fwAlive(UInt32 scd_addr) override;
     
-    int startFW() override;
+    int startFW(const struct fw_img *fw, bool run_in_rfkill) override;
     
     void stopDevice() override;
     

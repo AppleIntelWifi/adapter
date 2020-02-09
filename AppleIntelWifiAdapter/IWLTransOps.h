@@ -25,14 +25,6 @@ public:
     }
     virtual ~IWLTransOps() {}
     
-    void release() {
-        if (this->trans) {
-            trans->release();
-            delete trans;
-            trans = NULL;
-        }
-    }
-    
     void nicConfig();
     
     int startHW();
@@ -58,7 +50,7 @@ public:
     
     virtual void fwAlive(UInt32 scd_addr) = 0;
     
-    virtual int startFW() = 0;
+    virtual int startFW(const struct fw_img *fw, bool run_in_rfkill) = 0;
     
     virtual void stopDevice() = 0; //iwl_trans_pcie_stop_device and iwl_trans_pcie_gen2_stop_device
     

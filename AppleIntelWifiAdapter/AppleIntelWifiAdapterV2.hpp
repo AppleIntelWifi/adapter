@@ -5,6 +5,8 @@
 #include "apple80211/IO80211Controller.h"
 #include "apple80211/IO80211Interface.h"
 #include <IOKit/network/IOEthernetController.h>
+#include "IOKit/network/IOGatedOutputQueue.h"
+#include <libkern/c++/OSString.h>
 
 #include <IOKit/IOService.h>
 #include <IOKit/pci/IOPCIDevice.h>
@@ -26,9 +28,11 @@ public:
     IOReturn getHardwareAddress(IOEthernetAddress* addrP) override;
     IOReturn enable(IONetworkInterface *netif) override;
     IOReturn disable(IONetworkInterface *netif) override;
-    bool configureInterface(IONetworkInterface *netif) override;
     IOReturn setPromiscuousMode(bool active) override;
     IOReturn setMulticastMode(bool active) override;
+    IOOutputQueue * createOutputQueue() override;
+    UInt32 outputPacket(mbuf_t, void * param) override;
+    int intrOccured(OSObject *object, IOInterruptEventSource *, int count);
     
     
 public:
@@ -37,6 +41,9 @@ public:
 private:
     IWLMvmDriver *drv;
     IOWorkLoop *fWorkLoop;
+    IOGatedOutputQueue*    fOutputQueue;
+    IOInterruptEventSource* fInterrupt;
+    IOEthernetInterface *netif;
 };
 
 #endif

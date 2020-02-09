@@ -12,6 +12,7 @@
 #include "IWLMvmTransOpsGen2.hpp"
 #include "MvmCmd.hpp"
 #include "txq.h"
+#include "fw/NotificationWait.hpp"
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
@@ -20,7 +21,7 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
     if (!this->m_pDevice->init(pciDevice)) {
         return false;
     }
-    IWLTransport *trans = new IWLTransport();
+    trans = new IWLTransport();
     if (!trans->init(m_pDevice)) {
         return false;
     }
@@ -39,9 +40,13 @@ void IWLMvmDriver::release()
         this->fwLoadLock = NULL;
     }
     if (trans_ops) {
-        trans_ops->release();
         delete trans_ops;
         trans_ops = NULL;
+    }
+    if (this->trans) {
+        trans->release();
+        delete trans;
+        trans = NULL;
     }
     if (m_pDevice) {
         m_pDevice->release();
@@ -296,11 +301,11 @@ void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, c
         IOLockWakeup(that->fwLoadLock, that, true);
         return;
     }
-
+    
     iwl_firmware_pieces *pieces = &that->m_pDevice->pieces;
-
+    
     /* Allocate ucode buffers for card's bus-master loading ... */
-
+    
     /* Runtime instructions and 2 copies of data:
      * 1) unmodified from disk
      * 2) backup cache for save/restore during power-downs
@@ -312,12 +317,12 @@ void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, c
             break;
         }
     }
-
+    
     if (isAllocErr) {
         IOLockWakeup(that->fwLoadLock, that, true);
         return;
     }
-
+    
     /*
      * The (size - 16) / 12 formula is based on the information recorded
      * for each event, which is of mode 1 (including timestamp) for all
@@ -353,20 +358,51 @@ void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, c
 
 bool IWLMvmDriver::drvStart()
 {
+    int err;
+    static const u8 no_reclaim_cmds[] = {
+        TX_CMD,
+    };
+    enum iwl_amsdu_size rb_size_default;
     //TODO
-//    /********************************
-//     * 1. Allocating and configuring HW data
-//     ********************************/
-//    hw = ieee80211_alloc_hw(sizeof(struct iwl_op_mode) +
-//                            sizeof(struct iwl_mvm),
-//                            &iwl_mvm_hw_ops);
-//    if (!hw)
-//        return NULL;
+    //    /********************************
+    //     * 1. Allocating and configuring HW data
+    //     ********************************/
+    //    hw = ieee80211_alloc_hw(sizeof(struct iwl_op_mode) +
+    //                            sizeof(struct iwl_mvm),
+    //                            &iwl_mvm_hw_ops);
+    //    if (!hw)
+    //        return NULL;
     
     if (iwl_mvm_has_new_rx_api(&this->m_pDevice->fw)) {
         
     } else {
         
+    }
+    if (iwl_mvm_has_unified_ucode(m_pDevice)) {
+        m_pDevice->cur_fw_img = IWL_UCODE_REGULAR;
+    } else {
+        m_pDevice->cur_fw_img = IWL_UCODE_INIT;
+    }
+    if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210)
+        rb_size_default = IWL_AMSDU_2K;
+    else
+        rb_size_default = IWL_AMSDU_4K;
+    switch (m_pDevice->iwlwifi_mod_params.amsdu_size) {
+        case IWL_AMSDU_DEF:
+            trans->rx_buf_size = rb_size_default;
+            break;
+        case IWL_AMSDU_4K:
+            trans->rx_buf_size = IWL_AMSDU_4K;
+            break;
+        case IWL_AMSDU_8K:
+            trans->rx_buf_size = IWL_AMSDU_8K;
+            break;
+        case IWL_AMSDU_12K:
+            trans->rx_buf_size = IWL_AMSDU_12K;
+            break;
+        default:
+            IWL_INFO(0, "Unsupported amsdu_size: %d\n", m_pDevice->iwlwifi_mod_params.amsdu_size);
+            trans->rx_buf_size = rb_size_default;
     }
     IWLTransport *trans = trans_ops->trans;
     trans->wide_cmd_header = true;
@@ -374,124 +410,225 @@ bool IWLMvmDriver::drvStart()
     trans->command_groups_size = ARRAY_SIZE(iwl_mvm_groups);
     trans->cmd_queue = IWL_MVM_DQA_CMD_QUEUE;
     trans->cmd_fifo = IWL_MVM_TX_FIFO_CMD;
+    iwl_phy_db_init(trans, &this->phy_db);
+    err = trans_ops->startHW();
+    err = runInitMvmUCode(true);
+//    if (err && err != -ERFKILL) {
+//        IWL_ERR(0, "init mvm ucode fail\n");
+//    }
+//    if (!err) {
+//        stopDevice();
+//    }
     return true;
 }
 
-struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
-                 const struct iwl_fw *fw)
+
+void IWLMvmDriver::stopDevice()
 {
-    struct iwl_nvm_get_info cmd = {};
-    struct iwl_nvm_data *nvm;
-    struct iwl_host_cmd hcmd = {
-        .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
-        .data = { &cmd, },
-        .len = { sizeof(cmd) },
-        .id = WIDE_ID(REGULATORY_AND_NVM_GROUP, NVM_GET_INFO)
-    };
-    int  ret;
-    bool empty_otp;
-    u32 mac_flags;
-    u32 sbands_flags = 0;
-    /*
-     * All the values in iwl_nvm_get_info_rsp v4 are the same as
-     * in v3, except for the channel profile part of the
-     * regulatory.  So we can just access the new struct, with the
-     * exception of the latter.
-     */
-    struct iwl_nvm_get_info_rsp *rsp;
-    struct iwl_nvm_get_info_rsp_v3 *rsp_v3;
-    bool v4 = fw_has_api(&fw->ucode_capa,
-                 IWL_UCODE_TLV_API_REGULATORY_NVM_INFO);
-    size_t rsp_size = v4 ? sizeof(*rsp) : sizeof(*rsp_v3);
-    void *channel_profile;
+    clear_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &trans->m_pDevice->status);
+    trans_ops->stopDevice();
+    //TODO
+    //    iwl_free_fw_paging(&mvm->fwrt);
+}
 
-//    ret = iwl_trans_send_cmd(trans, &hcmd);
-    ret = trans->sendCmd(&hcmd);
-    if (ret)
-        return (iwl_nvm_data *)ERR_PTR(ret);
-
-    if (iwl_rx_packet_payload_len(hcmd.resp_pkt) != rsp_size) {
-        IWL_ERR(0, "Invalid payload len in NVM response from FW %d", iwl_rx_packet_payload_len(hcmd.resp_pkt));
-        ret = -EINVAL;
-        trans->freeResp(&hcmd);
-        return (struct iwl_nvm_data *)ERR_PTR(ret);
-    }
-
-    rsp = (struct iwl_nvm_get_info_rsp *)hcmd.resp_pkt->data;
-    empty_otp = !!(le32_to_cpu(rsp->general.flags) &
-               NVM_GENERAL_FLAGS_EMPTY_OTP);
-    if (empty_otp)
-        IWL_INFO(trans, "OTP is empty\n");
-
-//    nvm = (struct iwl_nvm_data *)kzalloc(struct_size(nvm, channels, IWL_NUM_CHANNELS));
-    size_t nvm_size = sizeof(*nvm) + sizeof(ieee80211_channel) * IWL_NUM_CHANNELS;
-    nvm = (struct iwl_nvm_data *)kzalloc(nvm_size);
-    if (!nvm) {
-        ret = -ENOMEM;
-        goto out;
-    }
-
-    iwl_set_hw_address_from_csr(trans, nvm);
-    /* TODO: if platform NVM has MAC address - override it here */
-
-    if (!is_valid_ether_addr(nvm->hw_addr)) {
-        IWL_ERR(trans, "no valid mac address was found\n");
-        ret = -EINVAL;
-        goto err_free;
-    }
-
-    IWL_INFO(trans, "base HW address: %pM\n", nvm->hw_addr);
-
-    /* Initialize general data */
-    nvm->nvm_version = le16_to_cpu(rsp->general.nvm_version);
-    nvm->n_hw_addrs = rsp->general.n_hw_addrs;
-    if (nvm->n_hw_addrs == 0)
-        IWL_WARN(trans,
-             "Firmware declares no reserved mac addresses. OTP is empty: %d\n",
-             empty_otp);
-
-    /* Initialize MAC sku data */
-    mac_flags = le32_to_cpu(rsp->mac_sku.mac_sku_flags);
-    nvm->sku_cap_11ac_enable =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11AC_ENABLED);
-    nvm->sku_cap_11n_enable =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11N_ENABLED);
-    nvm->sku_cap_11ax_enable =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_802_11AX_ENABLED);
-    nvm->sku_cap_band_24ghz_enable =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_BAND_2_4_ENABLED);
-    nvm->sku_cap_band_52ghz_enable =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_BAND_5_2_ENABLED);
-    nvm->sku_cap_mimo_disabled =
-        !!(mac_flags & NVM_MAC_SKU_FLAGS_MIMO_DISABLED);
-
-    /* Initialize PHY sku data */
-    nvm->valid_tx_ant = (u8)le32_to_cpu(rsp->phy_sku.tx_chains);
-    nvm->valid_rx_ant = (u8)le32_to_cpu(rsp->phy_sku.rx_chains);
-
-    if (le32_to_cpu(rsp->regulatory.lar_enabled) &&
-        fw_has_capa(&fw->ucode_capa,
-            IWL_UCODE_TLV_CAPA_LAR_SUPPORT)) {
-        nvm->lar_enabled = true;
-        sbands_flags |= IWL_NVM_SBANDS_FLAGS_LAR;
-    }
-
-    rsp_v3 = (struct iwl_nvm_get_info_rsp_v3 *)rsp;
-    channel_profile = v4 ? (void *)rsp->regulatory.channel_profile :
-              (void *)rsp_v3->regulatory.channel_profile;
-
-    iwl_init_sbands(trans, nvm, channel_profile,
-            nvm->valid_tx_ant & fw->valid_tx_ant,
-            nvm->valid_rx_ant & fw->valid_rx_ant,
-            sbands_flags, v4);
-
-    trans->freeResp(&hcmd);
-    return nvm;
-
-err_free:
-    IOFree(nvm, nvm_size);
-out:
-    trans->freeResp(&hcmd);
-    return (struct iwl_nvm_data *)ERR_PTR(ret);
+int IWLMvmDriver::irqHandler(int irq, void *dev_id)
+{
+    //    isr_statistics *isr_stats = &this->isr_stats;
+    //    u32 inta;
+    //    u32 handled = 0;
+    //    /* dram interrupt table not set yet,
+    //     * use legacy interrupt.
+    //     */
+    //    if (likely(trans_ops->trans->use_ict))
+    //        inta = trans_ops->trans->intrCauseICT();
+    //    else
+    //        inta = trans_ops->trans->intrCauseNonICT();
+    //
+    //    inta &= trans_ops->trans->inta_mask;
+    //    /*
+    //     * Ignore interrupt if there's nothing in NIC to service.
+    //     * This may be due to IRQ shared with another device,
+    //     * or due to sporadic interrupts thrown from our NIC.
+    //     */
+    //    if (unlikely(!inta)) {
+    //        IWL_INFO(0, "Ignore interrupt, inta == 0\n");
+    //        /*
+    //         * Re-enable interrupts here since we don't
+    //         * have anything to service
+    //         */
+    //        if (test_bit(STATUS_INT_ENABLED, &trans_ops->trans->status))
+    //            trans->enableIntrDirectly();
+    //        return -1;
+    //    }
+    //
+    //    if (unlikely(inta == 0xFFFFFFFF || (inta & 0xFFFFFFF0) == 0xa5a5a5a0)) {
+    //        /*
+    //         * Hardware disappeared. It might have
+    //         * already raised an interrupt.
+    //         */
+    //        IWL_WARN(trans, "HARDWARE GONE?? INTA == 0x%08x\n", inta);
+    //        goto out;
+    //    }
+    //    /* Ack/clear/reset pending uCode interrupts.
+    //     * Note:  Some bits in CSR_INT are "OR" of bits in CSR_FH_INT_STATUS,
+    //     */
+    //    /* There is a hardware bug in the interrupt mask function that some
+    //     * interrupts (i.e. CSR_INT_BIT_SCD) can still be generated even if
+    //     * they are disabled in the CSR_INT_MASK register. Furthermore the
+    //     * ICT interrupt handling mechanism has another bug that might cause
+    //     * these unmasked interrupts fail to be detected. We workaround the
+    //     * hardware bugs here by ACKing all the possible interrupts so that
+    //     * interrupt coalescing can still be achieved.
+    //     */
+    //    trans->iwlWrite32(CSR_INT, inta | ~trans->inta_mask);
+    //    /* Now service all interrupt bits discovered above. */
+    //    if (inta & CSR_INT_BIT_HW_ERR) {
+    //        IWL_ERR(trans, "Hardware error detected.  Restarting.\n");
+    //        /* Tell the device to stop sending interrupts */
+    //        trans->disableIntr();
+    //        isr_stats->hw++;
+    //        trans->irqHandleError();
+    //        handled |= CSR_INT_BIT_HW_ERR;
+    //        goto out;
+    //    }
+    //    /* NIC fires this, but we don't use it, redundant with WAKEUP */
+    //    if (inta & CSR_INT_BIT_SCD) {
+    //        IWL_INFO(trans,
+    //                 "Scheduler finished to transmit the frame/frames.\n");
+    //        isr_stats->sch++;
+    //    }
+    //    /* Alive notification via Rx interrupt will do the real work */
+    //    if (inta & CSR_INT_BIT_ALIVE) {
+    //        IWL_INFO(trans, "Alive interrupt\n");
+    //        isr_stats->alive++;
+    //        if (trans->m_pDevice->cfg->trans.gen2) {
+    //            /*
+    //             * We can restock, since firmware configured
+    //             * the RFH
+    //             */
+    //            iwl_pcie_rxmq_restock(trans, trans_pcie->rxq);
+    //        }
+    //        handled |= CSR_INT_BIT_ALIVE;
+    //    }
+    //    /* Safely ignore these bits for debug checks below */
+    //    inta &= ~(CSR_INT_BIT_SCD | CSR_INT_BIT_ALIVE);
+    //    /* HW RF KILL switch toggled */
+    //    if (inta & CSR_INT_BIT_RF_KILL) {
+    //        iwl_pcie_handle_rfkill_irq(trans);
+    //        handled |= CSR_INT_BIT_RF_KILL;
+    //    }
+    //
+    //    /* Chip got too hot and stopped itself */
+    //    if (inta & CSR_INT_BIT_CT_KILL) {
+    //        IWL_ERR(trans, "Microcode CT kill error detected.\n");
+    //        isr_stats->ctkill++;
+    //        handled |= CSR_INT_BIT_CT_KILL;
+    //    }
+    //
+    //    /* Error detected by uCode */
+    //    if (inta & CSR_INT_BIT_SW_ERR) {
+    //        IWL_ERR(trans, "Microcode SW error detected. "
+    //                " Restarting 0x%X.\n", inta);
+    //        isr_stats->sw++;
+    //        trans->irqHandleError();
+    //        handled |= CSR_INT_BIT_SW_ERR;
+    //    }
+    //
+    //    /* uCode wakes up after power-down sleep */
+    //    if (inta & CSR_INT_BIT_WAKEUP) {
+    //        IWL_INFO(trans, "Wakeup interrupt\n");
+    //        iwl_pcie_rxq_check_wrptr(trans);
+    //        iwl_pcie_txq_check_wrptrs(trans);
+    //
+    //        isr_stats->wakeup++;
+    //
+    //        handled |= CSR_INT_BIT_WAKEUP;
+    //    }
+    //
+    //    /* All uCode command responses, including Tx command responses,
+    //     * Rx "responses" (frame-received notification), and other
+    //     * notifications from uCode come through here*/
+    //    if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX |
+    //                CSR_INT_BIT_RX_PERIODIC)) {
+    //        IWL_INFO(trans, "Rx interrupt\n");
+    //        if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX)) {
+    //            handled |= (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX);
+    //            trans->iwlWrite32(CSR_FH_INT_STATUS,
+    //                              CSR_FH_INT_RX_MASK);
+    //        }
+    //        if (inta & CSR_INT_BIT_RX_PERIODIC) {
+    //            handled |= CSR_INT_BIT_RX_PERIODIC;
+    //            trans->iwlWrite32(
+    //                              CSR_INT, CSR_INT_BIT_RX_PERIODIC);
+    //        }
+    //        /* Sending RX interrupt require many steps to be done in the
+    //         * the device:
+    //         * 1- write interrupt to current index in ICT table.
+    //         * 2- dma RX frame.
+    //         * 3- update RX shared data to indicate last write index.
+    //         * 4- send interrupt.
+    //         * This could lead to RX race, driver could receive RX interrupt
+    //         * but the shared data changes does not reflect this;
+    //         * periodic interrupt will detect any dangling Rx activity.
+    //         */
+    //
+    //        /* Disable periodic interrupt; we use it as just a one-shot. */
+    //        trans->iwlWrite8(CSR_INT_PERIODIC_REG,
+    //                         CSR_INT_PERIODIC_DIS);
+    //
+    //        /*
+    //         * Enable periodic interrupt in 8 msec only if we received
+    //         * real RX interrupt (instead of just periodic int), to catch
+    //         * any dangling Rx interrupt.  If it was just the periodic
+    //         * interrupt, there was no dangling Rx activity, and no need
+    //         * to extend the periodic interrupt; one-shot is enough.
+    //         */
+    //        if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX))
+    //            trans->iwlWrite8(CSR_INT_PERIODIC_REG,
+    //                             CSR_INT_PERIODIC_ENA);
+    //
+    //        isr_stats->rx++;
+    //
+    //        local_bh_disable();
+    //        iwl_pcie_rx_handle(trans, 0);
+    //        local_bh_enable();
+    //    }
+    //
+    //    /* This "Tx" DMA channel is used only for loading uCode */
+    //    if (inta & CSR_INT_BIT_FH_TX) {
+    //        trans->iwlWrite32(CSR_FH_INT_STATUS, CSR_FH_INT_TX_MASK);
+    //        IWL_INFO(trans, "uCode load interrupt\n");
+    //        isr_stats->tx++;
+    //        handled |= CSR_INT_BIT_FH_TX;
+    //        /* Wake up uCode load routine, now that load is complete */
+    //        trans->ucode_write_complete = true;
+    //        wake_up(&trans_pcie->ucode_write_waitq);
+    //    }
+    //
+    //    if (inta & ~handled) {
+    //        IWL_ERR(trans, "Unhandled INTA bits 0x%08x\n", inta & ~handled);
+    //        isr_stats->unhandled++;
+    //    }
+    //
+    //    if (inta & ~(trans->inta_mask)) {
+    //        IWL_WARN(trans, "Disabled INTA bits 0x%08x were pending\n",
+    //                 inta & ~trans->inta_mask);
+    //    }
+    //
+    //    /* only Re-enable all interrupt if disabled by irq */
+    //    if (test_bit(STATUS_INT_ENABLED, &trans->status))
+    //        trans->enableIntrDirectly();
+    //    /* we are loading the firmware, enable FH_TX interrupt only */
+    //    else if (handled & CSR_INT_BIT_FH_TX)
+    //        trans->enableFWLoadIntr();
+    //    /* Re-enable RF_KILL if it occurred */
+    //    else if (handled & CSR_INT_BIT_RF_KILL)
+    //        trans->enableRFKillIntr();
+    //    /* Re-enable the ALIVE / Rx interrupt if it occurred */
+    //    else if (handled & (CSR_INT_BIT_ALIVE | CSR_INT_BIT_FH_RX))
+    //        iwl_enable_fw_load_int_ctx_info(trans);
+    //out:
+    //
+    return 0;
 }
 

@@ -9,7 +9,15 @@
 #ifndef Mvm_h
 #define Mvm_h
 
-#include "IWLDevice.hpp"
+#define MVM_UCODE_ALIVE_TIMEOUT    (HZ * CPTCFG_IWL_TIMEOUT_FACTOR)
+#define MVM_UCODE_CALIB_TIMEOUT    (2 * HZ * CPTCFG_IWL_TIMEOUT_FACTOR)
+
+#define UCODE_VALID_OK    cpu_to_le32(0x1)
+
+struct iwl_mvm_alive_data {
+    bool valid;
+    u32 scd_base_addr;
+};
 
 /**
  * enum iwl_mvm_status - MVM status bits
@@ -38,22 +46,6 @@ enum iwl_mvm_init_status {
     IWL_MVM_INIT_STATUS_THERMAL_INIT_COMPLETE = BIT(0),
     IWL_MVM_INIT_STATUS_LEDS_INIT_COMPLETE = BIT(1),
 };
-
-static inline bool iwl_mvm_is_radio_killed(IWLDevice *mvm)
-{
-    return test_bit(IWL_MVM_STATUS_HW_RFKILL, &mvm->status) ||
-           test_bit(IWL_MVM_STATUS_HW_CTKILL, &mvm->status);
-}
-
-static inline bool iwl_mvm_is_radio_hw_killed(IWLDevice *mvm)
-{
-    return test_bit(IWL_MVM_STATUS_HW_RFKILL, &mvm->status);
-}
-
-static inline bool iwl_mvm_firmware_running(IWLDevice *mvm)
-{
-    return test_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &mvm->status);
-}
 
 #define IWL_MVM_SCAN_STOPPING_SHIFT    8
 

@@ -7,13 +7,13 @@
 //
 
 #include "IWLTransOps.h"
-
+#include "fw/NotificationWait.hpp"
 
 
 bool IWLTransOps::setHWRFKillState(bool state)
 {
     bool rfkill_safe_init_done = trans->m_pDevice->rfkill_safe_init_done;
-    bool unified = trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_22000;
+    bool unified = iwl_mvm_has_unified_ucode(trans->m_pDevice);
     if (state)
         set_bit(IWL_MVM_STATUS_HW_RFKILL, &trans->m_pDevice->status);
     else
@@ -22,15 +22,16 @@ bool IWLTransOps::setHWRFKillState(bool state)
     //    iwl_mvm_set_rfkill_state(mvm);
     bool rfkill_state = iwl_mvm_is_radio_killed(trans->m_pDevice);
     if (rfkill_state) {
-        //TODO
+        IOLockLock(trans->m_pDevice->rx_sync_waitq);
+        IOLockWakeup(trans->m_pDevice->rx_sync_waitq, NULL, true);
+        IOLockUnlock(trans->m_pDevice->rx_sync_waitq);
         //        wake_up(&mvm->rx_sync_waitq);
     }
     
     
     /* iwl_run_init_mvm_ucode is waiting for results, abort it. */
     if (rfkill_safe_init_done)
-        //TODO
-        //        iwl_abort_notification_waits(&mvm->notif_wait);
+                iwl_abort_notification_waits(&trans->m_pDevice->notif_wait);
         
     /*
      * Don't ask the transport to stop the firmware. We'll do it

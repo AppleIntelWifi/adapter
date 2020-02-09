@@ -73,12 +73,95 @@ void IWLMvmTransOpsGen1::setPwr(bool vaux)
 
 void IWLMvmTransOpsGen1::fwAlive(UInt32 scd_addr)
 {
-    
+    trans->state = IWL_TRANS_FW_ALIVE;
 }
 
-int IWLMvmTransOpsGen1::startFW()
+int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
 {
-    return 0;
+    clear_bit(STATUS_FW_ERROR, &trans->status);
+    trans->state = IWL_TRANS_FW_ALIVE;
+    bool hw_rfkill;
+    int ret;
+    /* This may fail if AMT took ownership of the device */
+    if (trans->prepareCardHW()) {
+        IWL_WARN(trans, "Exit HW not ready\n");
+        ret = -EIO;
+        goto out;
+    }
+    
+    trans->enableRFKillIntr();
+    
+    trans->iwlWrite32(CSR_INT, 0xFFFFFFFF);
+    
+    /*
+     * We enabled the RF-Kill interrupt and the handler may very
+     * well be running. Disable the interrupts to make sure no other
+     * interrupt can be fired.
+     */
+    trans->disableIntr();
+    
+    //TODO
+//    /* Make sure it finished running */
+//    iwl_pcie_synchronize_irqs(trans);
+    
+    IOLockLock(trans->mutex);
+    
+    /* If platform's RF_KILL switch is NOT set to KILL */
+    hw_rfkill = checkHWRFKill();
+    if (hw_rfkill && !run_in_rfkill) {
+        ret = -ERFKILL;
+        goto out;
+    }
+    
+    /* Someone called stop_device, don't try to start_fw */
+    if (trans->is_down) {
+        IWL_WARN(trans,
+                 "Can't start_fw since the HW hasn't been started\n");
+        ret = -EIO;
+        goto out;
+    }
+    
+    /* make sure rfkill handshake bits are cleared */
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR, CSR_UCODE_SW_BIT_RFKILL);
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR,
+                      CSR_UCODE_DRV_GP1_BIT_CMD_BLOCKED);
+    
+    /* clear (again), then enable host interrupts */
+    trans->iwlWrite32(CSR_INT, 0xFFFFFFFF);
+    
+    ret = nicInit();
+    if (ret) {
+        IWL_ERR(trans, "Unable to init nic\n");
+        goto out;
+    }
+    
+    /*
+     * Now, we load the firmware and don't want to be interrupted, even
+     * by the RF-Kill interrupt (hence mask all the interrupt besides the
+     * FH_TX interrupt which is needed to load the firmware). If the
+     * RF-Kill switch is toggled, we will find out after having loaded
+     * the firmware and return the proper value to the caller.
+     */
+    trans->enableFWLoadIntr();
+    
+    /* really make sure rfkill handshake bits are cleared */
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR, CSR_UCODE_SW_BIT_RFKILL);
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR, CSR_UCODE_SW_BIT_RFKILL);
+    
+    /* Load the given image to the HW */
+    if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000)
+        trans->loadGivenUcode8000(fw);
+    else
+        trans->loadGivenUcode(fw);
+    
+    /* re-check RF-Kill state since we may have missed the interrupt */
+    hw_rfkill = checkHWRFKill();
+    if (hw_rfkill && !run_in_rfkill)
+        ret = -ERFKILL;
+    
+out:
+    IOLockUnlock(trans->mutex);
+    return ret;
 }
 
 void IWLMvmTransOpsGen1::stopDevice()

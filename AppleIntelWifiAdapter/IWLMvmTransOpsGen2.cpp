@@ -111,12 +111,83 @@ void IWLMvmTransOpsGen2::apmStop(bool op_mode_leave)
 
 void IWLMvmTransOpsGen2::fwAlive(UInt32 scd_addr)
 {
-    
+    trans->state = IWL_TRANS_FW_ALIVE;
 }
 
-int IWLMvmTransOpsGen2::startFW()
+int IWLMvmTransOpsGen2::startFW(const struct fw_img *fw, bool run_in_rfkill)
 {
-    return 0;
+    clear_bit(STATUS_FW_ERROR, &trans->status);
+    bool hw_rfkill;
+    int ret;
+    
+    /* This may fail if AMT took ownership of the device */
+    if (trans->prepareCardHW()) {
+        IWL_WARN(trans, "Exit HW not ready\n");
+        ret = -EIO;
+        goto out;
+    }
+    
+    trans->enableRFKillIntr();
+    
+    trans->iwlWrite32(CSR_INT, 0xFFFFFFFF);
+    
+    /*
+     * We enabled the RF-Kill interrupt and the handler may very
+     * well be running. Disable the interrupts to make sure no other
+     * interrupt can be fired.
+     */
+    trans->disableIntr();
+    
+    //        /* Make sure it finished running */
+    //        iwl_pcie_synchronize_irqs(trans);
+    IOLockLock(trans->mutex);
+    
+    /* If platform's RF_KILL switch is NOT set to KILL */
+    hw_rfkill = checkHWRFKill();
+    if (hw_rfkill && !run_in_rfkill) {
+        ret = -ERFKILL;
+        goto out;
+    }
+    
+    /* Someone called stop_device, don't try to start_fw */
+    if (trans->is_down) {
+        IWL_WARN(trans,
+                 "Can't start_fw since the HW hasn't been started\n");
+        ret = -EIO;
+        goto out;
+    }
+    
+    /* make sure rfkill handshake bits are cleared */
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR, CSR_UCODE_SW_BIT_RFKILL);
+    trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR,
+                      CSR_UCODE_DRV_GP1_BIT_CMD_BLOCKED);
+    
+    /* clear (again), then enable host interrupts */
+    trans->iwlWrite32(CSR_INT, 0xFFFFFFFF);
+    
+    ret = nicInit();
+    
+    if (ret) {
+        IWL_ERR(trans, "Unable to init nic\n");
+        goto out;
+    }
+    
+    //TODO
+//    if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210)
+//        ret = iwl_pcie_ctxt_info_gen3_init(trans, fw);
+//    else
+//        ret = iwl_pcie_ctxt_info_init(trans, fw);
+//    if (ret)
+//        goto out;
+    
+    /* re-check RF-Kill state since we may have missed the interrupt */
+    hw_rfkill = checkHWRFKill();
+    if (hw_rfkill && !run_in_rfkill)
+        ret = -ERFKILL;
+    
+out:
+    IOLockUnlock(trans->mutex);
+    return ret;
 }
 
 void IWLMvmTransOpsGen2::stopDevice()

@@ -50,7 +50,7 @@ const char *iwl_get_cmd_string(IWLTransport *trans, u32 id)
     return ret->cmd_name;
 }
 
-int iwl_cmd_groups_verify_sorted(const struct iwl_trans_config *trans)
+int iwl_cmd_groups_verify_sorted(IWLTransport *trans)
 {
     int i, j;
     const struct iwl_hcmd_arr *arr;
@@ -164,20 +164,19 @@ static int iwl_pcie_send_hcmd_sync(IWLTransport *trans,
 static int iwl_pcie_send_hcmd_async(IWLTransport *trans,
                     struct iwl_host_cmd *cmd)
 {
-    int ret;
-
-    /* An asynchronous command can not expect an SKB to be set. */
-    if (WARN_ON(cmd->flags & CMD_WANT_SKB))
-        return -EINVAL;
-
-    //TODO
+//    int ret;
+//    /* An asynchronous command can not expect an SKB to be set. */
+//    if (WARN_ON(cmd->flags & CMD_WANT_SKB))
+//        return -EINVAL;
+//
+//    //TODO
 //    ret = iwl_pcie_enqueue_hcmd(trans, cmd);
-    if (ret < 0) {
-        IWL_ERR(trans,
-            "Error sending %s: enqueue_hcmd failed: %d\n",
-            iwl_get_cmd_string(trans, cmd->id), ret);
-        return ret;
-    }
+//    if (ret < 0) {
+//        IWL_ERR(trans,
+//            "Error sending %s: enqueue_hcmd failed: %d\n",
+//            iwl_get_cmd_string(trans, cmd->id), ret);
+//        return ret;
+//    }
     return 0;
 }
 
@@ -193,10 +192,8 @@ int IWLTransport::pcieSendHCmd(iwl_host_cmd *cmd)
                  cmd->id);
         return -ERFKILL;
     }
-    
     if (cmd->flags & CMD_ASYNC)
         return iwl_pcie_send_hcmd_async(this, cmd);
-    
     /* We still can fail on RFKILL that can be asserted while we wait */
     return iwl_pcie_send_hcmd_sync(this, cmd);
 }

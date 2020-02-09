@@ -79,18 +79,6 @@ iwl_parse_nvm_mcc_info(IWLDevice *dev, const struct iwl_cfg *cfg,
                        u16 geo_info, u16 cap);
 
 /**
- * struct iwl_nvm_section - describes an NVM section in memory.
- *
- * This struct holds an NVM section read from the NIC using NVM_ACCESS_CMD,
- * and saved for later use by the driver. Not all NVM sections are saved
- * this way, only the needed ones.
- */
-struct iwl_nvm_section {
-    u16 length;
-    const u8 *data;
-};
-
-/**
  * iwl_read_external_nvm - Reads external NVM from a file into nvm_sections
  */
 int iwl_read_external_nvm(IWLTransport *trans,

@@ -51,4 +51,16 @@ struct iwl_nvm_data {
     struct ieee80211_channel channels[];
 };
 
+/**
+ * struct iwl_nvm_section - describes an NVM section in memory.
+ *
+ * This struct holds an NVM section read from the NIC using NVM_ACCESS_CMD,
+ * and saved for later use by the driver. Not all NVM sections are saved
+ * this way, only the needed ones.
+ */
+struct iwl_nvm_section {
+    u16 length;
+    const u8 *data;
+};
+
 #endif /* IWLeeprom_h */

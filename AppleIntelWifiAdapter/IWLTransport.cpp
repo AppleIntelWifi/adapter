@@ -9,6 +9,7 @@
 #include "IWLTransport.hpp"
 #include "IWLDebug.h"
 #include "IWLFH.h"
+#include "tx.h"
 
 #define super IWLIO
 
@@ -72,10 +73,32 @@ bool IWLTransport::init(IWLDevice *device)
         IOLog("IWLTransport init fail\n");
         return false;
     }
-    
+    if (!m_pDevice->cfg->trans.gen2) {
+        txcmd_size = sizeof(struct iwl_tx_cmd);
+        txcmd_align = sizeof(void *);
+    } else if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_AX210) {
+        txcmd_size = sizeof(struct iwl_tx_cmd_gen2);
+        txcmd_align = 64;
+    } else {
+        txcmd_size = sizeof(struct iwl_tx_cmd_gen3);
+        txcmd_align = 128;
+    }
+    txcmd_size += sizeof(struct iwl_cmd_header);
+    txcmd_size += 36; /* biggest possible 802.11 header */
+    /* Ensure device TX cmd cannot reach/cross a page boundary in gen2 */
+    if (WARN_ON(m_pDevice->cfg->trans.gen2 && txcmd_size >= txcmd_align)) {
+        IOLog("Ensure device TX cmd fail\n");
+        return false;
+    }
+    //TODO empty tx queues from [iwl_trans_alloc] may be function [iwl_trans_pcie_wait_txq_empty]
+    this->opmode_down = true;
     this->irq_lock = IOSimpleLockAlloc();
     this->mutex = IOLockAlloc();
     this->syncCmdLock = IOLockAlloc();
+    //waitlocks
+    this->ucode_write_waitq = IOLockAlloc();
+    this->def_rx_queue = 0;
+    this->num_rx_queues = 1;//iwl_trans_alloc
     disableIntr();
     /*
      * In the 8000 HW family the format of the 4 bytes of CSR_HW_REV have
@@ -105,7 +128,9 @@ bool IWLTransport::init(IWLDevice *device)
     IOLog("%s\n", m_pDevice->hw_id_str);
     if (this->msix_enabled) {
         //TODO now not needed
-        //        iwl_pcie_set_interrupt_capa()
+        //        ret = iwl_pcie_init_msix_handler(pdev, trans_pcie);
+        //        if (ret)
+        //            goto out_no_pci;
     } else {
         //        ret = iwl_pcie_alloc_ict(trans);
         //        if (ret)
@@ -163,6 +188,10 @@ void IWLTransport::release()
     if (this->syncCmdLock) {
         IOLockFree(this->syncCmdLock);
         this->syncCmdLock = NULL;
+    }
+    if (this->ucode_write_waitq) {
+        IOLockFree(this->ucode_write_waitq);
+        this->ucode_write_waitq = NULL;
     }
     super::release();
 }
@@ -239,8 +268,14 @@ int IWLTransport::clearPersistenceBit()
 
 void IWLTransport::disableIntr()
 {
-    IWL_INFO(0, "disable interrupt\n");
     IOSimpleLockLock(this->irq_lock);
+    disableIntrDirectly();
+    IOSimpleLockUnlock(this->irq_lock);
+}
+
+void IWLTransport::disableIntrDirectly()
+{
+    IWL_INFO(0, "disable interrupt\n");
     clear_bit(STATUS_INT_ENABLED, &this->status);
     if (!msix_enabled) {
         /* disable interrupts from uCode/NIC to host */
@@ -256,13 +291,18 @@ void IWLTransport::disableIntr()
         iwlWrite32(CSR_MSIX_HW_INT_MASK_AD,
                    hw_init_mask);
     }
-    IOSimpleLockUnlock(this->irq_lock);
 }
 
 void IWLTransport::enableIntr()
 {
-    IWL_INFO(0, "enable interrupt\n");
     IOSimpleLockLock(this->irq_lock);
+    enableIntrDirectly();
+    IOSimpleLockUnlock(this->irq_lock);
+}
+
+void IWLTransport::enableIntrDirectly()
+{
+    IWL_INFO(0, "enable interrupt\n");
     set_bit(STATUS_INT_ENABLED, &this->status);
     if (!msix_enabled) {
         this->inta_mask = CSR_INI_SET_MASK;
@@ -279,7 +319,6 @@ void IWLTransport::enableIntr()
         iwlWrite32(CSR_MSIX_HW_INT_MASK_AD,
                    ~this->hw_mask);
     }
-    IOSimpleLockUnlock(this->irq_lock);
 }
 
 void IWLTransport::enableRFKillIntr()
@@ -308,6 +347,26 @@ void IWLTransport::enableHWIntrMskMsix(u32 msk)
 {
     iwlWrite32(CSR_MSIX_HW_INT_MASK_AD, ~msk);
     this->hw_mask = msk;
+}
+
+void IWLTransport::enableFHIntrMskMsix(u32 msk)
+{
+    iwlWrite32(CSR_MSIX_FH_INT_MASK_AD, ~msk);
+    this->fh_mask = msk;
+}
+
+void IWLTransport::enableFWLoadIntr()
+{
+    IWL_INFO(trans, "Enabling FW load interrupt\n");
+    if (!this->msix_enabled) {
+        this->inta_mask = CSR_INT_BIT_FH_TX;
+        iwlWrite32(CSR_INT_MASK, this->inta_mask);
+    } else {
+        iwlWrite32(CSR_MSIX_HW_INT_MASK_AD,
+                this->hw_init_mask);
+        
+        enableFHIntrMskMsix(MSIX_FH_INT_CAUSES_D2S_CH0_NUM);
+    }
 }
 
 bool IWLTransport::isRFKikkSet()
@@ -352,19 +411,16 @@ int IWLTransport::loadFWChunk(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)
     
     loadFWChunkFh(dst_addr, phy_addr, byte_cnt);
     this->releaseNICAccess(&flags);
-    
-    //TODO wait for interrupt to refresh this state
-    uint64_t begin_time = 0;
-    uint64_t cur_time = 0;
-    clock_get_uptime(&begin_time);
-    while (!this->ucode_write_complete) {
-        IOSleep(10);
-        clock_get_uptime(&cur_time);
-        if (cur_time - begin_time > 5000) {
-            ret = -1;
-            break;
-        }
+    IOLockLock(this->ucode_write_waitq);
+    if (this->ucode_write_waitq) {
+        IOLockUnlock(this->ucode_write_waitq);
+        return 0;
     }
+    AbsoluteTime deadline;
+    clock_interval_to_deadline(5, kSecondScale, (UInt64 *) &deadline);
+    ret = IOLockSleepDeadline(this->ucode_write_waitq, &this->ucode_write_complete,
+                              deadline, THREAD_INTERRUPTIBLE);
+    IOLockUnlock(this->ucode_write_waitq);
     if (ret == -1) {
         IWL_ERR(0, "Failed to load firmware chunk!\n");
         return -ETIMEDOUT;
@@ -395,7 +451,6 @@ int IWLTransport::loadSection(u8 section_num, const struct fw_desc *section)
         return -1;
     }
     for (offset = 0; offset < section->len; offset += chunk_sz) {
-        DebugLog("Writing [%d] with offset %d", section_num, offset);
         u32 copy_size, dst_addr;
         bool extended_addr = false;
         
@@ -421,6 +476,7 @@ int IWLTransport::loadSection(u8 section_num, const struct fw_desc *section)
             break;
         }
     }
+    IWL_INFO(0, "write ucode complete\n");
     cmd->complete();
     cmd->clearMemoryDescriptor();
     cmd->release();
@@ -764,7 +820,6 @@ int IWLTransport::sendCmd(iwl_host_cmd *cmd)
     }
     pcieSendHCmd(cmd);
     if (!(cmd->flags & CMD_ASYNC)) {
-        IOLockSleep(this->syncCmdLock, this, 0);
         IOLockUnlock(this->syncCmdLock);
     }
     return ret;
