@@ -4,6 +4,7 @@
 #include <IOKit/IOInterruptController.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
+#include "IWLDebug.h"
 
 #define super IOEthernetController
 
@@ -109,6 +110,10 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     }
     initTimeout(fWorkLoop);
     fInterrupt = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventSource::Action, this, &AppleIntelWifiAdapterV2::intrOccured));
+    if (fWorkLoop->addEventSource(fInterrupt) != kIOReturnSuccess) {
+        IWL_ERR(0, "add interrupt event soure fail\n");
+        return false;
+    }
     fInterrupt->enable();
     IONetworkMedium *medium;
     IONetworkMedium *autoMedium;
@@ -142,12 +147,12 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         IOLog("start fail, can not set current medium\n");
         return false;
     }
-    if (!drv->start()) {
-        IOLog("start failed\n");
-        return false;
-    }
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IOLog("start failed, can not attach interface\n");
+        return false;
+    }
+    if (!drv->start()) {
+        IOLog("start failed\n");
         return false;
     }
     netif->registerService();
@@ -157,8 +162,9 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
 
 int AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSource *, int count)
 {
+    IOLog("interrupt!!!\n");
     drv->irqHandler(0, NULL);
-    return kIOReturnOutputSuccess;
+    return kIOReturnSuccess;
 }
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
@@ -177,6 +183,7 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
     }
     if (netif) {
         detachInterface(netif);
+        netif = NULL;
     }
     super::stop(provider);
 }
@@ -184,6 +191,7 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IOLog("Driver Enable()");
+//    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
     return super::enable(netif);
 }
 
@@ -201,6 +209,12 @@ IOReturn AppleIntelWifiAdapterV2::setPromiscuousMode(bool active)
 IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
 {
     return kIOReturnSuccess;
+}
+
+IONetworkInterface *AppleIntelWifiAdapterV2::createInterface()
+{
+    return super::createInterface();
+    return new HackIO80211Interface();
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {

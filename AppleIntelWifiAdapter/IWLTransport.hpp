@@ -12,6 +12,8 @@
 #include "IWLIO.hpp"
 #include "IWLDevice.hpp"
 #include "TransHdr.h"
+#include "IWLCtxtInfo.hpp"
+#include "IWLInternal.hpp"
 
 class IWLTransport : public IWLIO
 {
@@ -84,6 +86,18 @@ public:
     
     int loadGivenUcode8000(const struct fw_img *image);
     
+    //ctxt
+    int iwl_pcie_ctxt_info_init(const struct fw_img *fw);
+    void iwl_pcie_ctxt_info_free();
+    void iwl_pcie_ctxt_info_free_paging();
+    int iwl_pcie_init_fw_sec(const struct fw_img *fw,
+                 struct iwl_context_info_dram *ctxt_dram);
+    int iwl_pcie_ctxt_info_gen3_init(const struct fw_img *fw);
+    void iwl_pcie_ctxt_info_gen3_free();
+    void iwl_enable_fw_load_int_ctx_info();
+    void iwl_pcie_ctxt_info_free_fw_img();
+    int iwl_pcie_get_num_sections(const struct fw_img *fw, int start);
+    
     ///
     ///power
     void setPMI(bool state);
@@ -115,11 +129,33 @@ public:
     IOSimpleLock *irq_lock;
     IOLock *mutex;
     
+    //pci
+    mach_vm_address_t dma_mask;
+    
+    int tfd_size;
+    int max_tbs;
+    
     //waitLocks
     IOLock *ucode_write_waitq;
     
     //fw
     enum iwl_trans_state state;
+    bool ucode_write_complete;
+    union {
+        struct iwl_context_info *ctxt_info;
+        struct iwl_context_info_gen3 *ctxt_info_gen3;
+    };
+    struct iwl_prph_info *prph_info;
+    struct iwl_prph_scratch *prph_scratch;
+    dma_addr_t ctxt_info_dma_addr;
+    iwl_dma_ptr *ctxt_info_dma_ptr;
+    dma_addr_t prph_info_dma_addr;
+    iwl_dma_ptr *prph_info_dma_ptr;
+    dma_addr_t prph_scratch_dma_addr;
+    iwl_dma_ptr *prph_scratch_dma_ptr;
+    dma_addr_t iml_dma_addr;
+    iwl_dma_ptr *iml_dma_ptr;
+    iwl_self_init_dram init_dram;
     
     //tx--cmd
     int cmd_queue;
@@ -131,12 +167,14 @@ public:
     int txcmd_size;
     int txcmd_align;
     //tx
+    iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
     
     //rx
     bool use_ict;
     int num_rx_queues;
     int def_rx_queue;
     int rx_buf_size;
+    iwl_rxq rxq;
     
     bool opmode_down;
     bool is_down;
@@ -160,8 +198,6 @@ private:
     u32 hw_mask;
     bool msix_enabled;
     
-    ///fw
-    bool ucode_write_complete;
     
 };
 

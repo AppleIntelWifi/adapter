@@ -260,29 +260,30 @@ int IWLMvmDriver::sendTXAntCfg(u8 valid_tx_ant)
 static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
                          struct iwl_rx_packet *pkt, void *data)
 {
+    IWL_INFO(0, "iwl alive.\n");
 //    IWLDevice *mvm =
 //    container_of(notif_wait, typeof(IWLDevice), notif_wait);
     struct iwl_mvm_alive_data *alive_data = (struct iwl_mvm_alive_data *)data;
-    struct mvm_alive_resp_v3 *palive3;
-    struct mvm_alive_resp *palive;
-    struct iwl_umac_alive *umac;
-    struct iwl_lmac_alive *lmac1;
-    struct iwl_lmac_alive *lmac2 = NULL;
-    u16 status;
-    u32 lmac_error_event_table, umac_error_event_table;
-    
-    if (iwl_rx_packet_payload_len(pkt) == sizeof(*palive)) {
-        palive = (struct mvm_alive_resp *)pkt->data;
-        umac = &palive->umac_data;
-        lmac1 = &palive->lmac_data[0];
-        lmac2 = &palive->lmac_data[1];
-        status = le16_to_cpu(palive->status);
-    } else {
-        palive3 = (struct mvm_alive_resp_v3 *)pkt->data;
-        umac = &palive3->umac_data;
-        lmac1 = &palive3->lmac_data;
-        status = le16_to_cpu(palive3->status);
-    }
+//    struct mvm_alive_resp_v3 *palive3;
+//    struct mvm_alive_resp *palive;
+//    struct iwl_umac_alive *umac;
+//    struct iwl_lmac_alive *lmac1;
+//    struct iwl_lmac_alive *lmac2 = NULL;
+//    u16 status;
+//    u32 lmac_error_event_table, umac_error_event_table;
+//
+//    if (iwl_rx_packet_payload_len(pkt) == sizeof(*palive)) {
+//        palive = (struct mvm_alive_resp *)pkt->data;
+//        umac = &palive->umac_data;
+//        lmac1 = &palive->lmac_data[0];
+//        lmac2 = &palive->lmac_data[1];
+//        status = le16_to_cpu(palive->status);
+//    } else {
+//        palive3 = (struct mvm_alive_resp_v3 *)pkt->data;
+//        umac = &palive3->umac_data;
+//        lmac1 = &palive3->lmac_data;
+//        status = le16_to_cpu(palive3->status);
+//    }
     
 //    lmac_error_event_table =
 //    le32_to_cpu(lmac1->dbg_ptrs.error_event_table_ptr);
@@ -312,8 +313,11 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
 //        iwl_fw_umac_set_alive_err_table(mvm->trans,
 //                                        umac_error_event_table);
     
-    alive_data->scd_base_addr = le32_to_cpu(lmac1->dbg_ptrs.scd_base_ptr);
-    alive_data->valid = status == IWL_ALIVE_STATUS_OK;
+//    alive_data->scd_base_addr = le32_to_cpu(lmac1->dbg_ptrs.scd_base_ptr);
+//    alive_data->valid = status == IWL_ALIVE_STATUS_OK;
+    
+    alive_data->scd_base_addr = 0;
+    alive_data->valid = 1;
     
     return true;
 }
@@ -357,15 +361,21 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
         iwl_remove_notification(&m_pDevice->notif_wait, &alive_wait);
         return ret;
     }
+    IOLockLock(trans->ucode_write_waitq);
+    AbsoluteTime deadline;
+    clock_interval_to_deadline(5, kSecondScale, (UInt64 *) &deadline);
+    ret = IOLockSleepDeadline(trans->ucode_write_waitq, &alive_wait,
+                              deadline, THREAD_INTERRUPTIBLE);
+    IOLockUnlock(trans->ucode_write_waitq);
     
     return 0;
+    
     /*
      * Some things may run in the background now, but we
      * just wait for the ALIVE notification here.
      */
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &alive_wait,
                                 MVM_UCODE_ALIVE_TIMEOUT);
-    
     
     if (ret) {
         if (m_pDevice->cfg->trans.device_family >=

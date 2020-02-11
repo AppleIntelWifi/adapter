@@ -413,12 +413,14 @@ bool IWLMvmDriver::drvStart()
     iwl_phy_db_init(trans, &this->phy_db);
     err = trans_ops->startHW();
     err = runInitMvmUCode(true);
-//    if (err && err != -ERFKILL) {
-//        IWL_ERR(0, "init mvm ucode fail\n");
-//    }
-//    if (!err) {
-//        stopDevice();
-//    }
+    if (err && err != -ERFKILL) {
+        IWL_ERR(0, "init mvm ucode fail\n");
+    }
+    if (!err) {
+        stopDevice();
+    } else if (err < 0) {
+        IWL_ERR(0, "Failed to run INIT ucode: %d\n", err);
+    }
     return true;
 }
 

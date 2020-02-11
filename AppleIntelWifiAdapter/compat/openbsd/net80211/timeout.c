@@ -25,15 +25,15 @@ void releaseTimeout()
 
 int splnet()
 {
-    _fWorkloop->disableAllInterrupts();
-    _fWorkloop->disableAllEventSources();
+//    _fWorkloop->disableAllInterrupts();
+//    _fWorkloop->disableAllEventSources();
     return 1;
 }
 
 void splx(int s)
 {
-    _fWorkloop->enableAllInterrupts();
-    _fWorkloop->enableAllEventSources();
+//    _fWorkloop->enableAllInterrupts();
+//    _fWorkloop->enableAllEventSources();
 }
 
 void timeout_set(CTimeout **t, void (*fn)(void *), void *arg)

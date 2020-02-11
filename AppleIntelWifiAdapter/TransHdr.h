@@ -12,6 +12,10 @@
 #include <linux/types.h>
 #include "IWLFH.h"
 #include "fw/api/cmdhdr.h"
+#include "IWLInternal.hpp"
+
+#include <sys/kernel_types.h>
+#include <sys/queue.h>
 
 #define FH_RSCSR_FRAME_SIZE_MSK        0x00003FFF    /* bits 0-13 */
 #define FH_RSCSR_FRAME_INVALID        0x55550000
@@ -254,6 +258,255 @@ enum iwl_trans_state {
 enum iwl_d3_status {
     IWL_D3_STATUS_ALIVE,
     IWL_D3_STATUS_RESET,
+};
+
+/**
+ * struct iwl_rx_transfer_desc - transfer descriptor
+ * @addr: ptr to free buffer start address
+ * @rbid: unique tag of the buffer
+ * @reserved: reserved
+ */
+struct iwl_rx_transfer_desc {
+    __le16 rbid;
+    __le16 reserved[3];
+    __le64 addr;
+} __packed;
+
+#define IWL_RX_CD_FLAGS_FRAGMENTED    BIT(0)
+
+/**
+ * struct iwl_rx_completion_desc - completion descriptor
+ * @reserved1: reserved
+ * @rbid: unique tag of the received buffer
+ * @flags: flags (0: fragmented, all others: reserved)
+ * @reserved2: reserved
+ */
+struct iwl_rx_completion_desc {
+    __le32 reserved1;
+    __le16 rbid;
+    u8 flags;
+    u8 reserved2[25];
+} __packed;
+
+/**
+ * struct iwl_rx_mem_buffer
+ * @page_dma: bus address of rxb page
+ * @page: driver's pointer to the rxb page
+ * @invalid: rxb is in driver ownership - not owned by HW
+ * @vid: index of this rxb in the global table
+ * @offset: indicates which offset of the page (in bytes)
+ *    this buffer uses (if multiple RBs fit into one page)
+ */
+struct iwl_rx_mem_buffer {
+    dma_addr_t page_dma;
+    struct page *page;
+    u16 vid;
+    bool invalid;
+//    TAILQ_ENTRY(iwl_rx_mem_buffer) list;
+    u32 offset;
+};
+
+/**
+ * struct iwl_rxq - Rx queue
+ * @id: queue index
+ * @bd: driver's pointer to buffer of receive buffer descriptors (rbd).
+ *    Address size is 32 bit in pre-9000 devices and 64 bit in 9000 devices.
+ *    In AX210 devices it is a pointer to a list of iwl_rx_transfer_desc's
+ * @bd_dma: bus address of buffer of receive buffer descriptors (rbd)
+ * @ubd: driver's pointer to buffer of used receive buffer descriptors (rbd)
+ * @ubd_dma: physical address of buffer of used receive buffer descriptors (rbd)
+ * @tr_tail: driver's pointer to the transmission ring tail buffer
+ * @tr_tail_dma: physical address of the buffer for the transmission ring tail
+ * @cr_tail: driver's pointer to the completion ring tail buffer
+ * @cr_tail_dma: physical address of the buffer for the completion ring tail
+ * @read: Shared index to newest available Rx buffer
+ * @write: Shared index to oldest written Rx packet
+ * @free_count: Number of pre-allocated buffers in rx_free
+ * @used_count: Number of RBDs handled to allocator to use for allocation
+ * @write_actual:
+ * @rx_free: list of RBDs with allocated RB ready for use
+ * @rx_used: list of RBDs with no RB attached
+ * @need_update: flag to indicate we need to update read/write index
+ * @rb_stts: driver's pointer to receive buffer status
+ * @rb_stts_dma: bus address of receive buffer status
+ * @lock:
+ * @queue: actual rx queue. Not used for multi-rx queue.
+ *
+ * NOTE:  rx_free and rx_used are used as a FIFO for iwl_rx_mem_buffers
+ */
+struct iwl_rxq {
+    int id;
+    void *bd;
+    dma_addr_t bd_dma;
+    iwl_dma_ptr *bd_dma_ptr;
+    union {
+        void *used_bd;
+        __le32 *bd_32;
+        struct iwl_rx_completion_desc *cd;
+    };
+    dma_addr_t used_bd_dma;
+    iwl_dma_ptr *used_bd_dma_ptr;
+    __le16 *tr_tail;
+    dma_addr_t tr_tail_dma;
+    iwl_dma_ptr *tr_tail_dma_ptr;
+    __le16 *cr_tail;
+    dma_addr_t cr_tail_dma;
+    iwl_dma_ptr *cr_tail_dma_ptr;
+    u32 read;
+    u32 write;
+    u32 free_count;
+    u32 used_count;
+    u32 write_actual;
+    u32 queue_size;
+//    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_free;
+//    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_used;
+    bool need_update;
+    void *rb_stts;
+    dma_addr_t rb_stts_dma;
+    iwl_dma_ptr *rb_stts_dma_ptr;
+    IOSimpleLock* lock;
+    struct iwl_rx_mem_buffer *queue[RX_QUEUE_SIZE];
+};
+
+struct iwl_cmd_meta {
+    /* only for SYNC commands, iff the reply skb is wanted */
+    struct iwl_host_cmd *source;
+    u32 flags;
+    u32 tbs;
+};
+
+/*
+ * The FH will write back to the first TB only, so we need to copy some data
+ * into the buffer regardless of whether it should be mapped or not.
+ * This indicates how big the first TB must be to include the scratch buffer
+ * and the assigned PN.
+ * Since PN location is 8 bytes at offset 12, it's 20 now.
+ * If we make it bigger then allocations will be bigger and copy slower, so
+ * that's probably not useful.
+ */
+#define IWL_FIRST_TB_SIZE    20
+#define IWL_FIRST_TB_SIZE_ALIGN LNX_ALIGN(IWL_FIRST_TB_SIZE, 64)
+
+struct iwl_pcie_txq_entry {
+    void *cmd;
+    mbuf_t skb;
+    /* buffer to free after command completes */
+    const void *free_buf;
+    struct iwl_cmd_meta meta;
+};
+
+struct iwl_pcie_first_tb_buf {
+    u8 buf[IWL_FIRST_TB_SIZE_ALIGN];
+};
+
+/**
+ * struct iwl_txq - Tx Queue for DMA
+ * @q: generic Rx/Tx queue descriptor
+ * @tfds: transmit frame descriptors (DMA memory)
+ * @first_tb_bufs: start of command headers, including scratch buffers, for
+ *    the writeback -- this is DMA memory and an array holding one buffer
+ *    for each command on the queue
+ * @first_tb_dma: DMA address for the first_tb_bufs start
+ * @entries: transmit entries (driver state)
+ * @lock: queue lock
+ * @stuck_timer: timer that fires if queue gets stuck
+ * @trans_pcie: pointer back to transport (for timer)
+ * @need_update: indicates need to update read/write index
+ * @ampdu: true if this queue is an ampdu queue for an specific RA/TID
+ * @wd_timeout: queue watchdog timeout (jiffies) - per queue
+ * @frozen: tx stuck queue timer is frozen
+ * @frozen_expiry_remainder: remember how long until the timer fires
+ * @bc_tbl: byte count table of the queue (relevant only for gen2 transport)
+ * @write_ptr: 1-st empty entry (index) host_w
+ * @read_ptr: last used entry (index) host_r
+ * @dma_addr:  physical addr for BD's
+ * @n_window: safe queue window
+ * @id: queue id
+ * @low_mark: low watermark, resume queue if free space more than this
+ * @high_mark: high watermark, stop queue if free space less than this
+ *
+ * A Tx queue consists of circular buffer of BDs (a.k.a. TFDs, transmit frame
+ * descriptors) and required locking structures.
+ *
+ * Note the difference between TFD_QUEUE_SIZE_MAX and n_window: the hardware
+ * always assumes 256 descriptors, so TFD_QUEUE_SIZE_MAX is always 256 (unless
+ * there might be HW changes in the future). For the normal TX
+ * queues, n_window, which is the size of the software queue data
+ * is also 256; however, for the command queue, n_window is only
+ * 32 since we don't need so many commands pending. Since the HW
+ * still uses 256 BDs for DMA though, TFD_QUEUE_SIZE_MAX stays 256.
+ * This means that we end up with the following:
+ *  HW entries: | 0 | ... | N * 32 | ... | N * 32 + 31 | ... | 255 |
+ *  SW entries:           | 0      | ... | 31          |
+ * where N is a number between 0 and 7. This means that the SW
+ * data is a window overlayed over the HW queue.
+ */
+struct iwl_txq {
+    void *tfds;
+    struct iwl_pcie_first_tb_buf *first_tb_bufs;
+    dma_addr_t first_tb_dma;
+    struct iwl_pcie_txq_entry *entries;
+    IOSimpleLock *lock;
+    unsigned long frozen_expiry_remainder;
+//    struct timer_list stuck_timer;
+    struct iwl_trans_pcie *trans_pcie;
+    bool need_update;
+    bool frozen;
+    bool ampdu;
+    int block;
+    unsigned long wd_timeout;
+    mbuf_t overflow_q;
+    struct iwl_dma_ptr bc_tbl;
+
+    int write_ptr;
+    int read_ptr;
+    dma_addr_t dma_addr;
+    int n_window;
+    u32 id;
+    int low_mark;
+    int high_mark;
+
+    bool overflow_tx;
+};
+
+#define IWL_NUM_OF_COMPLETION_RINGS    31
+#define IWL_NUM_OF_TRANSFER_RINGS    527
+
+/**
+ * struct iwl_dram_data
+ * @physical: page phy pointer
+ * @block: pointer to the allocated block/page
+ * @size: size of the block/page
+ */
+struct iwl_dram_data {
+    dma_addr_t physical;
+    iwl_dma_ptr *physical_ptr;
+    void *block;
+    int size;
+};
+
+/**
+ * struct iwl_fw_mon - fw monitor per allocation id
+ * @num_frags: number of fragments
+ * @frags: an array of DRAM buffer fragments
+ */
+struct iwl_fw_mon {
+    u32 num_frags;
+    struct iwl_dram_data *frags;
+};
+
+/**
+ * struct iwl_self_init_dram - dram data used by self init process
+ * @fw: lmac and umac dram data
+ * @fw_cnt: total number of items in array
+ * @paging: paging dram data
+ * @paging_cnt: total number of items in array
+ */
+struct iwl_self_init_dram {
+    struct iwl_dram_data *fw;
+    int fw_cnt;
+    struct iwl_dram_data *paging;
+    int paging_cnt;
 };
 
 #endif /* TransHdr_h */

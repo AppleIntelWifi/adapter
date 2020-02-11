@@ -98,6 +98,17 @@ bool IWLTransport::init(IWLDevice *device)
     //waitlocks
     this->ucode_write_waitq = IOLockAlloc();
     this->def_rx_queue = 0;
+    int addr_size;
+    if (m_pDevice->cfg->trans.use_tfh) {
+        addr_size = 64;
+        this->max_tbs = IWL_TFH_NUM_TBS;
+        this->tfd_size = sizeof(struct iwl_tfh_tfd);
+    } else {
+        addr_size = 36;
+        this->max_tbs = IWL_NUM_OF_TBS;
+        this->tfd_size = sizeof(struct iwl_tfd);
+    }
+    this->dma_mask = DMA_BIT_MASK(addr_size);
     this->num_rx_queues = 1;//iwl_trans_alloc
     disableIntr();
     /*

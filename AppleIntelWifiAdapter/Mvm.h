@@ -180,5 +180,4 @@ enum iwl_mvm_queue_status {
 
 #define IWL_MVM_NUM_CIPHERS             10
 
-
 #endif /* Mvm_h */

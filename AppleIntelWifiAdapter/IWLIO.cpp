@@ -156,13 +156,11 @@ void IWLIO::osWriteInt8(uintptr_t byteOffset, uint8_t data)
 void IWLIO::iwlWrite8(u32 ofs, u8 val)
 {
     osWriteInt8(ofs, val);
-    OSSynchronizeIO();
 }
 
 void IWLIO::iwlWrite32(u32 ofs, u32 val)
 {
     OSWriteLittleInt32(fHwBase, ofs, val);
-    OSSynchronizeIO();
 }
 
 void IWLIO::iwlWrite64(u64 ofs, u64 val)

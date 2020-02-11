@@ -172,13 +172,12 @@ int IWLMvmTransOpsGen2::startFW(const struct fw_img *fw, bool run_in_rfkill)
         goto out;
     }
     
-    //TODO
-//    if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210)
-//        ret = iwl_pcie_ctxt_info_gen3_init(trans, fw);
-//    else
-//        ret = iwl_pcie_ctxt_info_init(trans, fw);
-//    if (ret)
-//        goto out;
+    if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210)
+        ret = trans->iwl_pcie_ctxt_info_gen3_init(fw);
+    else
+        ret = trans->iwl_pcie_ctxt_info_init(fw);
+    if (ret)
+        goto out;
     
     /* re-check RF-Kill state since we may have missed the interrupt */
     hw_rfkill = checkHWRFKill();
