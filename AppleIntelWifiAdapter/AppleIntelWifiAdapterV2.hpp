@@ -5,6 +5,7 @@
 #include "HackIO80211Interface.h"
 #include <IOKit/network/IOEthernetController.h>
 #include "IOKit/network/IOGatedOutputQueue.h"
+#include <IOKit/IOFilterInterruptEventSource.h>
 #include <libkern/c++/OSString.h>
 
 #include <IOKit/IOService.h>
@@ -33,6 +34,7 @@ public:
     IOOutputQueue * createOutputQueue() override;
     UInt32 outputPacket(mbuf_t, void * param) override;
     int intrOccured(OSObject *object, IOInterruptEventSource *, int count);
+    bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
     IONetworkInterface * createInterface() override;
     
 public:
@@ -40,7 +42,6 @@ public:
     
 private:
     IWLMvmDriver *drv;
-    IOWorkLoop *fWorkLoop;
     IOGatedOutputQueue*    fOutputQueue;
     IOInterruptEventSource* fInterrupt;
     IOEthernetInterface *netif;

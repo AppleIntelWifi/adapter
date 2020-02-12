@@ -103,14 +103,26 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     if (!super::start(provider)) {
         return false;
     }
-    fWorkLoop = IOWorkLoop::workLoop();
-    if (!fWorkLoop) {
-        IOLog("start failed, can not create workloop\n");
-        return false;
+    initTimeout(getWorkLoop());
+    int msiIntrIndex = 0;
+    for (int index = 0; ; index++)
+    {
+        int interruptType;
+        int ret = provider->getInterruptType(index, &interruptType);
+        if (ret != kIOReturnSuccess)
+            break;
+        if (interruptType & kIOInterruptTypePCIMessaged)
+        {
+            msiIntrIndex = index;
+            break;
+        }
     }
-    initTimeout(fWorkLoop);
-    fInterrupt = IOInterruptEventSource::interruptEventSource(this, OSMemberFunctionCast(IOInterruptEventSource::Action, this, &AppleIntelWifiAdapterV2::intrOccured));
-    if (fWorkLoop->addEventSource(fInterrupt) != kIOReturnSuccess) {
+    fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
+                                                             OSMemberFunctionCast(IOInterruptEventSource::Action, this, &AppleIntelWifiAdapterV2::intrOccured),
+                                                             OSMemberFunctionCast(IOFilterInterruptAction, this, &AppleIntelWifiAdapterV2::intrFilter),
+                                                             provider,
+                                                             msiIntrIndex);
+    if (getWorkLoop()->addEventSource(fInterrupt) != kIOReturnSuccess) {
         IWL_ERR(0, "add interrupt event soure fail\n");
         return false;
     }
@@ -160,6 +172,11 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     return true;
 }
 
+bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object, IOFilterInterruptEventSource *src)
+{
+    return true;
+}
+
 int AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSource *, int count)
 {
     IOLog("interrupt!!!\n");
@@ -173,13 +190,9 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
     releaseTimeout();
     if (fInterrupt) {
         fInterrupt->disable();
-        fWorkLoop->removeEventSource(fInterrupt);
+        getWorkLoop()->removeEventSource(fInterrupt);
         fInterrupt->release();
         fInterrupt = NULL;
-    }
-    if (fWorkLoop) {
-        fWorkLoop->release();
-        fWorkLoop = NULL;
     }
     if (netif) {
         detachInterface(netif);
@@ -191,7 +204,7 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IOLog("Driver Enable()");
-//    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
+    //    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
     return super::enable(netif);
 }
 

@@ -160,13 +160,12 @@ void IWLIO::iwlWrite8(u32 ofs, u8 val)
 
 void IWLIO::iwlWrite32(u32 ofs, u32 val)
 {
-    OSWriteLittleInt32(fHwBase, ofs, val);
+    _OSWriteInt32(fHwBase, ofs, val);
 }
 
 void IWLIO::iwlWrite64(u64 ofs, u64 val)
 {
-    iwlWrite32((u32)ofs, lower_32_bits(val));
-    iwlWrite32((u32)ofs + 4, upper_32_bits(val));
+    _OSWriteInt64(fHwBase, ofs, val);
 }
 
 void IWLIO::iwlWriteDirect32(u32 reg, u32 value)
@@ -189,7 +188,7 @@ void IWLIO::iwlWriteDirect64(u64 reg, u64 value)
 
 u32 IWLIO::iwlRead32(u32 ofs)
 {
-    return OSReadLittleInt32(fHwBase, ofs);
+    return _OSReadInt32(fHwBase, ofs);
 }
 
 u32 IWLIO::iwlReadDirect32(u32 reg)

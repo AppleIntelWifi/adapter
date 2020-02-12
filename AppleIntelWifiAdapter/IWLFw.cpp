@@ -349,6 +349,27 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
                                alive_cmd, ARRAY_SIZE(alive_cmd),
                                iwl_alive_fn, &alive_data);
     
+    if (m_pDevice->cfg->trans.device_family >=
+        IWL_DEVICE_FAMILY_22000) {
+        IWL_ERR(mvm,
+                "SecBoot CPU1 Status: 0x%x, CPU2 Status: 0x%x\n",
+                trans->iwlReadUmacPRPH(UMAG_SB_CPU_1_STATUS),
+                trans->iwlReadUmacPRPH(UMAG_SB_CPU_2_STATUS));
+        IWL_ERR(mvm, "UMAC PC: 0x%x\n",
+                trans->iwlReadUmacPRPH(UREG_UMAC_CURRENT_PC));
+        IWL_ERR(mvm, "LMAC PC: 0x%x\n",
+                trans->iwlReadUmacPRPH(UREG_LMAC1_CURRENT_PC));
+        if (iwl_mvm_is_cdb_supported(m_pDevice))
+            IWL_ERR(mvm, "LMAC2 PC: 0x%x\n",
+                    trans->iwlReadUmacPRPH(UREG_LMAC2_CURRENT_PC));
+    } else if (m_pDevice->cfg->trans.device_family >=
+               IWL_DEVICE_FAMILY_8000) {
+        IWL_ERR(mvm,
+                "SecBoot CPU1 Status: 0x%x, CPU2 Status: 0x%x\n",
+                trans->iwlReadPRPH(SB_CPU_1_STATUS),
+                trans->iwlReadPRPH(SB_CPU_2_STATUS));
+    }
+    
     /*
      * We want to load the INIT firmware even in RFKILL
      * For the unified firmware case, the ucode_type is not
@@ -363,10 +384,31 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
     }
     IOLockLock(trans->ucode_write_waitq);
     AbsoluteTime deadline;
-    clock_interval_to_deadline(5, kSecondScale, (UInt64 *) &deadline);
+    clock_interval_to_deadline(MVM_UCODE_ALIVE_TIMEOUT, kSecondScale, (UInt64 *) &deadline);
     ret = IOLockSleepDeadline(trans->ucode_write_waitq, &alive_wait,
                               deadline, THREAD_INTERRUPTIBLE);
     IOLockUnlock(trans->ucode_write_waitq);
+    
+    if (m_pDevice->cfg->trans.device_family >=
+        IWL_DEVICE_FAMILY_22000) {
+        IWL_ERR(mvm,
+                "SecBoot CPU1 Status: 0x%x, CPU2 Status: 0x%x\n",
+                trans->iwlReadUmacPRPH(UMAG_SB_CPU_1_STATUS),
+                trans->iwlReadUmacPRPH(UMAG_SB_CPU_2_STATUS));
+        IWL_ERR(mvm, "UMAC PC: 0x%x\n",
+                trans->iwlReadUmacPRPH(UREG_UMAC_CURRENT_PC));
+        IWL_ERR(mvm, "LMAC PC: 0x%x\n",
+                trans->iwlReadUmacPRPH(UREG_LMAC1_CURRENT_PC));
+        if (iwl_mvm_is_cdb_supported(m_pDevice))
+            IWL_ERR(mvm, "LMAC2 PC: 0x%x\n",
+                    trans->iwlReadUmacPRPH(UREG_LMAC2_CURRENT_PC));
+    } else if (m_pDevice->cfg->trans.device_family >=
+               IWL_DEVICE_FAMILY_8000) {
+        IWL_ERR(mvm,
+                "SecBoot CPU1 Status: 0x%x, CPU2 Status: 0x%x\n",
+                trans->iwlReadPRPH(SB_CPU_1_STATUS),
+                trans->iwlReadPRPH(SB_CPU_2_STATUS));
+    }
     
     return 0;
     

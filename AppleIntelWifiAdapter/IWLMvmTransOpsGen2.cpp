@@ -41,6 +41,8 @@ int IWLMvmTransOpsGen2::nicInit()
 
 int IWLMvmTransOpsGen2::rxInit()
 {
+    /* Set interrupt coalescing timer to default (2048 usecs) */
+    trans->iwlWrite8(CSR_INT_COALESCING, IWL_HOST_INT_TIMEOUT_DEF);
     
     return 0;
 }
