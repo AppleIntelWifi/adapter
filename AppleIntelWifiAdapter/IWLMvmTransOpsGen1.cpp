@@ -13,39 +13,40 @@
 int IWLMvmTransOpsGen1::nicInit()
 {
     int ret;
-    
     /* nic_init */
     IOSimpleLockLock(trans->irq_lock);
     ret = apmInit();
     IOSimpleLockUnlock(trans->irq_lock);
-    
     if (ret)
         return ret;
-    
     setPwr(false);
-    
     nicConfig();
-    
     /* Allocate the RX queue, or reset if it is already allocated */
     rxInit();
-    
     /* Allocate or reset and init all Tx and Command queues */
     if (txInit())
         return -ENOMEM;
-    
     if (trans->m_pDevice->cfg->trans.base_params->shadow_reg_enable) {
         /* enable shadow regs in HW */
         trans->setBit(CSR_MAC_SHADOW_REG_CTRL, 0x800FFFFF);
         IWL_INFO(trans, "Enabling shadow registers in device\n");
     }
-    
-    return 0;
     return 0;
 }
 
 int IWLMvmTransOpsGen1::rxInit()
 {
-    
+    int ret = trans->rxInit();
+    if (ret)
+    return ret;
+    if (trans->m_pDevice->cfg->trans.mq_rx_supported)
+        trans->rxMqHWInit();
+    else
+        trans->rxHWInit(trans->rxq);
+    trans->rxqRestok(trans->rxq);
+    IOSimpleLockLock(trans->rxq->lock);
+    trans->rxqIncWrPtr(trans->rxq);
+    IOSimpleLockUnlock(trans->rxq->lock);
     return 0;
 }
 
@@ -74,6 +75,8 @@ void IWLMvmTransOpsGen1::setPwr(bool vaux)
 void IWLMvmTransOpsGen1::fwAlive(UInt32 scd_addr)
 {
     trans->state = IWL_TRANS_FW_ALIVE;
+    trans->resetICT();
+    trans->txStart();
 }
 
 int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)

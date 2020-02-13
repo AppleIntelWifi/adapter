@@ -299,10 +299,10 @@ struct iwl_rx_completion_desc {
  */
 struct iwl_rx_mem_buffer {
     dma_addr_t page_dma;
-    struct page *page;
+    mbuf_t page;
     u16 vid;
     bool invalid;
-//    TAILQ_ENTRY(iwl_rx_mem_buffer) list;
+    TAILQ_ENTRY(iwl_rx_mem_buffer) list;
     u32 offset;
 };
 
@@ -358,8 +358,8 @@ struct iwl_rxq {
     u32 used_count;
     u32 write_actual;
     u32 queue_size;
-//    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_free;
-//    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_used;
+    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_free;
+    TAILQ_HEAD(, iwl_rx_mem_buffer) rx_used;
     bool need_update;
     void *rb_stts;
     dma_addr_t rb_stts_dma;
@@ -508,5 +508,34 @@ struct iwl_self_init_dram {
     struct iwl_dram_data *paging;
     int paging_cnt;
 };
+
+/**
+ * struct iwl_rb_allocator - Rx allocator
+ * @req_pending: number of requests the allcator had not processed yet
+ * @req_ready: number of requests honored and ready for claiming
+ * @rbd_allocated: RBDs with pages allocated and ready to be handled to
+ *    the queue. This is a list of &struct iwl_rx_mem_buffer
+ * @rbd_empty: RBDs with no page attached for allocator use. This is a list
+ *    of &struct iwl_rx_mem_buffer
+ * @lock: protects the rbd_allocated and rbd_empty lists
+ * @alloc_wq: work queue for background calls
+ * @rx_alloc: work struct for background calls
+ */
+struct iwl_rb_allocator {
+    int req_pending;
+    int req_ready;
+    TAILQ_HEAD(, iwl_rx_mem_buffer) rbd_allocated;
+    TAILQ_HEAD(, iwl_rx_mem_buffer) rbd_empty;
+    IOSimpleLock *lock;
+};
+
+/*
+ * RX related structures and functions
+ */
+#define RX_NUM_QUEUES 1
+#define RX_POST_REQ_ALLOC 2
+#define RX_CLAIM_REQ_ALLOC 8
+#define RX_PENDING_WATERMARK 16
+#define FIRST_RX_QUEUE 512
 
 #endif /* TransHdr_h */

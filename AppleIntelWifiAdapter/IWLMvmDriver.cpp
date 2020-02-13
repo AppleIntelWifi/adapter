@@ -39,19 +39,19 @@ void IWLMvmDriver::release()
         IOLockFree(this->fwLoadLock);
         this->fwLoadLock = NULL;
     }
-    if (trans_ops) {
-        delete trans_ops;
-        trans_ops = NULL;
+    if (this->trans_ops) {
+//        delete this->trans_ops;
+        this->trans_ops = NULL;
     }
     if (this->trans) {
-        trans->release();
-        delete trans;
-        trans = NULL;
+        this->trans->release();
+//        delete this->trans;
+        this->trans = NULL;
     }
-    if (m_pDevice) {
-        m_pDevice->release();
-        delete m_pDevice;
-        m_pDevice = NULL;
+    if (this->m_pDevice) {
+        this->m_pDevice->release();
+//        delete this->m_pDevice;
+        this->m_pDevice = NULL;
     }
 }
 
@@ -215,14 +215,14 @@ bool IWLMvmDriver::probe()
         
         IOLog("device name=%s\n", m_pDevice->name);
         
-        //        if (m_pDevice->trans_cfg->mq_rx_supported) {
-        //            if (!m_pDevice->cfg->num_rbds) {
-        //                goto error;
-        //            }
-        //            trans_pcie->num_rx_bufs = iwl_trans_ops->trans->cfg->num_rbds;
-        //        } else {
-        //            trans_pcie->num_rx_bufs = RX_QUEUE_SIZE;
-        //        }
+        if (m_pDevice->cfg->trans.mq_rx_supported) {
+            if (!m_pDevice->cfg->num_rbds) {
+                goto error;
+            }
+            trans->num_rx_bufs = m_pDevice->cfg->num_rbds;
+        } else {
+            trans->num_rx_bufs = RX_QUEUE_SIZE;
+        }
         
         if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000 &&
             trans_ops->trans->grabNICAccess(&flags)) {
@@ -410,6 +410,7 @@ bool IWLMvmDriver::drvStart()
     trans->command_groups_size = ARRAY_SIZE(iwl_mvm_groups);
     trans->cmd_queue = IWL_MVM_DQA_CMD_QUEUE;
     trans->cmd_fifo = IWL_MVM_TX_FIFO_CMD;
+    iwl_notification_wait_init(&m_pDevice->notif_wait);
     iwl_phy_db_init(trans, &this->phy_db);
     err = trans_ops->startHW();
     err = runInitMvmUCode(true);
@@ -429,24 +430,24 @@ void IWLMvmDriver::stopDevice()
 {
     clear_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &trans->m_pDevice->status);
     trans_ops->stopDevice();
-    //TODO
+    //TODO xvt fw paging mode
     //    iwl_free_fw_paging(&mvm->fwrt);
 }
 
 int IWLMvmDriver::irqHandler(int irq, void *dev_id)
 {
-    //    isr_statistics *isr_stats = &this->isr_stats;
-    //    u32 inta;
-    //    u32 handled = 0;
-    //    /* dram interrupt table not set yet,
-    //     * use legacy interrupt.
-    //     */
-    //    if (likely(trans_ops->trans->use_ict))
-    //        inta = trans_ops->trans->intrCauseICT();
-    //    else
-    //        inta = trans_ops->trans->intrCauseNonICT();
-    //
-    //    inta &= trans_ops->trans->inta_mask;
+    isr_statistics *isr_stats = &this->isr_stats;
+    u32 inta;
+    u32 handled = 0;
+    /* dram interrupt table not set yet,
+     * use legacy interrupt.
+     */
+//    if (likely(trans_ops->trans->use_ict))
+//        inta = trans_ops->trans->intrCauseICT();
+//    else
+//        inta = trans_ops->trans->intrCauseNonICT();
+    
+    inta &= trans_ops->trans->inta_mask;
     //    /*
     //     * Ignore interrupt if there's nothing in NIC to service.
     //     * This may be due to IRQ shared with another device,
@@ -596,16 +597,18 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
     //        local_bh_enable();
     //    }
     //
-    //    /* This "Tx" DMA channel is used only for loading uCode */
-    //    if (inta & CSR_INT_BIT_FH_TX) {
-    //        trans->iwlWrite32(CSR_FH_INT_STATUS, CSR_FH_INT_TX_MASK);
-    //        IWL_INFO(trans, "uCode load interrupt\n");
-    //        isr_stats->tx++;
-    //        handled |= CSR_INT_BIT_FH_TX;
-    //        /* Wake up uCode load routine, now that load is complete */
-    //        trans->ucode_write_complete = true;
-    //        wake_up(&trans_pcie->ucode_write_waitq);
-    //    }
+    /* This "Tx" DMA channel is used only for loading uCode */
+    if (inta & CSR_INT_BIT_FH_TX) {
+        trans->iwlWrite32(CSR_FH_INT_STATUS, CSR_FH_INT_TX_MASK);
+        IWL_INFO(trans, "uCode load interrupt\n");
+        isr_stats->tx++;
+        handled |= CSR_INT_BIT_FH_TX;
+        /* Wake up uCode load routine, now that load is complete */
+        IOLockLock(trans->ucode_write_waitq);
+        trans->ucode_write_complete = true;
+        IOLockWakeup(trans->ucode_write_waitq, &trans->ucode_write_complete, true);
+        IOLockUnlock(trans->ucode_write_waitq);
+    }
     //
     //    if (inta & ~handled) {
     //        IWL_ERR(trans, "Unhandled INTA bits 0x%08x\n", inta & ~handled);

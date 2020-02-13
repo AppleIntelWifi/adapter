@@ -69,7 +69,7 @@ int iwl_cmd_groups_verify_sorted(IWLTransport *trans)
 static int iwl_pcie_send_hcmd_sync(IWLTransport *trans,
                    struct iwl_host_cmd *cmd)
 {
-//    struct iwl_txq *txq = trans_pcie->txq[trans_pcie->cmd_queue];
+//    struct iwl_txq *txq = trans->txq[trans->cmd_queue];
 //    int cmd_idx;
 //    int ret;
 //

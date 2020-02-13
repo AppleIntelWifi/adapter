@@ -43,8 +43,7 @@ int IWLMvmTransOpsGen2::rxInit()
 {
     /* Set interrupt coalescing timer to default (2048 usecs) */
     trans->iwlWrite8(CSR_INT_COALESCING, IWL_HOST_INT_TIMEOUT_DEF);
-    
-    return 0;
+    return trans->rxInit();
 }
 
 int IWLMvmTransOpsGen2::txInit(int txq_id, int queue_size)
@@ -114,6 +113,24 @@ void IWLMvmTransOpsGen2::apmStop(bool op_mode_leave)
 void IWLMvmTransOpsGen2::fwAlive(UInt32 scd_addr)
 {
     trans->state = IWL_TRANS_FW_ALIVE;
+    trans->resetICT();
+    /* make sure all queue are not stopped/used */
+    memset(trans->queue_stopped, 0, sizeof(trans->queue_stopped));
+    memset(trans->queue_used, 0, sizeof(trans->queue_used));
+    
+    /* now that we got alive we can free the fw image & the context info.
+     * paging memory cannot be freed included since FW will still use it
+     */
+    trans->iwl_pcie_ctxt_info_free();
+    
+    /*
+     * Re-enable all the interrupts, including the RF-Kill one, now that
+     * the firmware is alive.
+     */
+    trans->enableIntr();
+    IOLockLock(trans->mutex);
+    checkHWRFKill();
+    IOLockUnlock(trans->mutex);
 }
 
 int IWLMvmTransOpsGen2::startFW(const struct fw_img *fw, bool run_in_rfkill)

@@ -63,7 +63,7 @@ void AppleIntelWifiAdapterV2::free() {
     super::free();
     if (drv) {
         drv->release();
-        delete drv;
+//        delete drv;
         drv = NULL;
     }
     IOLog("Driver free()");

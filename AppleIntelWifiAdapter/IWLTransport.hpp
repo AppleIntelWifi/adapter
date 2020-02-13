@@ -14,6 +14,7 @@
 #include "TransHdr.h"
 #include "IWLCtxtInfo.hpp"
 #include "IWLInternal.hpp"
+#include <IOKit/network/IOMbufMemoryCursor.h>
 
 class IWLTransport : public IWLIO
 {
@@ -103,13 +104,36 @@ public:
     void setPMI(bool state);
     
     //rx
+    int rxInit();//_iwl_pcie_rx_init
+    
+    void rxFree();//iwl_pcie_rx_free
+    
     void disableICT();
     
-    void rxStop();
+    int rxStop();//iwl_pcie_rx_stop
     
-    u32 intrCauseICT();
+    void rxMqHWInit();
     
-    u32 intrCauseNonICT();
+    void rxHWInit(struct iwl_rxq *rxq);
+    
+    void rxqRestok(struct iwl_rxq *rxq);
+    
+    void restockBd(struct iwl_rxq *rxq,
+                   struct iwl_rx_mem_buffer *rxb);//iwl_pcie_restock_bd
+    
+    void rxMqRestock(struct iwl_rxq *rxq);//iwl_pcie_rxmq_restock
+    
+    void rxSqRestock(struct iwl_rxq *rxq);//iwl_pcie_rxsq_restock
+    
+    void rxqIncWrPtr(struct iwl_rxq *rxq);//iwl_pcie_rxq_inc_wr_ptr
+    
+    void rxqCheckWrPtr();//iwl_pcie_rxq_check_wrptr
+    
+    void resetICT();
+    
+    u32 intrCauseICT();//iwl_pcie_int_cause_ict
+    
+    u32 intrCauseNonICT();//iwl_pcie_int_cause_non_ict
     
     void irqHandleError();
     
@@ -120,6 +144,8 @@ public:
     
     void txStop();
     
+    void txStart();
+    
     //cmd
     int sendCmd(struct iwl_host_cmd *cmd);
     
@@ -127,7 +153,7 @@ public:
     //a bit-mask of transport status flags
     unsigned long status;
     IOSimpleLock *irq_lock;
-    IOLock *mutex;
+    IOLock *mutex;//to protect stop_device / start_fw / start_hw
     
     //pci
     mach_vm_address_t dma_mask;
@@ -135,27 +161,25 @@ public:
     int tfd_size;
     int max_tbs;
     
-    //waitLocks
-    IOLock *ucode_write_waitq;
-    
     //fw
     enum iwl_trans_state state;
-    bool ucode_write_complete;
+    bool ucode_write_complete;//indicates that the ucode has been copied.
+    IOLock *ucode_write_waitq;//wait queue for uCode load
     union {
         struct iwl_context_info *ctxt_info;
         struct iwl_context_info_gen3 *ctxt_info_gen3;
     };
-    struct iwl_prph_info *prph_info;
-    struct iwl_prph_scratch *prph_scratch;
-    dma_addr_t ctxt_info_dma_addr;
+    struct iwl_prph_info *prph_info;//rph info for self init
+    struct iwl_prph_scratch *prph_scratch;//prph scratch for self init
+    dma_addr_t ctxt_info_dma_addr;//dma addr of context information
     iwl_dma_ptr *ctxt_info_dma_ptr;
-    dma_addr_t prph_info_dma_addr;
+    dma_addr_t prph_info_dma_addr;//dma addr of prph info
     iwl_dma_ptr *prph_info_dma_ptr;
-    dma_addr_t prph_scratch_dma_addr;
+    dma_addr_t prph_scratch_dma_addr;//dma addr of prph scratch
     iwl_dma_ptr *prph_scratch_dma_ptr;
     dma_addr_t iml_dma_addr;
     iwl_dma_ptr *iml_dma_ptr;
-    iwl_self_init_dram init_dram;
+    iwl_self_init_dram init_dram;//DRAM data of firmware image (including paging). Context information addresses will be taken from here. This is driver's local copy for keeping track of size and count for allocating and freeing the memory.
     
     //tx--cmd
     int cmd_queue;
@@ -166,21 +190,38 @@ public:
     int cmd_fifo;
     int txcmd_size;
     int txcmd_align;
+    
     //tx
     iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
+    unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
+    unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
     
     //rx
-    bool use_ict;
     int num_rx_queues;
-    int def_rx_queue;
-    int rx_buf_size;
-    iwl_rxq rxq;
+    int def_rx_queue;//default rx queue number
+    int rx_buf_size;//Rx buffer size
+    iwl_rxq *rxq;//all the RX queue data
+    int num_rx_bufs;
+    struct iwl_rx_mem_buffer *rx_pool;
+    struct iwl_rx_mem_buffer **global_table;
+    struct iwl_rb_allocator rba;
+    IOMbufNaturalMemoryCursor *cursor;//dma map cursor
     
-    bool opmode_down;
-    bool is_down;
+    void *base_rb_stts;//base virtual address of receive buffer status for all queues
+    dma_addr_t base_rb_stts_dma;//base physical address of receive buffer status
+    iwl_dma_ptr *base_rb_stts_ptr;//base physical dma object of receive buffer status
     
     //interrupt
+    bool use_ict;
+    __le32 *ict_tbl;
+    dma_addr_t ict_tbl_dma;
+    bool opmode_down;
+    bool is_down;
+    int ict_index;
     u32 inta_mask;
+    u32 scd_base_addr;//scheduler sram base address in SRAM
+    iwl_dma_ptr *scd_bc_tbls;//pointer to the byte count table of the scheduler
+    iwl_dma_ptr *kw;//keep warm address
     
 private:
     
@@ -196,7 +237,8 @@ private:
     u32 hw_init_mask;
     u32 fh_mask;
     u32 hw_mask;
-    bool msix_enabled;
+//    struct msix_entry msix_entries[IWL_MAX_RX_HW_QUEUES];
+    bool msix_enabled;//true if managed to enable MSI-X
     
     
 };

@@ -202,8 +202,8 @@ static inline void* kcalloc(size_t n, size_t size)
         return NULL;
     }
     void *ret = IOMalloc(n * size);
-    if (!ret) {
-        memset(ret, 0, n * size);
+    if (ret) {
+        bzero(ret, n * size);
     }
     return ret;
 }

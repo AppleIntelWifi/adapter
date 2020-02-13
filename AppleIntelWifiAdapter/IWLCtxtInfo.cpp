@@ -70,14 +70,12 @@ int IWLTransport::iwl_pcie_ctxt_info_init(const struct fw_img *fw)
     
     /* initialize RX default queue */
     rx_cfg = &ctxt_info->rbd_cfg;
-    rx_cfg->free_rbd_addr = cpu_to_le64(this->rxq.bd_dma);
-    rx_cfg->used_rbd_addr = cpu_to_le64(this->rxq.used_bd_dma);
-    rx_cfg->status_wr_ptr = cpu_to_le64(this->rxq.rb_stts_dma);
+    rx_cfg->free_rbd_addr = cpu_to_le64(this->rxq->bd_dma);
+    rx_cfg->used_rbd_addr = cpu_to_le64(this->rxq->used_bd_dma);
+    rx_cfg->status_wr_ptr = cpu_to_le64(this->rxq->rb_stts_dma);
     
     /* initialize TX command queue */
-    ctxt_info->hcmd_cfg.cmd_queue_addr =
-    //TODO
-//    cpu_to_le64(this->txq[this->cmd_queue]->dma_addr);
+//    ctxt_info->hcmd_cfg.cmd_queue_addr = cpu_to_le64(this->txq[this->cmd_queue]->dma_addr);
     ctxt_info->hcmd_cfg.cmd_queue_size = 1;
     //    ctxt_info->hcmd_cfg.cmd_queue_size =
     //    TFD_QUEUE_CB_SIZE(IWL_CMD_QUEUE_SIZE);
@@ -91,11 +89,11 @@ int IWLTransport::iwl_pcie_ctxt_info_init(const struct fw_img *fw)
         this->ctxt_info_dma_addr = NULL;
         return ret;
     }
-
+    
     this->ctxt_info = ctxt_info;
-
+    
     iwl_enable_fw_load_int_ctx_info();
-
+    
     /* kick FW self load */
     iwlWrite64(CSR_CTXT_INFO_BA, this->ctxt_info_dma_addr);
     iwlWritePRPH(UREG_CPU_INIT_RUN, 1);
@@ -138,9 +136,8 @@ int IWLTransport::iwl_pcie_ctxt_info_gen3_init(const struct fw_img *fw)
      IWL_PRPH_SCRATCH_MTR_FORMAT);
     
     /* initialize RX default queue */
-    //TODO
-    //        prph_sc_ctrl->rbd_cfg.free_rbd_addr =
-    //            cpu_to_le64(trans_pcie->rxq->bd_dma);
+    prph_sc_ctrl->rbd_cfg.free_rbd_addr =
+    cpu_to_le64(this->rxq->bd_dma);
     
     //        iwl_pcie_ctxt_info_dbg_enable(trans, &prph_sc_ctrl->hwm_cfg,
     //                          &control_flags);
@@ -173,11 +170,11 @@ int IWLTransport::iwl_pcie_ctxt_info_gen3_init(const struct fw_img *fw)
     ctxt_info_gen3->prph_scratch_size =
     cpu_to_le32(sizeof(*prph_scratch));
     ctxt_info_gen3->cr_head_idx_arr_base_addr =
-    cpu_to_le64(this->rxq.rb_stts_dma);
+    cpu_to_le64(this->rxq->rb_stts_dma);
     ctxt_info_gen3->tr_tail_idx_arr_base_addr =
-    cpu_to_le64(this->rxq.tr_tail_dma);
+    cpu_to_le64(this->rxq->tr_tail_dma);
     ctxt_info_gen3->cr_tail_idx_arr_base_addr =
-    cpu_to_le64(this->rxq.cr_tail_dma);
+    cpu_to_le64(this->rxq->cr_tail_dma);
     ctxt_info_gen3->cr_idx_arr_size =
     cpu_to_le16(IWL_NUM_OF_COMPLETION_RINGS);
     ctxt_info_gen3->tr_idx_arr_size =
@@ -185,7 +182,7 @@ int IWLTransport::iwl_pcie_ctxt_info_gen3_init(const struct fw_img *fw)
     ctxt_info_gen3->mtr_base_addr =
     cpu_to_le64(this->txq[this->cmd_queue]->dma_addr);
     ctxt_info_gen3->mcr_base_addr =
-    cpu_to_le64(this->rxq.used_bd_dma);
+    cpu_to_le64(this->rxq->used_bd_dma);
     //TODO
     //    ctxt_info_gen3->mtr_size =
     //    cpu_to_le16(TFD_QUEUE_CB_SIZE(cmdq_size));
@@ -375,6 +372,25 @@ int IWLTransport::iwl_pcie_init_fw_sec(const struct fw_img *fw, struct iwl_conte
     return 0;
 }
 
+void IWLTransport::iwl_pcie_ctxt_info_free()
+{
+    struct iwl_self_init_dram *dram = &this->init_dram;
+    int i;
+    
+    if (!dram->paging) {
+        WARN_ON(dram->paging_cnt);
+        return;
+    }
+    
+    /* free paging*/
+    for (i = 0; i < dram->paging_cnt; i++) {
+        free_dma_buf(dram->paging[i].physical_ptr);
+    }
+    //    IOFree(dram->paging, sizeof(*dram->paging));
+    dram->paging_cnt = 0;
+    dram->paging = NULL;
+}
+
 void IWLTransport::iwl_pcie_ctxt_info_free_paging()
 {
     struct iwl_self_init_dram *dram = &this->init_dram;
@@ -390,7 +406,7 @@ void IWLTransport::iwl_pcie_ctxt_info_free_paging()
         free_dma_buf(dram->paging[i].physical_ptr);
     }
     
-    IOFree(dram->paging, sizeof(*dram->paging));
+    //    IOFree(dram->paging, sizeof(*dram->paging));
     dram->paging_cnt = 0;
     dram->paging = NULL;
 }
@@ -407,7 +423,7 @@ void IWLTransport::iwl_pcie_ctxt_info_free_fw_img()
     for (i = 0; i < dram->fw_cnt; i++) {
         free_dma_buf(dram->fw[i].physical_ptr);
     }
-    IOFree(dram->fw, sizeof(*dram->fw));
+    //    IOFree(dram->fw, sizeof(*dram->fw));
     dram->fw_cnt = 0;
     dram->fw = NULL;
 }
