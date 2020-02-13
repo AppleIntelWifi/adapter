@@ -14,7 +14,6 @@
 #include "TransHdr.h"
 #include "IWLCtxtInfo.hpp"
 #include "IWLInternal.hpp"
-#include <IOKit/network/IOMbufMemoryCursor.h>
 
 class IWLTransport : public IWLIO
 {
@@ -205,7 +204,6 @@ public:
     struct iwl_rx_mem_buffer *rx_pool;
     struct iwl_rx_mem_buffer **global_table;
     struct iwl_rb_allocator rba;
-    IOMbufNaturalMemoryCursor *cursor;//dma map cursor
     
     void *base_rb_stts;//base virtual address of receive buffer status for all queues
     dma_addr_t base_rb_stts_dma;//base physical address of receive buffer status

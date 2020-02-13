@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		02443B5823D1E9A4009C675B /* IWLMvmDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02443B5623D1E9A4009C675B /* IWLMvmDriver.cpp */; };
 		02443B5923D1E9A4009C675B /* IWLMvmDriver.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02443B5723D1E9A4009C675B /* IWLMvmDriver.hpp */; };
+		02473D4323F55DB900DED29D /* HackIO80211Interface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02473D4123F55DB900DED29D /* HackIO80211Interface.cpp */; };
+		02473D4423F55DB900DED29D /* HackIO80211Interface.h in Headers */ = {isa = PBXBuildFile; fileRef = 02473D4223F55DB900DED29D /* HackIO80211Interface.h */; };
+		024CFC3A23F57E350014F002 /* AppleIntelWifiAdapterV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */; };
 		024DDD4E23CCA027002716C8 /* IWLIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 024DDD4C23CCA027002716C8 /* IWLIO.cpp */; };
 		024DDD4F23CCA027002716C8 /* IWLIO.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 024DDD4D23CCA027002716C8 /* IWLIO.hpp */; };
 		024DDD5423CCA79C002716C8 /* IWLMvmTransOpsGen2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 024DDD5223CCA79C002716C8 /* IWLMvmTransOpsGen2.cpp */; };
@@ -38,7 +41,6 @@
 		0264965023E3CF6000914BB3 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0264964F23E3CF6000914BB3 /* IOKit.framework */; };
 		0264965223E3CF8A00914BB3 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0264965123E3CF8900914BB3 /* NetworkExtension.framework */; };
 		026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */; };
-		026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */; };
 		026E8CDD2356F2AD000BFD46 /* apple80211_ioctl.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */; };
 		026E8CDE2356F2AD000BFD46 /* apple80211_wps.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD82356F2AD000BFD46 /* apple80211_wps.h */; };
 		026E8CDF2356F2AD000BFD46 /* IO80211WorkLoop.h in Headers */ = {isa = PBXBuildFile; fileRef = 026E8CD92356F2AD000BFD46 /* IO80211WorkLoop.h */; };
@@ -153,6 +155,8 @@
 		0238D8A6235B4F6B00074654 /* IONetworkController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IONetworkController.h; sourceTree = "<group>"; };
 		02443B5623D1E9A4009C675B /* IWLMvmDriver.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmDriver.cpp; sourceTree = "<group>"; };
 		02443B5723D1E9A4009C675B /* IWLMvmDriver.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmDriver.hpp; sourceTree = "<group>"; };
+		02473D4123F55DB900DED29D /* HackIO80211Interface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HackIO80211Interface.cpp; sourceTree = "<group>"; };
+		02473D4223F55DB900DED29D /* HackIO80211Interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HackIO80211Interface.h; sourceTree = "<group>"; };
 		0248A083235833CB00A85BA3 /* IO80211Controller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IO80211Controller.h; sourceTree = "<group>"; };
 		024DDD4B23CC7965002716C8 /* IWLTransOps.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLTransOps.h; sourceTree = "<group>"; };
 		024DDD4C23CCA027002716C8 /* IWLIO.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLIO.cpp; sourceTree = "<group>"; };
@@ -458,6 +462,8 @@
 				026E8CE32356FD4D000BFD46 /* firmware */,
 				026E8CD62356F2AD000BFD46 /* apple80211 */,
 				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */,
+				02473D4123F55DB900DED29D /* HackIO80211Interface.cpp */,
+				02473D4223F55DB900DED29D /* HackIO80211Interface.h */,
 				02577D7F23EEBC57003FF602 /* IWLCoex.cpp */,
 				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */,
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
@@ -767,6 +773,7 @@
 				02CEFD7D23D7DE8E00B620E6 /* chachapoly.h in Headers */,
 				0252C5E423EC1A51001975DB /* fw-api.h in Headers */,
 				02CEFD7E23D7DE8E00B620E6 /* aes.h in Headers */,
+				02473D4423F55DB900DED29D /* HackIO80211Interface.h in Headers */,
 				02CEFD7A23D7DE8E00B620E6 /* chacha_private.h in Headers */,
 				02577D7823EE68F1003FF602 /* IWLPhyDb.hpp in Headers */,
 				02CEFD9B23D7E24B00B620E6 /* timeout.h in Headers */,
@@ -879,6 +886,7 @@
 				02CEFD6B23D7DE8E00B620E6 /* aes.c in Sources */,
 				02577D8423EEBD07003FF602 /* IWLFw.cpp in Sources */,
 				02CEFD7823D7DE8E00B620E6 /* sha2.c in Sources */,
+				024CFC3A23F57E350014F002 /* AppleIntelWifiAdapterV2.cpp in Sources */,
 				0252C5D823EBB7C0001975DB /* IWLInternal.cpp in Sources */,
 				02CEFD8B23D7DE8E00B620E6 /* idgen.c in Sources */,
 				02CEFD6C23D7DE8E00B620E6 /* key_wrap.c in Sources */,
@@ -904,6 +912,7 @@
 				02C2287123DBFA870016AD53 /* ieee80211.c in Sources */,
 				02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */,
 				02577D8923EF98B6003FF602 /* IWLCtxtInfo.cpp in Sources */,
+				02473D4323F55DB900DED29D /* HackIO80211Interface.cpp in Sources */,
 				02C2286E23DBFA870016AD53 /* ieee80211_proto.c in Sources */,
 				02CEFD8E23D7DE8E00B620E6 /* arc4.c in Sources */,
 				02CEFD6923D7DE8E00B620E6 /* ecb3_enc.c in Sources */,
@@ -918,7 +927,6 @@
 				02C2287823DBFA870016AD53 /* ieee80211_crypto_bip.c in Sources */,
 				024DDD5423CCA79C002716C8 /* IWLMvmTransOpsGen2.cpp in Sources */,
 				02443B5823D1E9A4009C675B /* IWLMvmDriver.cpp in Sources */,
-				026E8CCF2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp in Sources */,
 				02CEFCE523D5F09600B620E6 /* IWLUcodeParse.cpp in Sources */,
 				02CEFD6A23D7DE8E00B620E6 /* michael.c in Sources */,
 				02C2288923DBFA870016AD53 /* ieee80211_pae_output.c in Sources */,

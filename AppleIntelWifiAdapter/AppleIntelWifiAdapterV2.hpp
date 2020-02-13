@@ -36,6 +36,7 @@ public:
     int intrOccured(OSObject *object, IOInterruptEventSource *, int count);
     bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
     IONetworkInterface * createInterface() override;
+    bool configureInterface(IONetworkInterface * interface) override;
     
 public:
     

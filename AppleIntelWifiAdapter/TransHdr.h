@@ -288,6 +288,8 @@ struct iwl_rx_completion_desc {
     u8 reserved2[25];
 } __packed;
 
+#include <IOKit/network/IOMbufMemoryCursor.h>
+
 /**
  * struct iwl_rx_mem_buffer
  * @page_dma: bus address of rxb page
@@ -304,6 +306,8 @@ struct iwl_rx_mem_buffer {
     bool invalid;
     TAILQ_ENTRY(iwl_rx_mem_buffer) list;
     u32 offset;
+    IOMbufNaturalMemoryCursor *cursor;
+    IOMemoryCursor::PhysicalSegment vec;
 };
 
 /**

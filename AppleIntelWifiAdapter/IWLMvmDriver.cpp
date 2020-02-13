@@ -40,17 +40,17 @@ void IWLMvmDriver::release()
         this->fwLoadLock = NULL;
     }
     if (this->trans_ops) {
-//        delete this->trans_ops;
+        delete this->trans_ops;
         this->trans_ops = NULL;
     }
     if (this->trans) {
         this->trans->release();
-//        delete this->trans;
+        delete this->trans;
         this->trans = NULL;
     }
     if (this->m_pDevice) {
         this->m_pDevice->release();
-//        delete this->m_pDevice;
+        delete this->m_pDevice;
         this->m_pDevice = NULL;
     }
 }

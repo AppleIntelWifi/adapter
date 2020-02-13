@@ -9,6 +9,7 @@
 #define super IOEthernetController
 
 OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
+OSDefineMetaClassAndStructors(HackIO80211Interface, IOEthernetInterface)
 
 enum
 {
@@ -59,11 +60,20 @@ static UInt32 mediumSpeedArray[MEDIUM_INDEX_COUNT] = {
     100 * MBit
 };
 
+static struct MediumTable
+{
+    IOMediumType type;
+    UInt32 speed;
+} mediumTable[] = {
+    {kIOMediumIEEE80211None, 0},
+    {kIOMediumIEEE80211Auto, 0}
+};
+
 void AppleIntelWifiAdapterV2::free() {
     super::free();
     if (drv) {
         drv->release();
-//        delete drv;
+        delete drv;
         drv = NULL;
     }
     IOLog("Driver free()");
@@ -159,6 +169,28 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         IOLog("start fail, can not set current medium\n");
         return false;
     }
+    
+//    UInt32 capacity = sizeof(mediumTable) / sizeof(struct MediumTable);
+//
+//    OSDictionary *mediumDict = OSDictionary::withCapacity(capacity);
+//    if (mediumDict == 0) {
+//        return false;
+//    }
+//
+//    for (UInt32 i = 0; i < capacity; i++) {
+//        IONetworkMedium* medium = IONetworkMedium::medium(mediumTable[i].type, mediumTable[i].speed);
+//        if (medium) {
+//            IONetworkMedium::addMedium(mediumDict, medium);
+//            medium->release();
+//        }
+//    }
+//
+//    if (!publishMediumDictionary(mediumDict)) {
+//        return false;
+//    }
+//
+//    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
+//    setSelectedMedium(m);
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IOLog("start failed, can not attach interface\n");
         return false;
@@ -175,6 +207,16 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
 bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object, IOFilterInterruptEventSource *src)
 {
     return true;
+}
+
+bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
+{
+    return true;
+    bool result = true;
+    result = super::configureInterface(interface);
+    HackIO80211Interface *inf = (HackIO80211Interface*)interface;
+    inf->configureInterface(this);
+    return result;
 }
 
 int AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSource *, int count)
@@ -227,7 +269,9 @@ IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
 IONetworkInterface *AppleIntelWifiAdapterV2::createInterface()
 {
     return super::createInterface();
-    return new HackIO80211Interface();
+    IONetworkInterface *inf = new HackIO80211Interface();
+    inf->init(this);
+    return inf;
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {

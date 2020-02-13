@@ -94,6 +94,8 @@ public:
     virtual bool setLinkState(IO80211LinkState, int, unsigned int);
     virtual UInt32 outputPacket(mbuf_t, void*);
 
+    bool configureInterface(IOEthernetController *controller);
+    
     virtual bool setLinkQualityMetric(int);
     virtual void handleDebugCmd(apple80211_debug_command*);
     

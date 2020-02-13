@@ -10,10 +10,9 @@
 #include <IOKit/IOReturn.h>
 #include <IOKit/IOLib.h>
 #include <IOKit/network/IOOutputQueue.h>
+#include <net/if_types.h>
 
 #define super IOEthernetInterface
-
-OSDefineMetaClassAndStructors(HackIO80211Interface, IOEthernetInterface)
 
 bool HackIO80211Interface::terminate(unsigned int options)
 {
@@ -44,6 +43,12 @@ UInt32 HackIO80211Interface::inputPacket(mbuf_t          packet,
     return super::inputPacket(packet, length, options, param);
 }
 
+bool HackIO80211Interface::configureInterface(IOEthernetController *controller)
+{
+    setInterfaceType(3);
+    return true;
+}
+
 bool HackIO80211Interface::inputEvent(unsigned int type, void* data)
 {
     return super::inputEvent(type, data);
@@ -51,18 +56,18 @@ bool HackIO80211Interface::inputEvent(unsigned int type, void* data)
 
 SInt32 HackIO80211Interface::performCommand(IONetworkController* controller, unsigned long cmd, void* arg0, void* arg1)
 {
-//    switch (cmd) {
-//        case 2149607880LL:
-//        case 2150132168LL:
-//        case 3223873993LL:
-//            return controller->executeCommand(this, OSMemberFunctionCast(IONetworkController::Action, this, &HackIO80211Interface::performGatedCommand), this, controller, &cmd, arg0, arg1);
-//            break;
-//        default:
-//            if (cmd <= 3223349704LL) {
-//                return controller->executeCommand(this, OSMemberFunctionCast(IONetworkController::Action, this, &HackIO80211Interface::performGatedCommand), this, controller, &cmd, arg0, arg1);
-//            }
-//            break;
-//    }
+    switch (cmd) {
+        case 2149607880LL:
+        case 2150132168LL:
+        case 3223873993LL:
+            return controller->executeCommand(this, OSMemberFunctionCast(IONetworkController::Action, this, &HackIO80211Interface::performGatedCommand), this, controller, &cmd, arg0, arg1);
+            break;
+        default:
+            if (cmd <= 3223349704LL) {
+                return controller->executeCommand(this, OSMemberFunctionCast(IONetworkController::Action, this, &HackIO80211Interface::performGatedCommand), this, controller, &cmd, arg0, arg1);
+            }
+            break;
+    }
     return super::performCommand(controller, cmd, arg0, arg1);
 }
 

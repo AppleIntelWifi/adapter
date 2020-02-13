@@ -290,9 +290,9 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
 
         rxb->page = page;
         rxb->offset = offset;
+        rxb->cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
         /* Get physical address of the RB */
-        struct IOMemoryCursor::PhysicalSegment vec;
-        int ret = trans->cursor->getPhysicalSegments(page, &vec);
+        int ret = rxb->cursor->getPhysicalSegments(page, &rxb->vec);
         if (ret == 0) {
             rxb->page = NULL;
             IOSimpleLockLock(rxq->lock);
@@ -301,7 +301,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
             mbuf_freem(page);
             return;
         }
-        rxb->page_dma = vec.location;
+        rxb->page_dma = rxb->vec.location;
 
         IOSimpleLockLock(rxq->lock);
 
@@ -327,9 +327,6 @@ int IWLTransport::rxInit()
     struct iwl_rxq *def_rxq;
     struct iwl_rb_allocator *rba = &this->rba;
     int i, err, queue_size, allocator_pool_size, num_alloc;
-    if (!this->cursor) {
-        this->cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
-    }
     if (!this->rxq) {
         err = iwl_pcie_rx_alloc(this);
         if (err) {
