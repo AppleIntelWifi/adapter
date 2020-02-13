@@ -27,16 +27,20 @@
 #define __aligned(x)        __attribute__((aligned(x)))
 #define __must_check        __attribute__((warn_unused_result))
 
+/*
 #define MODULE_FIRMWARE(fw)
 #define MODULE_DESCRIPTION(x)
 #define MODULE_AUTHOR(x)
 #define MODULE_LICENSE(x)
+ 
 
 #define __init
 #define __exit
 
+
 #define module_init(x)
 #define module_exit(x)
+ */
 
 #define pr_info(x)
 

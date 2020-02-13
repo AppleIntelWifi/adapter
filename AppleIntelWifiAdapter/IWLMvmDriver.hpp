@@ -107,6 +107,7 @@ public:
     IWLTransport *trans;
     
     IWLTransOps *trans_ops;
+    struct iwl_notification_wait alive_wait;
     
 private:
     

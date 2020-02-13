@@ -23,9 +23,7 @@ int timingsafe_bcmp(const void *b1, const void *b2, size_t n)
     return (ret != 0);
 }
 
-void log(int, const char *format, ...)
-{
-    
-}
+
+
 
 #endif /* _string_c */

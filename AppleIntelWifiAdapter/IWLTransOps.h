@@ -19,10 +19,7 @@ class IWLTransOps {
 public:
     
     IWLTransOps() {}
-    IWLTransOps(IWLTransport *trans)
-    {
-        this->trans = trans;
-    }
+    IWLTransOps(IWLTransport *trans);
     virtual ~IWLTransOps() {}
     
     void nicConfig();

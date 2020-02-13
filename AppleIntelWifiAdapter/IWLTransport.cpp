@@ -138,11 +138,13 @@ bool IWLTransport::init(IWLDevice *device)
              "PCI ID: 0x%04X:0x%04X", m_pDevice->deviceID, m_pDevice->subSystemDeviceID);
     IOLog("%s\n", m_pDevice->hw_id_str);
     if (this->msix_enabled) {
+        this->msix_enabled = false; //OSX does not support MSIX
+        //this->inta_mask = CSR_INI_SET_MASK;
         //TODO now not needed
         //        ret = iwl_pcie_init_msix_handler(pdev, trans_pcie);
         //        if (ret)
         //            goto out_no_pci;
-    } else {
+    }
         //        ret = iwl_pcie_alloc_ict(trans);
         //        if (ret)
         //            goto out_no_pci;
@@ -152,7 +154,7 @@ bool IWLTransport::init(IWLDevice *device)
         //        IRQF_SHARED, DRV_NAME, trans);
         
         this->inta_mask = CSR_INI_SET_MASK;
-    }
+    
     IWL_ERR(0, "init succeed\n");
     return true;
 }
@@ -209,6 +211,8 @@ void IWLTransport::release()
 
 void IWLTransport::initMsix()
 {
+    this->msix_enabled = false;
+    
     configMsixHw();
     if (!msix_enabled) {
         return;
@@ -423,10 +427,6 @@ int IWLTransport::loadFWChunk(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)
     loadFWChunkFh(dst_addr, phy_addr, byte_cnt);
     this->releaseNICAccess(&flags);
     IOLockLock(this->ucode_write_waitq);
-    if (this->ucode_write_waitq) {
-        IOLockUnlock(this->ucode_write_waitq);
-        return 0;
-    }
     AbsoluteTime deadline;
     clock_interval_to_deadline(5, kSecondScale, (UInt64 *) &deadline);
     ret = IOLockSleepDeadline(this->ucode_write_waitq, &this->ucode_write_complete,
@@ -677,10 +677,13 @@ int IWLTransport::loadGivenUcode8000(const struct fw_img *image)
     
     /* load to FW the binary Secured sections of CPU1 */
     ret = loadCPUSections8000(image, 1, &first_ucode_section);
+    
+    IWL_INFO(0, "Load status = %d\n", ret);
     if (ret)
         return ret;
     
     /* load to FW the binary sections of CPU2 */
+    IWL_INFO(0, "Loading second CPU\n");
     return loadCPUSections8000(image, 2, &first_ucode_section);
 }
 

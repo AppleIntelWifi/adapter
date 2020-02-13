@@ -103,6 +103,10 @@ void IWLTransOps::handleStopRFKill(bool was_in_rfkill)
         setRfKillState(hw_rfkill);
 }
 
+IWLTransOps::IWLTransOps(IWLTransport* trans) {
+    this->trans = trans;
+}
+
 int IWLTransOps::startHW()
 {
     int err;
@@ -124,6 +128,8 @@ int IWLTransOps::startHW()
         return err;
     }
     trans->initMsix();
+    
+    
     /* From now on, the op_mode will be kept updated about RF kill state */
     trans->enableRFKillIntr();
     trans->opmode_down = false;

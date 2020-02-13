@@ -15,6 +15,19 @@
 
 OSDefineMetaClassAndStructors(CTimeout, OSObject)
 
+enum {
+    kOffPowerState,
+    kOnPowerState,
+    kNumPowerStates
+};
+
+static IOPMPowerState gPowerStates[kNumPowerStates] = {
+    // kOffPowerState
+    {kIOPMPowerStateVersion1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    // kOnPowerState
+    {kIOPMPowerStateVersion1, (kIOPMPowerOn | kIOPMDeviceUsable), kIOPMPowerOn, kIOPMPowerOn, 0, 0, 0, 0, 0, 0, 0, 0}
+};
+
 class AppleIntelWifiAdapterV2 : public IOEthernetController
 {
     OSDeclareDefaultStructors( AppleIntelWifiAdapterV2 )
@@ -33,8 +46,8 @@ public:
     IOReturn setMulticastMode(bool active) override;
     IOOutputQueue * createOutputQueue() override;
     UInt32 outputPacket(mbuf_t, void * param) override;
-    int intrOccured(OSObject *object, IOInterruptEventSource *, int count);
-    bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
+    static void intrOccured(OSObject *object, IOInterruptEventSource *, int count);
+    static bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
     IONetworkInterface * createInterface() override;
     bool configureInterface(IONetworkInterface * interface) override;
     
@@ -47,6 +60,7 @@ private:
     IOInterruptEventSource* fInterrupt;
     IOEthernetInterface *netif;
     IOCommandGate *gate;
+    IOWorkLoop* irqLoop;
 };
 
 #endif

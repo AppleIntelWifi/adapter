@@ -157,7 +157,7 @@ static int iwl_pcie_send_hcmd_sync(IWLTransport *trans,
 //        trans->freeResp(cmd);
 //        cmd->resp_pkt = NULL;
 //    }
-//
+//zwz
 //    return ret;
 }
 

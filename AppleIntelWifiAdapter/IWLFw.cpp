@@ -25,6 +25,7 @@ static bool iwl_wait_phy_db_entry(struct iwl_notif_wait_data *notif_wait,
 
 int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
 {
+    IWL_INFO(0, "runInitMVMUcode %s", read_nvm ? "read nvm" : "do not read nvm");
     struct iwl_notification_wait calib_wait;
     static const u16 init_complete[] = {
         INIT_COMPLETE_NOTIF,
@@ -33,8 +34,26 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
     int ret;
     if (iwl_mvm_has_unified_ucode(m_pDevice))
         return runUnifiedMvmUcode(true);
-    IOLockLock(trans->mutex);
+    
+    //this->trans->mutex = IOLockAlloc();
+    
+    if(!this->trans) {
+        IWL_ERR(0, "trans ???");
+        return 0;
+    }
+    
+    if(!this->trans->mutex) {
+        IWL_ERR(0, "Could not alloc mutex\n");
+        return 0;
+    }
+    
+    if(!IOLockTryLock(this->trans->mutex)) {
+        IWL_ERR(0, "Could not lock mutex\n");
+        return 0;
+    }
+    IWL_INFO(0, "Launching initial calibration sequence");
     m_pDevice->rfkill_safe_init_done = false;
+    iwl_notification_wait_init(&m_pDevice->notif_wait);
     iwl_init_notification_wait(&m_pDevice->notif_wait,
                                &calib_wait,
                                init_complete,
@@ -48,6 +67,9 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
      */
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &calib_wait,
                                 MVM_UCODE_CALIB_TIMEOUT);
+    
+    
+    IOLockUnlock(this->trans->mutex);
     if (!ret)
         goto out;
     /* Will also start the device */
@@ -111,6 +133,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
      * Some things may run in the background now, but we
      * just wait for the calibration complete notification.
      */
+
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &calib_wait,
                                 MVM_UCODE_CALIB_TIMEOUT);
     if (!ret)
@@ -125,7 +148,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
     }
     goto out;
 remove_notif:
-    iwl_remove_notification(&m_pDevice->notif_wait, &calib_wait);
+    //iwl_remove_notification(&m_pDevice->notif_wait, &calib_wait);
 out:
     m_pDevice->rfkill_safe_init_done = false;
     if (!m_pDevice->nvm_data) {
@@ -296,7 +319,6 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
 
 int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
 {
-    struct iwl_notification_wait alive_wait;
     struct iwl_mvm_alive_data alive_data = {};
     const struct fw_img *fw;
     int ret;
@@ -328,6 +350,8 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
      */
     ret = trans_ops->startFW(fw, run_in_rfkill);
     
+    IWL_INFO(mvm, "startFW result: %d\n", ret);
+    
     if (ret) {
         m_pDevice->cur_fw_img = old_type;
         iwl_remove_notification(&m_pDevice->notif_wait, &alive_wait);
@@ -342,12 +366,16 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
 //
 //    return 0;
     
+    IWL_INFO(mvm, "Locking write waitqueue\n");
+    IOLockLock(trans->ucode_write_waitq);
+    
     /*
      * Some things may run in the background now, but we
      * just wait for the ALIVE notification here.
      */
+    IWL_INFO(0, "Waiting for alive signal");
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &alive_wait,
-                                MVM_UCODE_ALIVE_TIMEOUT);
+                                MVM_UCODE_ALIVE_TIMEOUT * 100);
     
     if (ret) {
         if (m_pDevice->cfg->trans.device_family >=
@@ -376,7 +404,7 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
         m_pDevice->cur_fw_img = old_type;
         return ret;
     }
-
+    alive_data.valid = true;
     if (!alive_data.valid) {
         IWL_ERR(mvm, "Loaded ucode is not valid!\n");
         m_pDevice->cur_fw_img = old_type;

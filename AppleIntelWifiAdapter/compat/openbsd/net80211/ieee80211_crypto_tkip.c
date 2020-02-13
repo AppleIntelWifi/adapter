@@ -524,7 +524,7 @@ ieee80211_michael_mic_failure(struct ieee80211com *ic, u_int64_t tsc)
 	if (ic->ic_flags & IEEE80211_F_COUNTERM)
 		return;	/* countermeasures already active */
 
-	log(LOG_WARNING, "%s: Michael MIC failure\n", ic->ic_if.if_xname);
+	//log(LOG_WARNING, "%s: Michael MIC failure\n", ic->ic_if.if_xname);
 
 	/*
 	 * NB. do not send Michael MIC Failure reports as recommended since
@@ -550,9 +550,9 @@ ieee80211_michael_mic_failure(struct ieee80211com *ic, u_int64_t tsc)
 		/* refuse new TKIP associations for at least 60 seconds */
 		ic->ic_flags |= IEEE80211_F_COUNTERM;
 		sec = 60 + arc4random_uniform(30);
-		log(LOG_WARNING, "%s: HostAP will be disabled for %d seconds "
-		    "as a countermeasure against TKIP key cracking attempts\n",
-		    ic->ic_if.if_xname, sec);
+		//log(LOG_WARNING, "%s: HostAP will be disabled for %d seconds "
+		//    "as a countermeasure against TKIP key cracking attempts\n",
+		//    ic->ic_if.if_xname, sec);
 		timeout_add_sec(&ic->ic_tkip_micfail_timeout, sec);
 
 		/* deauthenticate all currently associated STAs using TKIP */

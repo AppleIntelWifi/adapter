@@ -216,7 +216,7 @@ public:
         .fw_monitor = false,
         .disable_11ac = false,
         .disable_11ax = false,
-        .disable_msix = false,
+        .disable_msix = true,
         .remove_when_gone = false,
     };
     
