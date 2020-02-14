@@ -597,7 +597,7 @@ void IWLTransport::rxHWInit(struct iwl_rxq *rxq)
     
     releaseNICAccess(&flags);
     
-    iwlWrite32(FH_RSCSR_CHNL0_WPTR, 8);
+   // iwlWrite32(FH_RSCSR_CHNL0_WPTR, 8);
     
 }
 

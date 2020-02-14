@@ -409,7 +409,7 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
         m_pDevice->cur_fw_img = old_type;
         return ret;
     }
-    alive_data.valid = true;
+    //alive_data.valid = true;
     if (!alive_data.valid) {
         IWL_ERR(mvm, "Loaded ucode is not valid!\n");
         m_pDevice->cur_fw_img = old_type;

@@ -134,6 +134,7 @@
 		02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */; };
 		68604F1723F5F4490066F562 /* iwlwifi-8265-36.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 6864313723F5F0CD002F3C52 /* iwlwifi-8265-36.ucode */; };
 		68604F1823F5F44B0066F562 /* iwlwifi-8265-34.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */; };
+		6860E55023F6349C0041CD2D /* TransHdr.h in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7923EE70D3003FF602 /* TransHdr.h */; };
 		686F711023F4BE51008A0E88 /* IWLTransOps.h in Headers */ = {isa = PBXBuildFile; fileRef = 024DDD4B23CC7965002716C8 /* IWLTransOps.h */; };
 		686F711123F4BE58008A0E88 /* IWLFH.h in Headers */ = {isa = PBXBuildFile; fileRef = 02CEFCD223D4595E00B620E6 /* IWLFH.h */; };
 		686F711223F4BE60008A0E88 /* IWLConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7A23EE7A9F003FF602 /* IWLConstants.h */; };
@@ -790,6 +791,7 @@
 				02CEFCE623D5F09600B620E6 /* IWLUcodeParse.hpp in Headers */,
 				0252C5E223EC17CD001975DB /* MvmCmd.hpp in Headers */,
 				02CEFD5C23D7DE8E00B620E6 /* poly1305.h in Headers */,
+				6860E55023F6349C0041CD2D /* TransHdr.h in Headers */,
 				02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */,
 				02C2287423DBFA870016AD53 /* ieee80211_node.h in Headers */,
 				02CEFD7D23D7DE8E00B620E6 /* chachapoly.h in Headers */,
