@@ -98,13 +98,12 @@ bool IWLTransport::init(IWLDevice *device)
     //waitlocks
     this->ucode_write_waitq = IOLockAlloc();
     this->def_rx_queue = 0;
-    int addr_size;
     if (m_pDevice->cfg->trans.use_tfh) {
         addr_size = 64;
         this->max_tbs = IWL_TFH_NUM_TBS;
         this->tfd_size = sizeof(struct iwl_tfh_tfd);
     } else {
-        addr_size = 36;
+        addr_size = 32;
         this->max_tbs = IWL_NUM_OF_TBS;
         this->tfd_size = sizeof(struct iwl_tfd);
     }
@@ -544,7 +543,7 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
     
     
     
-    /*
+    
     if (m_pDevice->cfg->trans.use_tfh) {
         if (cpu == 1)
             this->iwlWritePRPH(UREG_UCODE_LOAD_STATUS, 0xFFFF);
@@ -556,11 +555,13 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
         else
             this->iwlWriteDirect32(FH_UCODE_LOAD_STATUS, 0xFFFFFFFF);
     }
-     */
+     
+    /*
     if(cpu == 1)
         this->iwlWrite32(FH_UCODE_LOAD_STATUS, 0xFFFF);
     else
         this->iwlWrite32(FH_UCODE_LOAD_STATUS, 0xFFFFFFFF);
+     */
     return 0;
 }
 
@@ -905,4 +906,29 @@ void IWLTransport::txStart()
 //    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
 //        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
 //                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
+}
+
+void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)
+{
+    //struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
+    
+    //lockdep_assert_held(&trans_pcie->reg_lock);
+    //trans->cmd
+    /*
+    if (trans->cmd_in_flight) {
+        trans_pcie->ref_cmd_in_flight = false;
+        IWL_DEBUG_RPM(trans, "clear ref_cmd_in_flight - unref\n");
+        iwl_trans_unref(trans);
+    }
+     */
+    
+    if (!trans->m_pDevice->cfg->trans.base_params->apmg_wake_up_wa)
+        return;
+    
+    if (WARN_ON(!trans->m_pDevice->holdNICWake))
+        return;
+    
+    trans->m_pDevice->holdNICWake = false;
+    trans->clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
+    //__iwl_trans_pcie_clear_bit(trans, CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
 }

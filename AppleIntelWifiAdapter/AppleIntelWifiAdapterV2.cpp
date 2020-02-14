@@ -89,6 +89,8 @@ bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
     IOLog("Driver init()");
     drv = new IWLMvmDriver();
     return super::init(properties);
+    
+    
 }
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
@@ -106,6 +108,8 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
     IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    this->drv->controller = static_cast<IOEthernetController*>(this);
+    
     if (!drv->init(pciDevice)) {
         return NULL;
     }
@@ -123,6 +127,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     irqLoop = IOWorkLoop::workLoop();
     int msiIntrIndex = 0;
     
+    
     if(!this->drv) {
         IWL_ERR(0, "Missing this->drv\n");
         return false;
@@ -137,6 +142,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
         return false;
     }
+    
     
     for (int index = 0; ; index++)
     {
@@ -229,6 +235,9 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         IOLog("start failed, can not attach interface\n");
         return false;
     }
+    
+    drv->m_pDevice->interface = netif;
+    
     if (!drv->start()) {
         IOLog("start failed\n");
         return false;
@@ -263,6 +272,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     }
     
     netif->registerService();
+    
     this->registerService();
     
     

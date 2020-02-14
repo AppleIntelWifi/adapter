@@ -21,43 +21,6 @@ extern const void *bsearch(const void *, const void *, size_t, size_t, int (*)(c
  * @return 0 iff equal.
  */
 
-static u8 iwl_pcie_tfd_get_num_tbs(IWLTransport *trans, void *_tfd)
-{
-    if (trans->m_pDevice->cfg->trans.use_tfh) {
-        struct iwl_tfh_tfd *tfd = (struct iwl_tfh_tfd *)_tfd;
-        
-        return le16_to_cpu(tfd->num_tbs) & 0x1f;
-    } else {
-        struct iwl_tfd *tfd = (struct iwl_tfd *)_tfd;
-        
-        return tfd->num_tbs & 0x1f;
-    }
-}
-
-static inline int iwl_queue_inc_wrap(int index)
-{
-    return ++index & (TFD_QUEUE_SIZE_MAX - 1);
-}
-
-/**
- * iwl_queue_dec_wrap - decrement queue index, wrap back to end
- * @index -- current index
- */
-static inline int iwl_queue_dec_wrap(int index)
-{
-    return --index & (TFD_QUEUE_SIZE_MAX - 1);
-}
-
-
-static inline u8 iwl_pcie_get_cmd_index(struct iwl_txq *q, u32 index)
-{
-    return index & (q->n_window - 1);
-}
-
-static inline void *iwl_pcie_get_tfd(IWLTransport *trans_pcie, struct iwl_txq *txq, int idx)
-{
-    return (u8*)txq->tfds + trans_pcie->tfd_size * iwl_pcie_get_cmd_index(txq, idx);
-}
 
 int iwl_queue_space(const struct iwl_txq *q)
 {
@@ -307,7 +270,7 @@ int iwl_pcie_txq_init(IWLTransport *trans, struct iwl_txq *txq, int slots_num, b
     return 0;
 }
 
-static void iwl_pcie_tfd_unmap(IWLTransport *trans, struct iwl_cmd_meta *meta, struct iwl_txq *txq, int index)
+void iwl_pcie_tfd_unmap(IWLTransport *trans, struct iwl_cmd_meta *meta, struct iwl_txq *txq, int index)
 {
     //struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
     int i, num_tbs;
@@ -440,30 +403,7 @@ void iwl_pcie_txq_free_tfd(IWLTransport *trans, struct iwl_txq *txq)
     }
 }
 
-static void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)
-{
-    //struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
-    
-    //lockdep_assert_held(&trans_pcie->reg_lock);
-    //trans->cmd
-    /*
-    if (trans->cmd_in_flight) {
-        trans_pcie->ref_cmd_in_flight = false;
-        IWL_DEBUG_RPM(trans, "clear ref_cmd_in_flight - unref\n");
-        iwl_trans_unref(trans);
-    }
-     */
-    
-    if (!trans->m_pDevice->cfg->trans.base_params->apmg_wake_up_wa)
-        return;
-    
-    if (WARN_ON(!trans->m_pDevice->holdNICWake))
-        return;
-    
-    trans->m_pDevice->holdNICWake = false;
-    trans->clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
-    //__iwl_trans_pcie_clear_bit(trans, CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
-}
+
 
 static void iwl_pcie_txq_unmap(IWLTransport *trans, int txq_id)
 {

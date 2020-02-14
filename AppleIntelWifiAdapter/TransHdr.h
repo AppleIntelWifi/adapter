@@ -116,7 +116,11 @@ enum CMD_MODE {
     CMD_ASYNC        = BIT(0),
     CMD_WANT_SKB        = BIT(1),
     CMD_SEND_IN_RFKILL    = BIT(2),
-    CMD_WANT_ASYNC_CALLBACK    = BIT(3),
+    CMD_HIGH_PRIO        = BIT(3),
+    CMD_SEND_IN_IDLE    = BIT(4),
+    CMD_MAKE_TRANS_IDLE    = BIT(5),
+    CMD_WAKE_UP_TRANS    = BIT(6),
+    CMD_WANT_ASYNC_CALLBACK    = BIT(7),
 };
 
 #define DEF_CMD_PAYLOAD_SIZE 320
@@ -365,7 +369,7 @@ struct iwl_rxq {
     TAILQ_HEAD(, iwl_rx_mem_buffer) rx_free;
     TAILQ_HEAD(, iwl_rx_mem_buffer) rx_used;
     bool need_update;
-    void *rb_stts;
+    iwl_rb_status *rb_stts;
     dma_addr_t rb_stts_dma;
     iwl_dma_ptr *rb_stts_dma_ptr;
     IOSimpleLock* lock;

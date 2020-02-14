@@ -50,6 +50,25 @@ enum iwl_amsdu_size {
     IWL_AMSDU_2K = 4,
 };
 
+static inline int
+iwl_trans_get_rb_size_order(enum iwl_amsdu_size rb_size)
+{
+    
+    // TODO: Implement get_order
+    switch (rb_size) {
+    case IWL_AMSDU_4K:
+            return __get_order(4 * 1024);
+    case IWL_AMSDU_8K:
+            return __get_order(8 * 1024);
+    case IWL_AMSDU_12K:
+            return __get_order(12 * 1024);
+    default:
+        //WARN_ON(1);
+        return -1;
+    }
+}
+
+
 enum iwl_uapsd_disable {
     IWL_DISABLE_UAPSD_BSS        = BIT(0),
     IWL_DISABLE_UAPSD_P2P_CLIENT    = BIT(1),
@@ -164,6 +183,8 @@ public:
     ieee80211_state ie_state;
     ieee80211_amrr ie_amrr;
     ieee80211com ie_ic;
+    IOEthernetInterface* interface;
+    IOEthernetController* controller;
     
     //firmware
     bool firmwareLoadToBuf;

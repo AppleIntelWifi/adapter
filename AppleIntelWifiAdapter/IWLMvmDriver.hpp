@@ -101,7 +101,7 @@ public:
     int sendCmdStatus(struct iwl_host_cmd *cmd, u32 *status);//iwl_mvm_send_cmd_status
     
 public:
-    
+    IOEthernetController* controller;
     IWLDevice *m_pDevice;
     
     IWLTransport *trans;

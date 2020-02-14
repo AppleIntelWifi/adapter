@@ -18,6 +18,7 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
     this->fwLoadLock = IOLockAlloc();
     this->m_pDevice = new IWLDevice();
+    this->m_pDevice->controller = controller;
     if (!this->m_pDevice->init(pciDevice)) {
         return false;
     }
@@ -363,9 +364,7 @@ void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, c
 bool IWLMvmDriver::drvStart()
 {
     int err;
-    static const u8 no_reclaim_cmds[] = {
-        TX_CMD,
-    };
+
     enum iwl_amsdu_size rb_size_default;
     //TODO
     //    /********************************
@@ -516,7 +515,7 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
                   */
                  //iwl_pcie_rxmq_restock(trans, trans_pcie->rxq);
              }
-             IOLockWakeup(trans->ucode_write_waitq, &this->alive_wait, true);
+             //IOLockWakeup(trans->ucode_write_waitq, &this->alive_wait, true);
              handled |= CSR_INT_BIT_ALIVE;
          }
          /* Safely ignore these bits for debug checks below */
@@ -600,7 +599,7 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
              isr_stats->rx++;
      
              local_bh_disable();
-             
+             trans->handleRx(0);
              //iwl_pcie_rx_handle(trans, 0);
              local_bh_enable();
          }
