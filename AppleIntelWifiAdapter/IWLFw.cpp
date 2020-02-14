@@ -65,13 +65,15 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
      * Some things may run in the background now, but we
      * just wait for the calibration complete notification.
      */
+    /*
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &calib_wait,
                                 MVM_UCODE_CALIB_TIMEOUT);
     
     
-    IOLockUnlock(this->trans->mutex);
     if (!ret)
         goto out;
+     */
+    IOLockUnlock(this->trans->mutex);
     /* Will also start the device */
     ret = loadUcodeWaitAlive(IWL_UCODE_INIT);
     if (ret) {
@@ -84,6 +86,8 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
         if (ret)
             goto remove_notif;
     }
+    
+    return 0;
     
     /* Read the NVM only at driver load time, no need to do this twice */
     if (read_nvm) {
@@ -339,6 +343,8 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
     m_pDevice->cur_fw_img = ucode_type;
     clear_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &m_pDevice->status);
     
+    
+    
     iwl_init_notification_wait(&m_pDevice->notif_wait, &alive_wait,
                                alive_cmd, ARRAY_SIZE(alive_cmd),
                                iwl_alive_fn, &alive_data);
@@ -366,8 +372,7 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
 //
 //    return 0;
     
-    IWL_INFO(mvm, "Locking write waitqueue\n");
-    IOLockLock(trans->ucode_write_waitq);
+
     
     /*
      * Some things may run in the background now, but we

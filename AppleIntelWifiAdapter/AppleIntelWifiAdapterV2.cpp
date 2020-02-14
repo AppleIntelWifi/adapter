@@ -122,10 +122,26 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     initTimeout(getWorkLoop());
     irqLoop = IOWorkLoop::workLoop();
     int msiIntrIndex = 0;
+    
+    if(!this->drv) {
+        IWL_ERR(0, "Missing this->drv\n");
+        return false;
+    }
+    
+    if(!this->drv->m_pDevice) {
+        IWL_ERR(0, "Missing this->m_pDevice\n");
+        return false;
+    }
+    
+    if(!this->drv->m_pDevice->pciDevice) {
+        IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
+        return false;
+    }
+    
     for (int index = 0; ; index++)
     {
         int interruptType;
-        int ret = this->drv->m_pDevice->pciDevice->getInterruptType(index, &interruptType);
+        int ret = provider->getInterruptType(index, &interruptType);
         if (ret != kIOReturnSuccess)
             break;
         if (interruptType & kIOInterruptTypePCIMessaged)
@@ -135,11 +151,12 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         }
     }
     
+    
     IWL_INFO(0, "MSI interrupt index: %d\n", msiIntrIndex);
     fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
                                                              (IOInterruptEventAction) &AppleIntelWifiAdapterV2::intrOccured,
                                                              (IOFilterInterruptAction)&AppleIntelWifiAdapterV2::intrFilter,
-                                                             this->drv->m_pDevice->pciDevice,
+                                                             provider,
                                                              msiIntrIndex);
     if (irqLoop->addEventSource(fInterrupt) != kIOReturnSuccess) {
         IWL_ERR(0, "add interrupt event soure fail\n");
@@ -216,8 +233,39 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         IOLog("start failed\n");
         return false;
     }
+    
+    if(!drv->m_pDevice->firmwareLoadToBuf) {
+        IOLog("firmware not loaded to buf");
+        fInterrupt->disable();
+        if(irqLoop) {
+            irqLoop->release();
+            irqLoop = NULL;
+        }
+        
+        if(drv) {
+            drv->release();
+            delete drv;
+            drv = NULL;
+        }
+        
+        if(netif) {
+            netif->release();
+        }
+        
+        return false;
+    }
+    else {
+        if(!drv->drvStart()) {
+            IWL_ERR(0, "Driver failed to start\n");
+            IOSleep(5000);
+        }
+        //return true;
+    }
+    
     netif->registerService();
     this->registerService();
+    
+    
     return true;
 }
 
@@ -275,15 +323,13 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IOLog("Driver Enable()");
-    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
-    if(!drv->m_pDevice->firmwareLoadToBuf) {
-        IOLog("firmware not loaded to buf");
-        return false;
+    if(drv) {
+        setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
+
+        return super::enable(netif);
+    } else {
+        return kIOReturnError;
     }
-    else {
-        return drv->drvStart();
-    }
-    return super::enable(netif);
 }
 
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)

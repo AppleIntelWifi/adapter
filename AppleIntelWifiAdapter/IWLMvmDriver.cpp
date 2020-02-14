@@ -262,6 +262,7 @@ bool IWLMvmDriver::start()
         return false;
     }
     snprintf(tag, sizeof(tag), "%d", m_pDevice->cfg->ucode_api_max);
+    //snprintf(tag, sizeof(tag), "%d", 34);
     snprintf(firmware_name, sizeof(firmware_name), "%s%s.ucode", m_pDevice->cfg->fw_name_pre, tag);
     IWL_INFO(0, "attempting to load firmware '%s'\n", firmware_name);
     IOLockLock(fwLoadLock);
@@ -611,8 +612,10 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
              isr_stats->tx++;
              handled |= CSR_INT_BIT_FH_TX;
              /* Wake up uCode load routine, now that load is complete */
+             IOLockLock(trans->ucode_write_waitq);
              trans->ucode_write_complete = true;
              IOLockWakeup(trans->ucode_write_waitq, &trans->ucode_write_complete, true);
+             IOLockUnlock(trans->ucode_write_waitq);
              //iwl_notification_notify(&m_pDevice->notif_wait);
              //wake_up(&trans_pcie->ucode_write_waitq);
          }

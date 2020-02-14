@@ -25,7 +25,8 @@ int IWLMvmTransOpsGen1::nicInit()
     IWL_INFO(0, "Allocating both queues\n");
     
     /* Allocate the RX queue, or reset if it is already allocated */
-    rxInit();
+    if(rxInit())
+        return -ENOMEM;
     /* Allocate or reset and init all Tx and Command queues */
     if (txInit())
         return -ENOMEM;
@@ -43,8 +44,9 @@ int IWLMvmTransOpsGen1::nicInit()
 int IWLMvmTransOpsGen1::rxInit()
 {
     int ret = trans->rxInit();
-    if (ret)
-    return ret;
+    if (ret) {
+        return ret;
+    }
     if (trans->m_pDevice->cfg->trans.mq_rx_supported)
         trans->rxMqHWInit();
     else
@@ -58,8 +60,8 @@ int IWLMvmTransOpsGen1::rxInit()
 
 int IWLMvmTransOpsGen1::txInit()
 {
-    
-    return 0;
+    int ret = trans->txInit();
+    return ret;
 }
 
 void IWLMvmTransOpsGen1::setPwr(bool vaux)

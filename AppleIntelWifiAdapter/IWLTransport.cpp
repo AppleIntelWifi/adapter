@@ -214,6 +214,8 @@ void IWLTransport::initMsix()
     this->msix_enabled = false;
     
     configMsixHw();
+    
+    IWL_INFO(0, "initMsix (%s)", msix_enabled ? "true" : "false");
     if (!msix_enabled) {
         return;
     }
@@ -540,6 +542,9 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
     
     enableIntr();
     
+    
+    
+    /*
     if (m_pDevice->cfg->trans.use_tfh) {
         if (cpu == 1)
             this->iwlWritePRPH(UREG_UCODE_LOAD_STATUS, 0xFFFF);
@@ -551,6 +556,11 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
         else
             this->iwlWriteDirect32(FH_UCODE_LOAD_STATUS, 0xFFFFFFFF);
     }
+     */
+    if(cpu == 1)
+        this->iwlWrite32(FH_UCODE_LOAD_STATUS, 0xFFFF);
+    else
+        this->iwlWrite32(FH_UCODE_LOAD_STATUS, 0xFFFFFFFF);
     return 0;
 }
 
@@ -703,6 +713,8 @@ void IWLTransport::apmConfig()
      * and in newer hardware they are not officially supported at
      * all, so we must always set the L0S_DISABLED bit.
      */
+    
+    
     this->setBit(CSR_GIO_REG, CSR_GIO_REG_VAL_L0S_DISABLED);
     //TODO
     //    pcie_capability_read_word(trans_pcie->pci_dev, PCI_EXP_LNKCTL, &lctl);

@@ -392,13 +392,14 @@ int IWLTransport::rxInit()
 
     iwl_pcie_rxq_alloc_rbs(this, def_rxq);
 
-    IWL_INFO(0, "init done\n");
+    IWL_INFO(0, "rxInit init done\n");
     
     return 0;
 }
 
 void IWLTransport::rxHWInit(struct iwl_rxq *rxq)
 {
+    IWL_INFO(0, "initializing hw for rx (non-mq)\n");
     u32 rb_size;
     IOInterruptState flags;
     const u32 rfdnlog = RX_QUEUE_SIZE_LOG; /* 256 RBDs */
@@ -418,15 +419,18 @@ void IWLTransport::rxHWInit(struct iwl_rxq *rxq)
             rb_size = FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_4K;
     }
     
+    /* Stop Rx DMA */
+    //rxStop();
+    
     if (!grabNICAccess(&flags))
         return;
     
-    /* Stop Rx DMA */
     iwlWrite32(FH_MEM_RCSR_CHNL0_CONFIG_REG, 0);
     /* reset and flush pointers */
     iwlWrite32(FH_MEM_RCSR_CHNL0_RBDCB_WPTR, 0);
     iwlWrite32(FH_MEM_RCSR_CHNL0_FLUSH_RB_REQ, 0);
     iwlWrite32(FH_RSCSR_CHNL0_RDPTR, 0);
+    
     
     /* Reset driver's Rx queue write index */
     iwlWrite32(FH_RSCSR_CHNL0_RBDCB_WPTR_REG, 0);
@@ -434,6 +438,8 @@ void IWLTransport::rxHWInit(struct iwl_rxq *rxq)
     /* Tell device where to find RBD circular buffer in DRAM */
     iwlWrite32(FH_RSCSR_CHNL0_RBDCB_BASE_REG,
                (u32)(rxq->bd_dma >> 8));
+    
+    
     
     /* Tell device where in DRAM to update its Rx status */
     iwlWrite32(FH_RSCSR_CHNL0_STTS_WPTR_REG,
@@ -455,18 +461,22 @@ void IWLTransport::rxHWInit(struct iwl_rxq *rxq)
                (RX_RB_TIMEOUT << FH_RCSR_RX_CONFIG_REG_IRQ_RBTH_POS) |
                (rfdnlog << FH_RCSR_RX_CONFIG_RBDCB_SIZE_POS));
     
-    releaseNICAccess(&flags);
-    
     /* Set interrupt coalescing timer to default (2048 usecs) */
     iwlWrite8(CSR_INT_COALESCING, IWL_HOST_INT_TIMEOUT_DEF);
     
     /* W/A for interrupt coalescing bug in 7260 and 3160 */
     if (m_pDevice->cfg->host_interrupt_operation_mode)
         setBit(CSR_INT_COALESCING, IWL_HOST_INT_OPER_MODE);
+    
+    releaseNICAccess(&flags);
+    
+    iwlWrite32(FH_RSCSR_CHNL0_WPTR, 8);
+    
 }
 
 void IWLTransport::rxMqHWInit()
 {
+    IWL_INFO(0, "initializing hw for rx (mq)\n");
     u32 rb_size, enabled = 0;
     IOInterruptState flags;
     int i;
@@ -548,6 +558,11 @@ void IWLTransport::rxMqHWInit()
     
     /* Set interrupt coalescing timer to default (2048 usecs) */
     iwlWrite8(CSR_INT_COALESCING, IWL_HOST_INT_TIMEOUT_DEF);
+    
+    for (i = 0; i < this->num_rx_queues; i++) {
+        iwlWrite32(RFH_Q_FRBDCB_WIDX_TRG(this->rxq[i].id),
+        this->rxq[i].write_actual);
+    }
 }
 
 /*

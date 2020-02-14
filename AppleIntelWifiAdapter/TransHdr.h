@@ -377,6 +377,8 @@ struct iwl_cmd_meta {
     struct iwl_host_cmd *source;
     u32 flags;
     u32 tbs;
+    
+    struct iwl_dma_ptr *dma[IWL_MAX_CMD_TBS_PER_TFD + 1];
 };
 
 /*
@@ -447,8 +449,10 @@ struct iwl_pcie_first_tb_buf {
  */
 struct iwl_txq {
     void *tfds;
+    struct iwl_dma_ptr* tfds_dma;
     struct iwl_pcie_first_tb_buf *first_tb_bufs;
     dma_addr_t first_tb_dma;
+    struct iwl_dma_ptr* first_tb_dma_ptr;
     struct iwl_pcie_txq_entry *entries;
     IOSimpleLock *lock;
     unsigned long frozen_expiry_remainder;

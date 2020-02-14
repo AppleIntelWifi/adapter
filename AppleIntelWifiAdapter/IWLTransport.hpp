@@ -15,6 +15,7 @@
 #include "IWLCtxtInfo.hpp"
 #include "IWLInternal.hpp"
 
+struct sk_buff { int something; };
 class IWLTransport : public IWLIO
 {
     
@@ -141,6 +142,10 @@ public:
     
     int pcieSendHCmd(iwl_host_cmd *cmd);
     
+    int txInit();
+    
+    int txFree();
+    
     void txStop();
     
     void txStart();
@@ -191,6 +196,7 @@ public:
     int txcmd_align;
     
     //tx
+    struct iwl_txq *txq_memory;
     iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
     unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
     unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
