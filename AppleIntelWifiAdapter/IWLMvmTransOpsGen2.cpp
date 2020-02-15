@@ -135,6 +135,7 @@ void IWLMvmTransOpsGen2::fwAlive(UInt32 scd_addr)
 
 int IWLMvmTransOpsGen2::startFW(const struct fw_img *fw, bool run_in_rfkill)
 {
+    IWL_INFO(0, "gen2 start firmware\n");
     clear_bit(STATUS_FW_ERROR, &trans->status);
     bool hw_rfkill;
     int ret;

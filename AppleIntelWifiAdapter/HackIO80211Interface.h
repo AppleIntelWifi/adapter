@@ -9,7 +9,8 @@
 #ifndef HackIO80211Interface_h
 #define HackIO80211Interface_h
 
-#include <IOKit/network/IOEthernetInterface.h>
+//#include <IOKit/network/IOEthernetInterface.h>
+#include "HackIOEthernetInterface.h"
 #include <net/if_var.h>
 #include <sys/queue.h>
 

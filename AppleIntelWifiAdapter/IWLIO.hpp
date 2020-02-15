@@ -28,8 +28,6 @@ public:
     
     void release();
     
-//    allocDMABuffer(int size, mach_vm_address_t physical_mask);
-    
     bool grabNICAccess(IOInterruptState *state);
     
     void releaseNICAccess(IOInterruptState *state);

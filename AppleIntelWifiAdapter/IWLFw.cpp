@@ -11,6 +11,7 @@
 static bool iwl_wait_phy_db_entry(struct iwl_notif_wait_data *notif_wait,
                                   struct iwl_rx_packet *pkt, void *data)
 {
+    IWL_INFO(0, "runInitMvmUCode init_complete\n");
     struct iwl_phy_db *phy_db = (struct iwl_phy_db *)data;
     
     if (pkt->hdr.cmd != CALIB_RES_NOTIF_PHY_DB) {
@@ -33,7 +34,6 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
     int ret;
     if (iwl_mvm_has_unified_ucode(m_pDevice))
         return runUnifiedMvmUcode(true);
-    IOLockLock(trans->mutex);
     m_pDevice->rfkill_safe_init_done = false;
     iwl_init_notification_wait(&m_pDevice->notif_wait,
                                &calib_wait,
@@ -41,21 +41,15 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
                                ARRAY_SIZE(init_complete),
                                iwl_wait_phy_db_entry,
                                &this->phy_db);
-    
-    /*
-     * Some things may run in the background now, but we
-     * just wait for the calibration complete notification.
-     */
-    ret = iwl_wait_notification(&m_pDevice->notif_wait, &calib_wait,
-                                MVM_UCODE_CALIB_TIMEOUT);
-    if (!ret)
-        goto out;
+
     /* Will also start the device */
     ret = loadUcodeWaitAlive(IWL_UCODE_INIT);
     if (ret) {
         IWL_ERR(0, "Failed to start INIT ucode: %d\n", ret);
         goto remove_notif;
     }
+    
+    return 0;
     
     if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000) {
         ret = sendBTInitConf();
@@ -106,6 +100,8 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
                 ret);
         goto remove_notif;
     }
+    
+    IWL_INFO(0, "wait firmware notification\n");
     
     /*
      * Some things may run in the background now, but we
@@ -296,6 +292,7 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
 
 int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
 {
+    IWL_INFO(0, "start load ucode\n");
     struct iwl_notification_wait alive_wait;
     struct iwl_mvm_alive_data alive_data = {};
     const struct fw_img *fw;
@@ -328,6 +325,8 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
      */
     ret = trans_ops->startFW(fw, run_in_rfkill);
     
+    IWL_INFO(0, "start firmware done, ret=%d.\n", ret);
+    
     if (ret) {
         m_pDevice->cur_fw_img = old_type;
         iwl_remove_notification(&m_pDevice->notif_wait, &alive_wait);
@@ -347,7 +346,7 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
      * just wait for the ALIVE notification here.
      */
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &alive_wait,
-                                MVM_UCODE_ALIVE_TIMEOUT);
+                                5);
     
     if (ret) {
         if (m_pDevice->cfg->trans.device_family >=

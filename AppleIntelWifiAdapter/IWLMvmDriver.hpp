@@ -17,24 +17,6 @@
 #include "IWLNvmParser.hpp"
 #include "IWLPhyDb.hpp"
 
-/**
- * struct isr_statistics - interrupt statistics
- *
- */
-struct isr_statistics {
-    u32 hw;
-    u32 sw;
-    u32 err_code;
-    u32 sch;
-    u32 alive;
-    u32 rfkill;
-    u32 ctkill;
-    u32 wakeup;
-    u32 rx;
-    u32 tx;
-    u32 unhandled;
-};
-
 class IWLMvmDriver {
     
 public:
@@ -108,13 +90,13 @@ public:
     
     IWLTransOps *trans_ops;
     
+    iwl_notif_wait_data alive_wait;
+    
 private:
     
     IOLock *fwLoadLock;
     
     struct iwl_phy_db phy_db;
-    
-    isr_statistics isr_stats;
     
 };
 

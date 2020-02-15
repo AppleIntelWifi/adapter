@@ -130,7 +130,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
                                                              OSMemberFunctionCast(IOInterruptEventSource::Action, this, &AppleIntelWifiAdapterV2::intrOccured),
                                                              OSMemberFunctionCast(IOFilterInterruptAction, this, &AppleIntelWifiAdapterV2::intrFilter),
-                                                             provider,
+                                                                          provider,
                                                              msiIntrIndex);
     if (getWorkLoop()->addEventSource(fInterrupt) != kIOReturnSuccess) {
         IWL_ERR(0, "add interrupt event soure fail\n");
@@ -206,6 +206,12 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
 
 bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object, IOFilterInterruptEventSource *src)
 {
+    /* Disable (but don't clear!) interrupts here to avoid
+     * back-to-back ISRs and sporadic interrupts from our NIC.
+     * If we have something to service, the tasklet will re-enable ints.
+     * If we *don't* have something, we'll re-enable before leaving here.
+     */
+    drv->trans->iwlWrite32(CSR_INT_MASK, 0x00000000);
     return true;
 }
 

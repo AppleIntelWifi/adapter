@@ -45,7 +45,30 @@ UInt32 HackIO80211Interface::inputPacket(mbuf_t          packet,
 
 bool HackIO80211Interface::configureInterface(IOEthernetController *controller)
 {
-    setInterfaceType(3);
+//    #define asm_cast(var,addr)  \
+//    {                           \
+//        __asm{                  \
+//            mov var,offset addr \
+//        }                       \
+//    }
+//    char *p4 = 0;
+//    asm_cast(p4, m);
+//    p4 += 8;
+//    __asm {
+//        push rax
+//        push rbx
+////        push 3
+////        push controller
+//        mov rdi, controller
+//        mov esi, 3
+//        mov rbx, offset m
+//        add rbx, 8
+//        call rbx
+////        add rsp, 16
+//        pop rbx
+//        pop rax
+//    }
+    setInterfaceSubType(3);
     return true;
 }
 
@@ -56,6 +79,7 @@ bool HackIO80211Interface::inputEvent(unsigned int type, void* data)
 
 SInt32 HackIO80211Interface::performCommand(IONetworkController* controller, unsigned long cmd, void* arg0, void* arg1)
 {
+    IOLog("AppleIntel cmd=%ld\n", cmd);
     switch (cmd) {
         case 2149607880LL:
         case 2150132168LL:
@@ -100,6 +124,7 @@ UInt64 HackIO80211Interface::IO80211InterfaceUserSpaceToKernelApple80211Request(
 
 int HackIO80211Interface::performGatedCommand(void *a2, void *a3, void *a4, void *a5, void *a6)
 {
+    IOLog("AppleIntel performGatedCommand\n");
     apple80211req req;
     UInt64 method;
     if (!a2) {
@@ -128,6 +153,7 @@ int HackIO80211Interface::apple80211_ioctl(HackIO80211Interface *netif, UInt64 m
 
 int HackIO80211Interface::apple80211_ioctl_set(HackIO80211Interface *netif, apple80211req *a6)
 {
+    IOLog("AppleIntel apple80211_ioctl_set\n");
     uint32_t index = a6->req_type - 1;
     if (index > 0x160) {
         return 102;
@@ -137,6 +163,7 @@ int HackIO80211Interface::apple80211_ioctl_set(HackIO80211Interface *netif, appl
 
 int HackIO80211Interface::apple80211_ioctl_get(HackIO80211Interface *netif, apple80211req *a6)
 {
+    IOLog("AppleIntel apple80211_ioctl_get\n");
     uint32_t index = a6->req_type - 1;
     if (index > 0x160) {
         return 102;
@@ -146,34 +173,34 @@ int HackIO80211Interface::apple80211_ioctl_get(HackIO80211Interface *netif, appl
 
 IOReturn HackIO80211Interface::attachToDataLinkLayer(IOOptionBits, void*)
 {
-    
+    IOLog("AppleIntel attachToDataLinkLayer\n");
     return kIOReturnSuccess;
 }
 
 void HackIO80211Interface::detachFromDataLinkLayer(unsigned int, void*)
 {
-    
+    IOLog("AppleIntel detachFromDataLinkLayer\n");
 }
 
 void HackIO80211Interface::setPoweredOnByUser(bool)
 {
-    
+    IOLog("AppleIntel setPoweredOnByUser\n");
 }
 
 void HackIO80211Interface::setEnabledBySystem(bool)
 {
-    
+    IOLog("AppleIntel setEnabledBySystem\n");
 }
 
 bool HackIO80211Interface::setLinkState(IO80211LinkState, unsigned int)
 {
-    
+    IOLog("AppleIntel setLinkState1\n");
     return true;
 }
 
 bool HackIO80211Interface::setLinkState(IO80211LinkState, int, unsigned int)
 {
-    
+    IOLog("AppleIntel setLinkState2\n");
     return true;
 }
 
@@ -187,7 +214,7 @@ UInt32 HackIO80211Interface::outputPacket(mbuf_t m, void* param)
 
 bool HackIO80211Interface::setLinkQualityMetric(int)
 {
-    
+    IOLog("AppleIntel setLinkQualityMetric\n");
     return true;
 }
 

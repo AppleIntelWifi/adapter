@@ -26,6 +26,24 @@
 #define FH_RSCSR_RXQ_MASK        0x3F0000
 
 /**
+ * struct isr_statistics - interrupt statistics
+ *
+ */
+struct isr_statistics {
+    u32 hw;
+    u32 sw;
+    u32 err_code;
+    u32 sch;
+    u32 alive;
+    u32 rfkill;
+    u32 ctkill;
+    u32 wakeup;
+    u32 rx;
+    u32 tx;
+    u32 unhandled;
+};
+
+/**
  * enum iwl_trans_status: transport status flags
  * @STATUS_SYNC_HCMD_ACTIVE: a SYNC command is being processed
  * @STATUS_DEVICE_ENABLED: APM is enabled

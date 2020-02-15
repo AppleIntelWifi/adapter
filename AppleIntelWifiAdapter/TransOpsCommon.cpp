@@ -22,10 +22,7 @@ bool IWLTransOps::setHWRFKillState(bool state)
     //    iwl_mvm_set_rfkill_state(mvm);
     bool rfkill_state = iwl_mvm_is_radio_killed(trans->m_pDevice);
     if (rfkill_state) {
-        IOLockLock(trans->m_pDevice->rx_sync_waitq);
         IOLockWakeup(trans->m_pDevice->rx_sync_waitq, NULL, true);
-        IOLockUnlock(trans->m_pDevice->rx_sync_waitq);
-        //        wake_up(&mvm->rx_sync_waitq);
     }
     
     
@@ -74,6 +71,45 @@ bool IWLTransOps::checkHWRFKill()
     if (prev != report)
         setRfKillState(report);
     return hw_rfkill;
+}
+
+void IWLTransOps::irqRfKillHandle()
+{
+    struct isr_statistics *isr_stats = &trans->isr_stats;
+    bool hw_rfkill, prev, report;
+    
+    IOLockLock(trans->mutex);
+    prev = test_bit(STATUS_RFKILL_OPMODE, &trans->status);
+    hw_rfkill = trans->isRFKikkSet();
+    if (hw_rfkill) {
+        set_bit(STATUS_RFKILL_OPMODE, &trans->status);
+        set_bit(STATUS_RFKILL_HW, &trans->status);
+    }
+    if (trans->opmode_down)
+        report = hw_rfkill;
+    else
+        report = test_bit(STATUS_RFKILL_OPMODE, &trans->status);
+    
+    IWL_WARN(0, "RF_KILL bit toggled to %s.\n",
+             hw_rfkill ? "disable radio" : "enable radio");
+    
+    isr_stats->rfkill++;
+    
+    if (prev != report)
+        setRfKillState(report);
+    IOLockUnlock(trans->mutex);
+    
+    if (hw_rfkill) {
+        if (test_and_clear_bit(STATUS_SYNC_HCMD_ACTIVE,
+                               &trans->status))
+            IWL_INFO(0,
+                     "Rfkill while SYNC HCMD in flight\n");
+        IOLockWakeup(trans->wait_command_queue, this, true);
+    } else {
+        clear_bit(STATUS_RFKILL_HW, &trans->status);
+        if (trans->opmode_down)
+            clear_bit(STATUS_RFKILL_OPMODE, &trans->status);
+    }
 }
 
 void IWLTransOps::handleStopRFKill(bool was_in_rfkill)

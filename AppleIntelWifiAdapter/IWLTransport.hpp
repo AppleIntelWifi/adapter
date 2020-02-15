@@ -70,6 +70,8 @@ public:
     
     bool isRFKikkSet();
     
+    void setRfKillState(bool state);//iwl_trans_pcie_rf_kill
+    
     ///fw
     void loadFWChunkFh(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt);
     
@@ -117,6 +119,8 @@ public:
     
     void rxqRestok(struct iwl_rxq *rxq);
     
+    void handleRx(int queue);//iwl_pcie_rx_handle
+    
     void restockBd(struct iwl_rxq *rxq,
                    struct iwl_rx_mem_buffer *rxb);//iwl_pcie_restock_bd
     
@@ -129,6 +133,10 @@ public:
     void rxqCheckWrPtr();//iwl_pcie_rxq_check_wrptr
     
     void resetICT();
+    
+    int allocICT();
+    
+    void freeICT();
     
     u32 intrCauseICT();//iwl_pcie_int_cause_ict
     
@@ -144,6 +152,8 @@ public:
     void txStop();
     
     void txStart();
+    
+    void txqCheckWrPtrs();//iwl_pcie_txq_check_wrptrs
     
     //cmd
     int sendCmd(struct iwl_host_cmd *cmd);
@@ -164,6 +174,7 @@ public:
     enum iwl_trans_state state;
     bool ucode_write_complete;//indicates that the ucode has been copied.
     IOLock *ucode_write_waitq;//wait queue for uCode load
+    IOLock *wait_command_queue;
     union {
         struct iwl_context_info *ctxt_info;
         struct iwl_context_info_gen3 *ctxt_info_gen3;
@@ -204,6 +215,7 @@ public:
     struct iwl_rx_mem_buffer *rx_pool;
     struct iwl_rx_mem_buffer **global_table;
     struct iwl_rb_allocator rba;
+    struct isr_statistics isr_stats;
     
     void *base_rb_stts;//base virtual address of receive buffer status for all queues
     dma_addr_t base_rb_stts_dma;//base physical address of receive buffer status
@@ -213,6 +225,7 @@ public:
     bool use_ict;
     __le32 *ict_tbl;
     dma_addr_t ict_tbl_dma;
+    iwl_dma_ptr *ict_tbl_ptr;
     bool opmode_down;
     bool is_down;
     int ict_index;

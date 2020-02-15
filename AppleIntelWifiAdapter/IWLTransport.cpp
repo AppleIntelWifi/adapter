@@ -97,6 +97,7 @@ bool IWLTransport::init(IWLDevice *device)
     this->syncCmdLock = IOLockAlloc();
     //waitlocks
     this->ucode_write_waitq = IOLockAlloc();
+    this->wait_command_queue = IOLockAlloc();
     this->def_rx_queue = 0;
     int addr_size;
     if (m_pDevice->cfg->trans.use_tfh) {
@@ -143,9 +144,9 @@ bool IWLTransport::init(IWLDevice *device)
         //        if (ret)
         //            goto out_no_pci;
     } else {
-        //        ret = iwl_pcie_alloc_ict(trans);
-        //        if (ret)
-        //            goto out_no_pci;
+        int ret = allocICT();
+        if (ret)
+            return false;
         //        ret = devm_request_threaded_irq(&pdev->dev, pdev->irq,
         //        iwl_pcie_isr,
         //        iwl_pcie_irq_handler,
@@ -203,6 +204,10 @@ void IWLTransport::release()
     if (this->ucode_write_waitq) {
         IOLockFree(this->ucode_write_waitq);
         this->ucode_write_waitq = NULL;
+    }
+    if (this->wait_command_queue) {
+        IOLockFree(this->wait_command_queue);
+        this->wait_command_queue = NULL;
     }
     super::release();
 }
@@ -423,15 +428,12 @@ int IWLTransport::loadFWChunk(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt)
     loadFWChunkFh(dst_addr, phy_addr, byte_cnt);
     this->releaseNICAccess(&flags);
     IOLockLock(this->ucode_write_waitq);
-    if (this->ucode_write_waitq) {
-        IOLockUnlock(this->ucode_write_waitq);
-        return 0;
-    }
     AbsoluteTime deadline;
     clock_interval_to_deadline(5, kSecondScale, (UInt64 *) &deadline);
     ret = IOLockSleepDeadline(this->ucode_write_waitq, &this->ucode_write_complete,
                               deadline, THREAD_INTERRUPTIBLE);
     IOLockUnlock(this->ucode_write_waitq);
+    IWL_INFO(0, "loadFWChunk wakeup\n");
     if (ret == -1) {
         IWL_ERR(0, "Failed to load firmware chunk!\n");
         return -ETIMEDOUT;

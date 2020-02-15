@@ -198,6 +198,11 @@ int IWLTransport::pcieSendHCmd(iwl_host_cmd *cmd)
     return iwl_pcie_send_hcmd_sync(this, cmd);
 }
 
+void IWLTransport::txqCheckWrPtrs()
+{
+    
+}
+
 void IWLTransport::txStop()
 {
     

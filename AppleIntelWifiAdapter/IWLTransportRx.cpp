@@ -707,9 +707,51 @@ void IWLTransport::rxqIncWrPtr(struct iwl_rxq *rxq)
         iwlWrite32(FH_RSCSR_CHNL0_WPTR, rxq->write_actual);
 }
 
+void IWLTransport::handleRx(int queue)
+{
+    IWL_INFO(0, "rx_handle\n");
+    
+}
+
+void IWLTransport::irqHandleError()
+{
+    for (int i = 0; i < m_pDevice->cfg->trans.base_params->num_of_queues; i++) {
+        if (!this->txq[i])
+            continue;
+//        del_timer(&trans_pcie->txq[i]->stuck_timer);
+    }
+    clear_bit(STATUS_SYNC_HCMD_ACTIVE, &this->status);
+    IOLockWakeup(this->wait_command_queue, this, true);
+}
+
 void IWLTransport::rxFree()
 {
-    
+    IWL_INFO(0, "rx free\n");
+}
+
+int IWLTransport::allocICT()
+{
+    this->ict_tbl_ptr = allocate_dma_buf(ICT_SIZE, this->dma_mask);
+    if (!this->ict_tbl_ptr) {
+        return -ENOMEM;
+    }
+    this->ict_tbl_dma = this->ict_tbl_ptr->dma;
+    this->ict_tbl = (__le32 *)this->ict_tbl_ptr->addr;
+    /* just an API sanity check ... it is guaranteed to be aligned */
+    if (this->ict_tbl_dma & (ICT_SIZE - 1)) {
+        freeICT();
+        return -EINVAL;
+    }
+    return 0;
+}
+
+void IWLTransport::freeICT()
+{
+    if (this->ict_tbl) {
+        free_dma_buf(this->ict_tbl_ptr);
+        this->ict_tbl = NULL;
+        this->ict_tbl_dma = NULL;
+    }
 }
 
 void IWLTransport::disableICT()

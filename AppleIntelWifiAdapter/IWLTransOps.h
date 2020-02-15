@@ -31,9 +31,11 @@ public:
     
     bool setHWRFKillState(bool state);
     
-    void setRfKillState(bool state);
+    void setRfKillState(bool state);//iwl_trans_pcie_rf_kill
     
     void handleStopRFKill(bool was_in_rfkill);
+    
+    void irqRfKillHandle();//iwl_pcie_handle_rfkill_irq
     
     bool checkHWRFKill();
     

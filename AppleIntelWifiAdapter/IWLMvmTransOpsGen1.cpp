@@ -12,6 +12,7 @@
 
 int IWLMvmTransOpsGen1::nicInit()
 {
+    IWL_INFO(0, "gen1 nic init");
     int ret;
     /* nic_init */
     IOSimpleLockLock(trans->irq_lock);
@@ -36,6 +37,7 @@ int IWLMvmTransOpsGen1::nicInit()
 
 int IWLMvmTransOpsGen1::rxInit()
 {
+    IWL_INFO(0, "gen1 rx init");
     int ret = trans->rxInit();
     if (ret)
     return ret;
@@ -52,7 +54,7 @@ int IWLMvmTransOpsGen1::rxInit()
 
 int IWLMvmTransOpsGen1::txInit()
 {
-    
+    IWL_INFO(0, "gen1 tx init");
     return 0;
 }
 
@@ -81,6 +83,7 @@ void IWLMvmTransOpsGen1::fwAlive(UInt32 scd_addr)
 
 int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
 {
+    IWL_INFO(0, "gen1 start firmware\n");
     clear_bit(STATUS_FW_ERROR, &trans->status);
     trans->state = IWL_TRANS_FW_ALIVE;
     bool hw_rfkill;
