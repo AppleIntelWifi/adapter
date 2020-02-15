@@ -27,6 +27,7 @@
 #ifndef _SYS_TIMEOUT_H_
 #define _SYS_TIMEOUT_H_
 
+
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/queue.h>            /* _Q_INVALIDATE */
@@ -34,13 +35,12 @@
 #include <sys/_buf.h>
 #include <sys/kernel.h>
 
+#define _KERNEL
 #include <sys/CTimeout.hpp>
 #include <IOKit/IOTimerEventSource.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOLocks.h>
 #include <libkern/c++/OSObject.h>
-
-#define _KERNEL
 
 void initTimeout(IOWorkLoop *workloop);
 void releaseTimeout();

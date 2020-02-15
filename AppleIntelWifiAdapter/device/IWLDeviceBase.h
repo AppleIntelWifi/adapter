@@ -20,7 +20,7 @@
 #include "FWFile.h"
 
 #define CPTCFG_IWL_TIMEOUT_FACTOR 1
-#define HZ 250
+#define HZ 1000
 
 #define IWL_MAX_PLCP_ERR_LONG_THRESHOLD_DEF    100
 #define IWL_MAX_PLCP_ERR_EXT_LONG_THRESHOLD_DEF    200

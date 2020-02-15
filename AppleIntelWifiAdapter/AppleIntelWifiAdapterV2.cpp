@@ -70,13 +70,18 @@ static struct MediumTable
 };
 
 void AppleIntelWifiAdapterV2::free() {
-    super::free();
+    IOLog("Driver free()");
+    if(irqLoop) {
+        irqLoop->release();
+        irqLoop = NULL;
+    }
     if (drv) {
         drv->release();
         delete drv;
         drv = NULL;
     }
-    IOLog("Driver free()");
+    
+    super::free();
 }
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
@@ -84,6 +89,8 @@ bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
     IOLog("Driver init()");
     drv = new IWLMvmDriver();
     return super::init(properties);
+    
+    
 }
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
@@ -101,9 +108,12 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
     IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    this->drv->controller = static_cast<IOEthernetController*>(this);
+    
     if (!drv->init(pciDevice)) {
         return NULL;
     }
+    
     return drv->probe() ? this : NULL;
 }
 
@@ -114,7 +124,26 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     initTimeout(getWorkLoop());
+    irqLoop = IOWorkLoop::workLoop();
     int msiIntrIndex = 0;
+    
+    
+    if(!this->drv) {
+        IWL_ERR(0, "Missing this->drv\n");
+        return false;
+    }
+    
+    if(!this->drv->m_pDevice) {
+        IWL_ERR(0, "Missing this->m_pDevice\n");
+        return false;
+    }
+    
+    if(!this->drv->m_pDevice->pciDevice) {
+        IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
+        return false;
+    }
+    
+    
     for (int index = 0; ; index++)
     {
         int interruptType;
@@ -127,16 +156,27 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
             break;
         }
     }
+    
+    
+    IWL_INFO(0, "MSI interrupt index: %d\n", msiIntrIndex);
     fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
-                                                             OSMemberFunctionCast(IOInterruptEventSource::Action, this, &AppleIntelWifiAdapterV2::intrOccured),
-                                                             OSMemberFunctionCast(IOFilterInterruptAction, this, &AppleIntelWifiAdapterV2::intrFilter),
+                                                                          (IOInterruptEventAction) &AppleIntelWifiAdapterV2::intrOccured,
+                                                                          (IOFilterInterruptAction)&AppleIntelWifiAdapterV2::intrFilter,
                                                                           provider,
-                                                             msiIntrIndex);
-    if (getWorkLoop()->addEventSource(fInterrupt) != kIOReturnSuccess) {
+                                                                          msiIntrIndex);
+    if (irqLoop->addEventSource(fInterrupt) != kIOReturnSuccess) {
         IWL_ERR(0, "add interrupt event soure fail\n");
         return false;
     }
+    
     fInterrupt->enable();
+    
+    
+    //    PMinit();
+    //    provider->joinPMtree(this);
+    //    changePowerStateTo(kOffPowerState);
+    //    registerPowerDriver(this, gPowerStates, kNumPowerStates);
+    //setIdleTimerPeriod(iwl_mod_params.d0i3_timeout);
     IONetworkMedium *medium;
     IONetworkMedium *autoMedium;
     OSDictionary *mediumDict = OSDictionary::withCapacity(MEDIUM_INDEX_COUNT + 1);
@@ -170,49 +210,104 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
-//    UInt32 capacity = sizeof(mediumTable) / sizeof(struct MediumTable);
-//
-//    OSDictionary *mediumDict = OSDictionary::withCapacity(capacity);
-//    if (mediumDict == 0) {
-//        return false;
-//    }
-//
-//    for (UInt32 i = 0; i < capacity; i++) {
-//        IONetworkMedium* medium = IONetworkMedium::medium(mediumTable[i].type, mediumTable[i].speed);
-//        if (medium) {
-//            IONetworkMedium::addMedium(mediumDict, medium);
-//            medium->release();
-//        }
-//    }
-//
-//    if (!publishMediumDictionary(mediumDict)) {
-//        return false;
-//    }
-//
-//    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
-//    setSelectedMedium(m);
+    //    UInt32 capacity = sizeof(mediumTable) / sizeof(struct MediumTable);
+    //
+    //    OSDictionary *mediumDict = OSDictionary::withCapacity(capacity);
+    //    if (mediumDict == 0) {
+    //        return false;
+    //    }
+    //
+    //    for (UInt32 i = 0; i < capacity; i++) {
+    //        IONetworkMedium* medium = IONetworkMedium::medium(mediumTable[i].type, mediumTable[i].speed);
+    //        if (medium) {
+    //            IONetworkMedium::addMedium(mediumDict, medium);
+    //            medium->release();
+    //        }
+    //    }
+    //
+    //    if (!publishMediumDictionary(mediumDict)) {
+    //        return false;
+    //    }
+    //
+    //    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
+    //    setSelectedMedium(m);
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IOLog("start failed, can not attach interface\n");
         return false;
     }
+    
+    drv->m_pDevice->interface = netif;
+    
     if (!drv->start()) {
         IOLog("start failed\n");
         return false;
     }
+    
+    //for test
+    if(!drv->drvStart()) {
+        IWL_ERR(0, "Driver failed to start\n");
+        IOSleep(5000);
+        return false;
+    }
+    
+    //    if(!drv->m_pDevice->firmwareLoadToBuf) {
+    //        IOLog("firmware not loaded to buf");
+    //        fInterrupt->disable();
+    //        if(irqLoop) {
+    //            irqLoop->release();
+    //            irqLoop = NULL;
+    //        }
+    //
+    //        if(drv) {
+    //            drv->release();
+    //            delete drv;
+    //            drv = NULL;
+    //        }
+    //
+    //        if(netif) {
+    //            netif->release();
+    //        }
+    //
+    //        return false;
+    //    }
+    //    else {
+    //        if(!drv->drvStart()) {
+    //            IWL_ERR(0, "Driver failed to start\n");
+    //            IOSleep(5000);
+    //        }
+    //        //return true;
+    //    }
+    
     netif->registerService();
+    
     this->registerService();
+    
+    
     return true;
 }
 
 bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object, IOFilterInterruptEventSource *src)
 {
-    /* Disable (but don't clear!) interrupts here to avoid
-     * back-to-back ISRs and sporadic interrupts from our NIC.
-     * If we have something to service, the tasklet will re-enable ints.
-     * If we *don't* have something, we'll re-enable before leaving here.
-     */
-    drv->trans->iwlWrite32(CSR_INT_MASK, 0x00000000);
+    AppleIntelWifiAdapterV2* me = (AppleIntelWifiAdapterV2*)object;
+    
+    if(me == 0) {
+        return false;
+    }
+    
+    kprintf("interrupt filter ran\n");
+    me->drv->trans->iwlWrite32(CSR_INT_MASK, 0x00000000);
     return true;
+}
+
+void AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSource* sender, int count)
+{
+    AppleIntelWifiAdapterV2* o = (AppleIntelWifiAdapterV2*)object;
+    if(o == 0) {
+        return;
+    }
+    
+    kprintf("interrupt!!!\n");
+    o->drv->irqHandler(0, NULL);
 }
 
 bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
@@ -223,13 +318,6 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
     HackIO80211Interface *inf = (HackIO80211Interface*)interface;
     inf->configureInterface(this);
     return result;
-}
-
-int AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSource *, int count)
-{
-    IOLog("interrupt!!!\n");
-    drv->irqHandler(0, NULL);
-    return kIOReturnSuccess;
 }
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
@@ -252,8 +340,13 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IOLog("Driver Enable()");
-    //    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
-    return super::enable(netif);
+    if(drv) {
+        setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
+        
+        return super::enable(netif);
+    } else {
+        return kIOReturnError;
+    }
 }
 
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)

@@ -22,8 +22,12 @@ int IWLMvmTransOpsGen1::nicInit()
         return ret;
     setPwr(false);
     nicConfig();
+    
+    IWL_INFO(0, "Allocating both queues\n");
+    
     /* Allocate the RX queue, or reset if it is already allocated */
-    rxInit();
+    if(rxInit())
+        return -ENOMEM;
     /* Allocate or reset and init all Tx and Command queues */
     if (txInit())
         return -ENOMEM;
@@ -32,6 +36,7 @@ int IWLMvmTransOpsGen1::nicInit()
         trans->setBit(CSR_MAC_SHADOW_REG_CTRL, 0x800FFFFF);
         IWL_INFO(trans, "Enabling shadow registers in device\n");
     }
+    
     return 0;
 }
 
@@ -39,8 +44,9 @@ int IWLMvmTransOpsGen1::rxInit()
 {
     IWL_INFO(0, "gen1 rx init");
     int ret = trans->rxInit();
-    if (ret)
-    return ret;
+    if (ret) {
+        return ret;
+    }
     if (trans->m_pDevice->cfg->trans.mq_rx_supported)
         trans->rxMqHWInit();
     else
@@ -54,8 +60,8 @@ int IWLMvmTransOpsGen1::rxInit()
 
 int IWLMvmTransOpsGen1::txInit()
 {
-    IWL_INFO(0, "gen1 tx init");
-    return 0;
+    int ret = trans->txInit();
+    return ret;
 }
 
 void IWLMvmTransOpsGen1::setPwr(bool vaux)
@@ -83,11 +89,12 @@ void IWLMvmTransOpsGen1::fwAlive(UInt32 scd_addr)
 
 int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
 {
-    IWL_INFO(0, "gen1 start firmware\n");
     clear_bit(STATUS_FW_ERROR, &trans->status);
     trans->state = IWL_TRANS_FW_ALIVE;
     bool hw_rfkill;
     int ret;
+    
+    IWL_INFO(trans, "Starting firmware\n");
     /* This may fail if AMT took ownership of the device */
     if (trans->prepareCardHW()) {
         IWL_WARN(trans, "Exit HW not ready\n");
@@ -109,6 +116,8 @@ int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
     //TODO
 //    /* Make sure it finished running */
 //    iwl_pcie_synchronize_irqs(trans);
+    
+    IWL_INFO(trans, "Locking mutex\n");
     
     IOLockLock(trans->mutex);
     
@@ -148,6 +157,8 @@ int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
      * RF-Kill switch is toggled, we will find out after having loaded
      * the firmware and return the proper value to the caller.
      */
+    
+    IWL_INFO(trans, "Enabling fw load interrupt\n");
     trans->enableFWLoadIntr();
     
     /* really make sure rfkill handshake bits are cleared */
@@ -155,6 +166,8 @@ int IWLMvmTransOpsGen1::startFW(const struct fw_img *fw, bool run_in_rfkill)
     trans->iwlWrite32(CSR_UCODE_DRV_GP1_CLR, CSR_UCODE_SW_BIT_RFKILL);
     
     /* Load the given image to the HW */
+    
+    IWL_INFO(trans, "Loading ucode\n");
     if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000)
         trans->loadGivenUcode8000(fw);
     else

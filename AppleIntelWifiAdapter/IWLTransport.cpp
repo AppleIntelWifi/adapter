@@ -105,7 +105,7 @@ bool IWLTransport::init(IWLDevice *device)
         this->max_tbs = IWL_TFH_NUM_TBS;
         this->tfd_size = sizeof(struct iwl_tfh_tfd);
     } else {
-        addr_size = 36;
+        addr_size = 32;
         this->max_tbs = IWL_NUM_OF_TBS;
         this->tfd_size = sizeof(struct iwl_tfd);
     }
@@ -139,21 +139,23 @@ bool IWLTransport::init(IWLDevice *device)
              "PCI ID: 0x%04X:0x%04X", m_pDevice->deviceID, m_pDevice->subSystemDeviceID);
     IOLog("%s\n", m_pDevice->hw_id_str);
     if (this->msix_enabled) {
+        this->msix_enabled = false; //OSX does not support MSIX
+        //this->inta_mask = CSR_INI_SET_MASK;
         //TODO now not needed
         //        ret = iwl_pcie_init_msix_handler(pdev, trans_pcie);
         //        if (ret)
         //            goto out_no_pci;
-    } else {
-        int ret = allocICT();
-        if (ret)
-            return false;
+    }
+        //        ret = iwl_pcie_alloc_ict(trans);
+        //        if (ret)
+        //            goto out_no_pci;
         //        ret = devm_request_threaded_irq(&pdev->dev, pdev->irq,
         //        iwl_pcie_isr,
         //        iwl_pcie_irq_handler,
         //        IRQF_SHARED, DRV_NAME, trans);
         
         this->inta_mask = CSR_INI_SET_MASK;
-    }
+    
     IWL_ERR(0, "init succeed\n");
     return true;
 }
@@ -214,7 +216,11 @@ void IWLTransport::release()
 
 void IWLTransport::initMsix()
 {
+    this->msix_enabled = false;
+    
     configMsixHw();
+    
+    IWL_INFO(0, "initMsix (%s)", msix_enabled ? "true" : "false");
     if (!msix_enabled) {
         return;
     }
@@ -542,6 +548,7 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
     
     enableIntr();
     
+    
     if (m_pDevice->cfg->trans.use_tfh) {
         if (cpu == 1)
             this->iwlWritePRPH(UREG_UCODE_LOAD_STATUS, 0xFFFF);
@@ -553,6 +560,7 @@ int IWLTransport::loadCPUSections8000(const struct fw_img *image, int cpu, int *
         else
             this->iwlWriteDirect32(FH_UCODE_LOAD_STATUS, 0xFFFFFFFF);
     }
+    
     return 0;
 }
 
@@ -679,10 +687,13 @@ int IWLTransport::loadGivenUcode8000(const struct fw_img *image)
     
     /* load to FW the binary Secured sections of CPU1 */
     ret = loadCPUSections8000(image, 1, &first_ucode_section);
+    
+    IWL_INFO(0, "Load status = %d\n", ret);
     if (ret)
         return ret;
     
     /* load to FW the binary sections of CPU2 */
+    IWL_INFO(0, "Loading second CPU\n");
     return loadCPUSections8000(image, 2, &first_ucode_section);
 }
 
@@ -702,6 +713,8 @@ void IWLTransport::apmConfig()
      * and in newer hardware they are not officially supported at
      * all, so we must always set the L0S_DISABLED bit.
      */
+    
+    
     this->setBit(CSR_GIO_REG, CSR_GIO_REG_VAL_L0S_DISABLED);
     //TODO
     //    pcie_capability_read_word(trans_pcie->pci_dev, PCI_EXP_LNKCTL, &lctl);
@@ -892,4 +905,29 @@ void IWLTransport::txStart()
 //    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
 //        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
 //                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
+}
+
+void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)
+{
+    //struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
+    
+    //lockdep_assert_held(&trans_pcie->reg_lock);
+    //trans->cmd
+    /*
+    if (trans->cmd_in_flight) {
+        trans_pcie->ref_cmd_in_flight = false;
+        IWL_DEBUG_RPM(trans, "clear ref_cmd_in_flight - unref\n");
+        iwl_trans_unref(trans);
+    }
+     */
+    
+    if (!trans->m_pDevice->cfg->trans.base_params->apmg_wake_up_wa)
+        return;
+    
+    if (WARN_ON(!trans->m_pDevice->holdNICWake))
+        return;
+    
+    trans->m_pDevice->holdNICWake = false;
+    trans->clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
+    //__iwl_trans_pcie_clear_bit(trans, CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
 }

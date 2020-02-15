@@ -15,6 +15,9 @@
 #include "IWLCtxtInfo.hpp"
 #include "IWLInternal.hpp"
 
+struct sk_buff { int something; };
+
+
 class IWLTransport : public IWLIO
 {
     
@@ -149,11 +152,17 @@ public:
     
     int pcieSendHCmd(iwl_host_cmd *cmd);
     
+    int txInit();
+    
+    int txFree();
+    
     void txStop();
     
     void txStart();
     
     void txqCheckWrPtrs();//iwl_pcie_txq_check_wrptrs
+    
+    void syncNmi();
     
     //cmd
     int sendCmd(struct iwl_host_cmd *cmd);
@@ -168,6 +177,7 @@ public:
     mach_vm_address_t dma_mask;
     
     int tfd_size;
+    int addr_size;
     int max_tbs;
     
     //fw
@@ -202,6 +212,7 @@ public:
     int txcmd_align;
     
     //tx
+    struct iwl_txq *txq_memory;
     iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
     unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
     unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
@@ -233,6 +244,7 @@ public:
     u32 scd_base_addr;//scheduler sram base address in SRAM
     iwl_dma_ptr *scd_bc_tbls;//pointer to the byte count table of the scheduler
     iwl_dma_ptr *kw;//keep warm address
+    u8 no_reclaim_cmds[1];
     
 private:
     
@@ -253,5 +265,70 @@ private:
     
     
 };
+
+#include <sys/kpi_mbuf.h>
+
+void iwl_pcie_tfd_unmap(IWLTransport *trans, struct iwl_cmd_meta *meta, struct iwl_txq *txq, int index);
+const char *iwl_get_cmd_string(IWLTransport *trans, u32 id);
+void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans);
+
+static inline void *rxb_addr(struct iwl_rx_cmd_buffer *r)
+{
+    return (void *)((u8*)mbuf_data((mbuf_t)r->_page) + r->_offset);
+}
+
+static inline int rxb_offset(struct iwl_rx_cmd_buffer *r)
+{
+    return r->_offset;
+}
+
+static inline mbuf_t rxb_steal_page(struct iwl_rx_cmd_buffer *r)
+{
+    r->_page_stolen = true;
+    return (mbuf_t)r->_page;
+}
+
+static inline void iwl_free_rxb(struct iwl_rx_cmd_buffer *r)
+{
+    //__free_pages(r->_page, r->_rx_page_order);
+}
+
+static u8 iwl_pcie_tfd_get_num_tbs(IWLTransport *trans, void *_tfd)
+{
+    if (trans->m_pDevice->cfg->trans.use_tfh) {
+        struct iwl_tfh_tfd *tfd = (struct iwl_tfh_tfd *)_tfd;
+        
+        return le16_to_cpu(tfd->num_tbs) & 0x1f;
+    } else {
+        struct iwl_tfd *tfd = (struct iwl_tfd *)_tfd;
+        
+        return tfd->num_tbs & 0x1f;
+    }
+}
+
+static inline int iwl_queue_inc_wrap(int index)
+{
+    return ++index & (TFD_QUEUE_SIZE_MAX - 1);
+}
+
+/**
+ * iwl_queue_dec_wrap - decrement queue index, wrap back to end
+ * @index -- current index
+ */
+static inline int iwl_queue_dec_wrap(int index)
+{
+    return --index & (TFD_QUEUE_SIZE_MAX - 1);
+}
+
+
+static inline u8 iwl_pcie_get_cmd_index(struct iwl_txq *q, u32 index)
+{
+    return index & (q->n_window - 1);
+}
+
+static inline void *iwl_pcie_get_tfd(IWLTransport *trans_pcie, struct iwl_txq *txq, int idx)
+{
+    return (u8*)txq->tfds + trans_pcie->tfd_size * iwl_pcie_get_cmd_index(txq, idx);
+}
 
 #endif /* IWLTransport_hpp */

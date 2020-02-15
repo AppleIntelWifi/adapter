@@ -164,6 +164,16 @@ pointer_t __mptr = (pointer_t)(ptr);                    \
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 #define round_down(x, y) ((x) & ~__round_mask(x, y))
 
+#define jiffies                         \
+({                                      \
+    uint64_t m,f;                       \
+    clock_get_uptime(&m);               \
+    absolutetime_to_nanoseconds(m,&f);  \
+    ((f * HZ) / 1000000000);            \
+})
+
+#define time_after(a,b)    \
+((long)(b) - (long)(a) < 0)
 
 #define DMA_BIT_MASK(n)    (((n) == 64) ? ~0ULL : ((1ULL<<(n))-1))
 
@@ -216,6 +226,35 @@ static inline void* kzalloc(size_t size)
     }
     return ret;
 }
+
+static inline void* iwh_malloc(vm_size_t len) {
+    void *addr = IOMalloc(len + sizeof(vm_size_t));
+    if (addr == NULL)
+        return NULL;
+    
+    *((vm_size_t*)addr) = len;
+    return (void*)((uint8_t*)addr + sizeof(vm_size_t));
+}
+
+static inline void* iwh_zalloc(vm_size_t len) {
+    void* addr = iwh_malloc(len);
+    if (addr == NULL)
+        return NULL;
+    
+    bzero(addr, len);
+    return addr;
+}
+
+static inline void iwh_free(void* ptr) {
+    if (!ptr)
+        return;
+    
+    void* start_addr = (void*)((uint8_t*)ptr - sizeof(vm_size_t));
+    vm_size_t block_size = *((vm_size_t*)start_addr) + sizeof(vm_size_t);
+    IOFree(start_addr, block_size);
+}
+
+
 
 static inline int atomic_dec_and_test(volatile SInt32 * addr)
 {

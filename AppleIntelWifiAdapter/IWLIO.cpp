@@ -347,3 +347,16 @@ void IWLIO::iwlWriteShr(u32 reg, u32 val)
     iwlWrite32(HEEP_CTRL_WRD_PCIEX_DATA_REG, val);
     iwlWrite32(HEEP_CTRL_WRD_PCIEX_CTRL_REG, ((reg & 0x0000ffff) | (3 << 28)));
 }
+
+void IWLIO::iwlForceNmi()
+{
+    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_9000)
+        iwlWritePRPH(DEVICE_SET_NMI_REG,
+                   DEVICE_SET_NMI_VAL_DRV);
+    else if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_AX210)
+        iwlWriteUmacPRPH(UREG_NIC_SET_NMI_DRIVER,
+                UREG_NIC_SET_NMI_DRIVER_NMI_FROM_DRIVER_MSK);
+    else
+        iwlWriteUmacPRPH(UREG_DOORBELL_TO_ISR6,
+                    UREG_DOORBELL_TO_ISR6_NMI_BIT);
+}

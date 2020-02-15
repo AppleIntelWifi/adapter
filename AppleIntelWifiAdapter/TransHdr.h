@@ -134,7 +134,11 @@ enum CMD_MODE {
     CMD_ASYNC        = BIT(0),
     CMD_WANT_SKB        = BIT(1),
     CMD_SEND_IN_RFKILL    = BIT(2),
-    CMD_WANT_ASYNC_CALLBACK    = BIT(3),
+    CMD_HIGH_PRIO        = BIT(3),
+    CMD_SEND_IN_IDLE    = BIT(4),
+    CMD_MAKE_TRANS_IDLE    = BIT(5),
+    CMD_WAKE_UP_TRANS    = BIT(6),
+    CMD_WANT_ASYNC_CALLBACK    = BIT(7),
 };
 
 #define DEF_CMD_PAYLOAD_SIZE 320
@@ -383,7 +387,7 @@ struct iwl_rxq {
     TAILQ_HEAD(, iwl_rx_mem_buffer) rx_free;
     TAILQ_HEAD(, iwl_rx_mem_buffer) rx_used;
     bool need_update;
-    void *rb_stts;
+    iwl_rb_status *rb_stts;
     dma_addr_t rb_stts_dma;
     iwl_dma_ptr *rb_stts_dma_ptr;
     IOSimpleLock* lock;
@@ -395,6 +399,8 @@ struct iwl_cmd_meta {
     struct iwl_host_cmd *source;
     u32 flags;
     u32 tbs;
+    
+    struct iwl_dma_ptr *dma[IWL_MAX_CMD_TBS_PER_TFD + 1];
 };
 
 /*
@@ -465,8 +471,10 @@ struct iwl_pcie_first_tb_buf {
  */
 struct iwl_txq {
     void *tfds;
+    struct iwl_dma_ptr* tfds_dma;
     struct iwl_pcie_first_tb_buf *first_tb_bufs;
     dma_addr_t first_tb_dma;
+    struct iwl_dma_ptr* first_tb_dma_ptr;
     struct iwl_pcie_txq_entry *entries;
     IOSimpleLock *lock;
     unsigned long frozen_expiry_remainder;
@@ -559,5 +567,11 @@ struct iwl_rb_allocator {
 #define RX_CLAIM_REQ_ALLOC 8
 #define RX_PENDING_WATERMARK 16
 #define FIRST_RX_QUEUE 512
+
+static inline dma_addr_t
+iwl_pcie_get_first_tb_dma(struct iwl_txq *txq, int idx)
+{
+    return txq->first_tb_dma + sizeof(struct iwl_pcie_first_tb_buf) * idx;
+}
 
 #endif /* TransHdr_h */

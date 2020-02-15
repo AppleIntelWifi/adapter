@@ -19,6 +19,9 @@
 
 #define IWL_POLL_INTERVAL 10
 
+/* Max time to wait for nmi interrupt */
+#define IWL_TRANS_NMI_TIMEOUT (HZ / 4 * CPTCFG_IWL_TIMEOUT_FACTOR)
+
 class IWLIO {
     
     
@@ -105,6 +108,8 @@ public:
     u32 iwlReadShr(u32 reg);
     
     void iwlWriteShr(u32 reg, u32 val);
+    
+    void iwlForceNmi();
     
 protected:
     

@@ -69,9 +69,11 @@
 
 #define    ALIGNED_POINTER(p,t)    1
 
+/*
 extern int _stop(struct kmod_info*, void*);
 
 extern int _start(struct kmod_info*, void*);
+ */
 
 extern int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
 
@@ -131,7 +133,7 @@ ppsratecheck(struct timeval *lasttime, int *curpps, int maxpps)
      */
     *curpps = *curpps + 1;
 #endif
-
+    
     return (rv);
 }
 

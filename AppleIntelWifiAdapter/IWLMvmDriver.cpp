@@ -18,18 +18,21 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
     this->fwLoadLock = IOLockAlloc();
     this->m_pDevice = new IWLDevice();
+    this->m_pDevice->controller = controller;
     if (!this->m_pDevice->init(pciDevice)) {
         return false;
     }
-    this->m_pDevice->firmwareLoadToBuf = false;
-    trans = new IWLTransport();
-    if (!trans->init(m_pDevice)) {
+    this->trans = new IWLTransport();
+    if (!this->trans->init(m_pDevice)) {
+        IWL_INFO(0, "failed to init trans\n");
         return false;
     }
     if (m_pDevice->cfg->trans.gen2) {
-        this->trans_ops = new IWLMvmTransOpsGen2(trans);
+        IWL_INFO(0, "gen2 device\n");
+        this->trans_ops = new IWLMvmTransOpsGen2(this->trans);
     } else {
-        this->trans_ops = new IWLMvmTransOpsGen1(trans);
+        IWL_INFO(0, "gen1 device\n");
+        this->trans_ops = new IWLMvmTransOpsGen1(this->trans);
     }
     return true;
 }
@@ -263,7 +266,6 @@ bool IWLMvmDriver::start()
     snprintf(firmware_name, sizeof(firmware_name), "%s%s.ucode", m_pDevice->cfg->fw_name_pre, tag);
     IWL_INFO(0, "attempting to load firmware '%s'\n", firmware_name);
     IOLockLock(fwLoadLock);
-    m_pDevice->firmwareLoadToBuf = false;
     IOReturn ret = OSKextRequestResource(OSKextGetCurrentIdentifier(), firmware_name, reqFWCallback, this, NULL);
     if (ret != kIOReturnSuccess) {
         IWL_ERR(0, "Error loading firmware %s\n", firmware_name);
@@ -271,7 +273,7 @@ bool IWLMvmDriver::start()
     }
     IOLockSleep(fwLoadLock, this, 0);
     IOLockUnlock(fwLoadLock);
-    return m_pDevice->firmwareLoadToBuf ? this->drvStart() : false;
+    return true;
 }
 
 #define IWL_DEFAULT_SCAN_CHANNELS 40
@@ -361,9 +363,7 @@ void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result, c
 bool IWLMvmDriver::drvStart()
 {
     int err;
-    static const u8 no_reclaim_cmds[] = {
-        TX_CMD,
-    };
+
     enum iwl_amsdu_size rb_size_default;
     //TODO
     //    /********************************
@@ -419,6 +419,17 @@ bool IWLMvmDriver::drvStart()
     if (err && err != -ERFKILL) {
         IWL_ERR(0, "init mvm ucode fail\n");
     }
+//    struct iwl_led_cmd led_cmd = {
+//        .status = cpu_to_le32(true),
+//    };
+//    struct iwl_host_cmd cmd = {
+//        .id = WIDE_ID(LONG_GROUP, LEDS_CMD),
+//        .len = { sizeof(led_cmd), },
+//        .data = { &led_cmd, },
+//        .flags = CMD_ASYNC,
+//    };
+//    sendCmd(&cmd);
+    
     if (!err) {
         stopDevice();
     } else if (err < 0) {
@@ -439,16 +450,17 @@ void IWLMvmDriver::stopDevice()
 int IWLMvmDriver::irqHandler(int irq, void *dev_id)
 {
     isr_statistics *isr_stats = &trans->isr_stats;
-    u32 inta;
-    u32 handled = 0;
-    /* dram interrupt table not set yet,
-     * use legacy interrupt.
-     */
-    if (likely(trans_ops->trans->use_ict))
-        inta = trans_ops->trans->intrCauseICT();
-    else
-        inta = trans_ops->trans->intrCauseNonICT();
-    inta = trans->iwlRead32(CSR_INT);
+//        u32 inta;
+   u32 handled = 0;
+//        /* dram interrupt table not set yet,
+//         * use legacy interrupt.
+//         */
+//        if (likely(trans_ops->trans->use_ict))
+//            inta = trans_ops->trans->intrCauseICT();
+//        else
+//            inta = trans_ops->trans->intrCauseNonICT();
+//
+    u32 inta = trans->iwlRead32(CSR_INT);
     inta &= trans_ops->trans->inta_mask;
     /*
      * Ignore interrupt if there's nothing in NIC to service.
@@ -466,174 +478,180 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
         return -1;
     }
     
-    if (unlikely(inta == 0xFFFFFFFF || (inta & 0xFFFFFFF0) == 0xa5a5a5a0)) {
-        /*
-         * Hardware disappeared. It might have
-         * already raised an interrupt.
-         */
-        IWL_WARN(trans, "HARDWARE GONE?? INTA == 0x%08x\n", inta);
-        goto out;
-    }
-    /* Ack/clear/reset pending uCode interrupts.
-     * Note:  Some bits in CSR_INT are "OR" of bits in CSR_FH_INT_STATUS,
-     */
-    /* There is a hardware bug in the interrupt mask function that some
-     * interrupts (i.e. CSR_INT_BIT_SCD) can still be generated even if
-     * they are disabled in the CSR_INT_MASK register. Furthermore the
-     * ICT interrupt handling mechanism has another bug that might cause
-     * these unmasked interrupts fail to be detected. We workaround the
-     * hardware bugs here by ACKing all the possible interrupts so that
-     * interrupt coalescing can still be achieved.
-     */
-    trans->iwlWrite32(CSR_INT, inta | ~trans->inta_mask);
-    /* Now service all interrupt bits discovered above. */
-    if (inta & CSR_INT_BIT_HW_ERR) {
-        IWL_ERR(trans, "Hardware error detected.  Restarting.\n");
-        /* Tell the device to stop sending interrupts */
-        trans->disableIntr();
-        isr_stats->hw++;
-        trans->irqHandleError();
-        handled |= CSR_INT_BIT_HW_ERR;
-        goto out;
-    }
-    /* NIC fires this, but we don't use it, redundant with WAKEUP */
-    if (inta & CSR_INT_BIT_SCD) {
-        IWL_INFO(trans,
-                 "Scheduler finished to transmit the frame/frames.\n");
-        isr_stats->sch++;
-    }
-    /* Alive notification via Rx interrupt will do the real work */
-    if (inta & CSR_INT_BIT_ALIVE) {
-        IWL_INFO(trans, "Alive interrupt\n");
-        isr_stats->alive++;
-        if (trans->m_pDevice->cfg->trans.gen2) {
-            /*
-             * We can restock, since firmware configured
-             * the RFH
-             */
-            trans->rxMqRestock(trans->rxq);
-        }
-        handled |= CSR_INT_BIT_ALIVE;
-    }
-    /* Safely ignore these bits for debug checks below */
-    inta &= ~(CSR_INT_BIT_SCD | CSR_INT_BIT_ALIVE);
-    /* HW RF KILL switch toggled */
-    if (inta & CSR_INT_BIT_RF_KILL) {
-        trans_ops->irqRfKillHandle();
-        handled |= CSR_INT_BIT_RF_KILL;
-    }
-    
-    /* Chip got too hot and stopped itself */
-    if (inta & CSR_INT_BIT_CT_KILL) {
-        IWL_ERR(trans, "Microcode CT kill error detected.\n");
-        isr_stats->ctkill++;
-        handled |= CSR_INT_BIT_CT_KILL;
-    }
-    
-    /* Error detected by uCode */
-    if (inta & CSR_INT_BIT_SW_ERR) {
-        IWL_ERR(trans, "Microcode SW error detected. "
-                " Restarting 0x%X.\n", inta);
-        isr_stats->sw++;
-        trans->irqHandleError();
-        handled |= CSR_INT_BIT_SW_ERR;
-    }
-    
-    /* uCode wakes up after power-down sleep */
-    if (inta & CSR_INT_BIT_WAKEUP) {
-        IWL_INFO(trans, "Wakeup interrupt\n");
-        trans->rxqCheckWrPtr();
-        trans->txqCheckWrPtrs();
-        
-        isr_stats->wakeup++;
-        
-        handled |= CSR_INT_BIT_WAKEUP;
-    }
-    
-    /* All uCode command responses, including Tx command responses,
-     * Rx "responses" (frame-received notification), and other
-     * notifications from uCode come through here*/
-    if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX |
-                CSR_INT_BIT_RX_PERIODIC)) {
-        IWL_INFO(trans, "Rx interrupt\n");
-        if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX)) {
-            handled |= (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX);
-            trans->iwlWrite32(CSR_FH_INT_STATUS,
-                              CSR_FH_INT_RX_MASK);
-        }
-        if (inta & CSR_INT_BIT_RX_PERIODIC) {
-            handled |= CSR_INT_BIT_RX_PERIODIC;
-            trans->iwlWrite32(
-                              CSR_INT, CSR_INT_BIT_RX_PERIODIC);
-        }
-        /* Sending RX interrupt require many steps to be done in the
-         * the device:
-         * 1- write interrupt to current index in ICT table.
-         * 2- dma RX frame.
-         * 3- update RX shared data to indicate last write index.
-         * 4- send interrupt.
-         * This could lead to RX race, driver could receive RX interrupt
-         * but the shared data changes does not reflect this;
-         * periodic interrupt will detect any dangling Rx activity.
-         */
-        
-        /* Disable periodic interrupt; we use it as just a one-shot. */
-        trans->iwlWrite8(CSR_INT_PERIODIC_REG,
-                         CSR_INT_PERIODIC_DIS);
-        
-        /*
-         * Enable periodic interrupt in 8 msec only if we received
-         * real RX interrupt (instead of just periodic int), to catch
-         * any dangling Rx interrupt.  If it was just the periodic
-         * interrupt, there was no dangling Rx activity, and no need
-         * to extend the periodic interrupt; one-shot is enough.
-         */
-        if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX))
-            trans->iwlWrite8(CSR_INT_PERIODIC_REG,
-                             CSR_INT_PERIODIC_ENA);
-        
-        isr_stats->rx++;
-        
-        local_bh_disable();
-        trans->handleRx(0);
-        local_bh_enable();
-    }
-    
-    /* This "Tx" DMA channel is used only for loading uCode */
-    if (inta & CSR_INT_BIT_FH_TX) {
-        trans->iwlWrite32(CSR_FH_INT_STATUS, CSR_FH_INT_TX_MASK);
-        IWL_INFO(trans, "uCode load interrupt\n");
-        isr_stats->tx++;
-        handled |= CSR_INT_BIT_FH_TX;
-        /* Wake up uCode load routine, now that load is complete */
-        trans->ucode_write_complete = true;
-        IOLockWakeup(trans->ucode_write_waitq, &trans->ucode_write_complete, true);
-    }
-    
-    if (inta & ~handled) {
-        IWL_ERR(trans, "Unhandled INTA bits 0x%08x\n", inta & ~handled);
-        isr_stats->unhandled++;
-    }
-    
-    if (inta & ~(trans->inta_mask)) {
-        IWL_WARN(trans, "Disabled INTA bits 0x%08x were pending\n",
-                 inta & ~trans->inta_mask);
-    }
-    
-    /* only Re-enable all interrupt if disabled by irq */
-    if (test_bit(STATUS_INT_ENABLED, &trans->status))
-        trans->enableIntrDirectly();
-    /* we are loading the firmware, enable FH_TX interrupt only */
-    else if (handled & CSR_INT_BIT_FH_TX)
-        trans->enableFWLoadIntr();
-    /* Re-enable RF_KILL if it occurred */
-    else if (handled & CSR_INT_BIT_RF_KILL)
-        trans->enableRFKillIntr();
-    /* Re-enable the ALIVE / Rx interrupt if it occurred */
-    else if (handled & (CSR_INT_BIT_ALIVE | CSR_INT_BIT_FH_RX))
-        trans->iwl_enable_fw_load_int_ctx_info();
-out:
-    
+         if (unlikely(inta == 0xFFFFFFFF || (inta & 0xFFFFFFF0) == 0xa5a5a5a0)) {
+             /*
+              * Hardware disappeared. It might have
+              * already raised an interrupt.
+              */
+             IWL_WARN(trans, "HARDWARE GONE?? INTA == 0x%08x\n", inta);
+             goto out;
+         }
+         /* Ack/clear/reset pending uCode interrupts.
+          * Note:  Some bits in CSR_INT are "OR" of bits in CSR_FH_INT_STATUS,
+          */
+         /* There is a hardware bug in the interrupt mask function that some
+          * interrupts (i.e. CSR_INT_BIT_SCD) can still be generated even if
+          * they are disabled in the CSR_INT_MASK register. Furthermore the
+          * ICT interrupt handling mechanism has another bug that might cause
+          * these unmasked interrupts fail to be detected. We workaround the
+          * hardware bugs here by ACKing all the possible interrupts so that
+          * interrupt coalescing can still be achieved.
+          */
+         trans->iwlWrite32(CSR_INT, inta | ~trans->inta_mask);
+         /* Now service all interrupt bits discovered above. */
+         if (inta & CSR_INT_BIT_HW_ERR) {
+             IWL_ERR(trans, "Hardware error detected.  Restarting.\n");
+             /* Tell the device to stop sending interrupts */
+             trans->disableIntr();
+             isr_stats->hw++;
+             trans->irqHandleError();
+             handled |= CSR_INT_BIT_HW_ERR;
+             goto out;
+         }
+         /* NIC fires this, but we don't use it, redundant with WAKEUP */
+         if (inta & CSR_INT_BIT_SCD) {
+             IWL_INFO(trans,
+                      "Scheduler finished to transmit the frame/frames.\n");
+             isr_stats->sch++;
+         }
+         /* Alive notification via Rx interrupt will do the real work */
+         if (inta & CSR_INT_BIT_ALIVE) {
+             IWL_INFO(trans, "Alive interrupt\n");
+             isr_stats->alive++;
+             if (trans->m_pDevice->cfg->trans.gen2) {
+                 /*
+                  * We can restock, since firmware configured
+                  * the RFH
+                  */
+                 trans->rxMqRestock(trans->rxq);
+             }
+             //IOLockWakeup(trans->ucode_write_waitq, &this->alive_wait, true);
+             handled |= CSR_INT_BIT_ALIVE;
+         }
+         /* Safely ignore these bits for debug checks below */
+         inta &= ~(CSR_INT_BIT_SCD | CSR_INT_BIT_ALIVE);
+         /* HW RF KILL switch toggled */
+         if (inta & CSR_INT_BIT_RF_KILL) {
+             
+             trans_ops->irqRfKillHandle();
+             handled |= CSR_INT_BIT_RF_KILL;
+         }
+     
+         /* Chip got too hot and stopped itself */
+         if (inta & CSR_INT_BIT_CT_KILL) {
+             IWL_ERR(trans, "Microcode CT kill error detected.\n");
+             isr_stats->ctkill++;
+             handled |= CSR_INT_BIT_CT_KILL;
+         }
+     
+         /* Error detected by uCode */
+         if (inta & CSR_INT_BIT_SW_ERR) {
+             IWL_ERR(trans, "Microcode SW error detected. "
+                     " Restarting 0x%X.\n", inta);
+             isr_stats->sw++;
+             trans->irqHandleError();
+             handled |= CSR_INT_BIT_SW_ERR;
+         }
+     
+         /* uCode wakes up after power-down sleep */
+         if (inta & CSR_INT_BIT_WAKEUP) {
+             IWL_INFO(trans, "Wakeup interrupt\n");
+             trans->rxqCheckWrPtr();
+             trans->txqCheckWrPtrs();
+             
+             isr_stats->wakeup++;
+     
+             handled |= CSR_INT_BIT_WAKEUP;
+         }
+     
+         /* All uCode command responses, including Tx command responses,
+          * Rx "responses" (frame-received notification), and other
+          * notifications from uCode come through here*/
+         if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX |
+                     CSR_INT_BIT_RX_PERIODIC)) {
+             IWL_INFO(trans, "Rx interrupt\n");
+             if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX)) {
+                 handled |= (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX);
+                 trans->iwlWrite32(CSR_FH_INT_STATUS,
+                                   CSR_FH_INT_RX_MASK);
+             }
+             if (inta & CSR_INT_BIT_RX_PERIODIC) {
+                 handled |= CSR_INT_BIT_RX_PERIODIC;
+                 trans->iwlWrite32(
+                                   CSR_INT, CSR_INT_BIT_RX_PERIODIC);
+             }
+             /* Sending RX interrupt require many steps to be done in the
+              * the device:
+              * 1- write interrupt to current index in ICT table.
+              * 2- dma RX frame.
+              * 3- update RX shared data to indicate last write index.
+              * 4- send interrupt.
+              * This could lead to RX race, driver could receive RX interrupt
+              * but the shared data changes does not reflect this;
+              * periodic interrupt will detect any dangling Rx activity.
+              */
+     
+             /* Disable periodic interrupt; we use it as just a one-shot. */
+             trans->iwlWrite8(CSR_INT_PERIODIC_REG,
+                              CSR_INT_PERIODIC_DIS);
+     
+             /*
+              * Enable periodic interrupt in 8 msec only if we received
+              * real RX interrupt (instead of just periodic int), to catch
+              * any dangling Rx interrupt.  If it was just the periodic
+              * interrupt, there was no dangling Rx activity, and no need
+              * to extend the periodic interrupt; one-shot is enough.
+              */
+             if (inta & (CSR_INT_BIT_FH_RX | CSR_INT_BIT_SW_RX))
+                 trans->iwlWrite8(CSR_INT_PERIODIC_REG,
+                                  CSR_INT_PERIODIC_ENA);
+     
+             isr_stats->rx++;
+     
+             local_bh_disable();
+             trans->handleRx(0);
+             local_bh_enable();
+         }
+     
+         /* This "Tx" DMA channel is used only for loading uCode */
+         if (inta & CSR_INT_BIT_FH_TX) {
+             trans->iwlWrite32(CSR_FH_INT_STATUS, CSR_FH_INT_TX_MASK);
+             IWL_INFO(trans, "uCode load interrupt\n");
+             isr_stats->tx++;
+             handled |= CSR_INT_BIT_FH_TX;
+             /* Wake up uCode load routine, now that load is complete */
+             IOLockLock(trans->ucode_write_waitq);
+             trans->ucode_write_complete = true;
+             IOLockWakeup(trans->ucode_write_waitq, &trans->ucode_write_complete, true);
+             IOLockUnlock(trans->ucode_write_waitq);
+             //iwl_notification_notify(&m_pDevice->notif_wait);
+             //wake_up(&trans_pcie->ucode_write_waitq);
+         }
+     
+         if (inta & ~handled) {
+             IWL_ERR(trans, "Unhandled INTA bits 0x%08x\n", inta & ~handled);
+             isr_stats->unhandled++;
+         }
+     
+         if (inta & ~(trans->inta_mask)) {
+             IWL_WARN(trans, "Disabled INTA bits 0x%08x were pending\n",
+                      inta & ~trans->inta_mask);
+         }
+     
+         /* only Re-enable all interrupt if disabled by irq */
+         if (test_bit(STATUS_INT_ENABLED, &trans->status))
+             trans->enableIntrDirectly();
+         /* we are loading the firmware, enable FH_TX interrupt only */
+         else if (handled & CSR_INT_BIT_FH_TX)
+             trans->enableFWLoadIntr();
+         /* Re-enable RF_KILL if it occurred */
+         else if (handled & CSR_INT_BIT_RF_KILL)
+             trans->enableRFKillIntr();
+         /* Re-enable the ALIVE / Rx interrupt if it occurred */
+         else if (handled & (CSR_INT_BIT_ALIVE | CSR_INT_BIT_FH_RX))
+             trans->iwl_enable_fw_load_int_ctx_info();
+     out:
+     
     return 0;
 }
 
