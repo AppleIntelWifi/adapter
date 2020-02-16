@@ -74,6 +74,8 @@ public:
     
     //bt coex
     int sendBTInitConf(); //iwl_mvm_send_bt_init_conf
+    void btCoexNotif(struct iwl_mvm *mvm,
+    struct iwl_rx_cmd_buffer *rxb);
     
     //utils
     int sendCmd(struct iwl_host_cmd *cmd);

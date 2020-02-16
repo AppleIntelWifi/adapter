@@ -1223,6 +1223,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         
         if (rxq->id == 0)
             iwl_notification_wait_notify(&trans->m_pDevice->notif_wait, pkt);
+            
             //opmode->rx(NULL, NULL, &rxcb);
         
         // TODO: Implement
