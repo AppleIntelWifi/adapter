@@ -94,7 +94,7 @@ static const struct iwl_rx_handlers iwl_mvm_rx_handlers[] = {
     //RX_HANDLER(MISSED_BEACONS_NOTIFICATION, iwl_mvm_rx_missed_beacons_notif,
     //           RX_HANDLER_SYNC),
     
-    RX_HANDLER(REPLY_ERROR, iwl_mvm_rx_fw_error, RX_HANDLER_SYNC),
+    RX_HANDLER(REPLY_ERROR, IWLMvmDriver::rxFwErrorNotif, RX_HANDLER_SYNC),
     //RX_HANDLER(PSM_UAPSD_AP_MISBEHAVING_NOTIFICATION,
     //           iwl_mvm_power_uapsd_misbehaving_ap_notif, RX_HANDLER_SYNC),
     //RX_HANDLER(DTS_MEASUREMENT_NOTIFICATION, iwl_mvm_temp_notif,
@@ -106,7 +106,7 @@ static const struct iwl_rx_handlers iwl_mvm_rx_handlers[] = {
     
     //RX_HANDLER(TDLS_CHANNEL_SWITCH_NOTIFICATION, iwl_mvm_rx_tdls_notif,
     //           RX_HANDLER_ASYNC_LOCKED),
-    RX_HANDLER(MFUART_LOAD_NOTIFICATION, iwl_mvm_rx_mfuart_notif,
+    RX_HANDLER(MFUART_LOAD_NOTIFICATION, IWLMvmDriver::rxMfuartNotif,
                RX_HANDLER_SYNC),
     //RX_HANDLER(TOF_NOTIFICATION, iwl_mvm_tof_resp_handler,
     //           RX_HANDLER_ASYNC_LOCKED),

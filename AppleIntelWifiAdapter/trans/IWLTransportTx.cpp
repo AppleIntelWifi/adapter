@@ -1164,6 +1164,66 @@ int IWLTransport::pcieSendHCmd(iwl_host_cmd *cmd)
     return iwl_pcie_send_hcmd_sync(this, cmd);
 }
 
+static inline unsigned int SCD_QUEUE_STATUS_BITS(unsigned int chnl)
+{
+    if (chnl < 20)
+        return SCD_BASE + 0x10c + chnl * 4;
+    WARN_ON_ONCE(chnl >= 32);
+    return SCD_BASE + 0x334 + chnl * 4;
+}
+
+static bool
+iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
+             const struct iwl_trans_txq_scd_cfg *cfg,
+             unsigned int queue_wdg_timeout)
+{
+    might_sleep();
+
+    if (WARN_ON_ONCE(trans->state != IWL_TRANS_FW_ALIVE)) {
+        IWL_ERR(trans, "%s bad state = %d\n", __func__, trans->state);
+        return false;
+    }
+
+    struct iwl_txq* txq = trans->txq[queue];
+    int txq_id = queue;
+    int fifo = -1;
+    bool scd_bug = false;
+    if(test_and_set_bit(txq_id, trans->queue_used))
+        IWL_WARN(0, "queue %d used already, expect issues", txq_id);
+    
+    txq->wd_timeout = queue_wdg_timeout;
+    if(cfg) {
+        fifo = cfg->fifo;
+        
+        if(txq_id == trans->cmd_queue &&
+           trans->scd_set_active)
+            trans->iwlWritePRPH(SCD_EN_CTRL, 0);
+        
+        trans->iwlWritePRPH(SCD_QUEUE_STATUS_BITS(txq_id),
+                            (0 << SCD_QUEUE_STTS_REG_POS_ACTIVE) |
+                            (1 << SCD_QUEUE_STTS_REG_POS_SCD_ACT_EN));
+    }
+    
+    return 0;
+}
+
+static inline
+void iwl_trans_ac_txq_enable(IWLTransport *trans, int queue, int fifo,
+                 unsigned int queue_wdg_timeout)
+{
+    struct iwl_trans_txq_scd_cfg cfg = {
+        .fifo = fifo,
+        .sta_id = -1,
+        .tid = IWL_MAX_TID_COUNT,
+        .frame_limit = IWL_FRAME_LIMIT,
+        .aggregate = false,
+    };
+
+    iwl_trans_txq_enable_cfg(trans, queue, 0, &cfg, queue_wdg_timeout);
+}
+
+
+
 void IWLTransport::txqCheckWrPtrs()
 {
     

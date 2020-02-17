@@ -12,7 +12,7 @@
 #include "IWLMvmTransOpsGen2.hpp"
 #include "MvmCmd.hpp"
 #include "txq.h"
-#include "fw/NotificationWait.hpp"
+#include "../fw/NotificationWait.hpp"
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {

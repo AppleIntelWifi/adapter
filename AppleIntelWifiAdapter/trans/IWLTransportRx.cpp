@@ -1272,7 +1272,7 @@ restart:
     
     /* Rx interrupt, but nothing sent from uCode */
     if (i == r)
-        IWL_INFO(trans, "Q %d: HW = SW = %d\n", _rxq->id, r);
+        IWL_INFO(trans, "Q %d: HW = SW = %d (nothing was sent??) \n", _rxq->id, r);
     
     while(i != r) {
         struct iwl_rx_mem_buffer *rxb;
@@ -1281,7 +1281,7 @@ restart:
             emergency = true;
         
         if(m_pDevice->cfg->trans.mq_rx_supported) {
-            //to-do: implement
+            //TODO: implement
             IWL_INFO(0, "mq supported, need to fix\n");
             break;
         } else {

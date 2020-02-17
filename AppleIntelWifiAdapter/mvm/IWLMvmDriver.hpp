@@ -13,13 +13,15 @@
 #include <IOKit/IOLib.h>
 
 #include "IWLTransOps.h"
-#include "fw/IWLUcodeParse.hpp"
+#include "../fw/IWLUcodeParse.hpp"
 #include "IWLNvmParser.hpp"
 #include "IWLPhyDb.hpp"
 
 class IWLMvmDriver {
     
 public:
+    
+    /* MARK: IOKit-related initialization code */
     
     bool init(IOPCIDevice *pciDevice);
     
@@ -29,12 +31,15 @@ public:
     
     bool start();
     
+    /* MARK: Firmware loading */
     static void reqFWCallback(
                               OSKextRequestTag requestTag,
                               OSReturn result,
                               const void* resourceData,
                               uint32_t resourceDataLength,
                               void* context);
+    
+    /* MARK: Callbacks from the IOKit driver */
     
     bool drvStart();
     
@@ -74,8 +79,6 @@ public:
     
     //bt coex
     int sendBTInitConf(); //iwl_mvm_send_bt_init_conf
-    void btCoexNotif(struct iwl_mvm *mvm,
-    struct iwl_rx_cmd_buffer *rxb);
     
     //utils
     int sendCmd(struct iwl_host_cmd *cmd);
@@ -91,6 +94,11 @@ public:
     IWLTransport *trans;
     
     IWLTransOps *trans_ops;
+    
+/* MARK: Rx handlers */
+    static void btCoexNotif(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb);
+    static void rxFwErrorNotif(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb);
+    static void rxMfuartNotif(struct iwl_mvm* mvm, struct iwl_rx_cmd_buffer *rxb);
     
 private:
     

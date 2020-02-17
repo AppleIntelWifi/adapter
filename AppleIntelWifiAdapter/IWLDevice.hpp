@@ -179,44 +179,49 @@ public:
     
     IOPCIDevice *pciDevice;
     
-    //80211
+    // MARK: 80211 support
     ieee80211_state ie_state;
     ieee80211_amrr ie_amrr;
     ieee80211com ie_ic;
     IOEthernetInterface* interface;
     IOEthernetController* controller;
     
-    //firmware
+    // MARK: BT Coex
+    int btForceAntMode;
+    iwl_bt_coex_profile_notif lastBtNotif;
+    iwl_bt_coex_ci_cmd lastBtCiCmd;
+    
+    // MARK: firmware
     bool firmwareLoadToBuf;
     iwl_fw fw;
     iwl_firmware_pieces pieces;
     bool usniffer_images;
-    /* NVM sections */
+    
+    // MARK: NVM Sections
     iwl_nvm_section nvm_sections[NVM_MAX_NUM_SECTIONS];
     iwl_fw_paging fw_paging_db[NUM_OF_FW_PAGING_BLOCKS];
     u16 num_of_paging_blk;
     u16 num_of_pages_in_last_blk;
     enum iwl_ucode_type cur_fw_img;
+    iwl_nvm_data *nvm_data;
     
-    //device config
+    // MARK: device config
     const struct iwl_cfg *cfg;
     const char *name;
     
-    //mvm
+    // MARK: mvm
     unsigned long status;
     bool rfkill_safe_init_done;
     iwl_notif_wait_data notif_wait;
     IOLock *rx_sync_waitq;
-    
-    //nvm
-    iwl_nvm_data *nvm_data;
-    
+
+    // MARK: queue info
     union {
         struct iwl_mvm_dqa_txq_info queue_info[IWL_MAX_HW_QUEUES];
         struct iwl_mvm_tvqm_txq_info tvqm_info[IWL_MAX_TVQM_QUEUES];
     };
     
-    /* shared module parameters */
+    /* MARK: shared module parameters */
     struct iwl_mod_params iwlwifi_mod_params = {
         .fw_restart = true,
         .bt_coex_active = true,
@@ -241,6 +246,7 @@ public:
         .remove_when_gone = false,
     };
     
+    // MARK: pci device info
     uint32_t hw_rf_id;
     uint32_t hw_rev;
     UInt16 deviceID;

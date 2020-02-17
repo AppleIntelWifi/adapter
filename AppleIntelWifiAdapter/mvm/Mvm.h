@@ -175,6 +175,15 @@ enum iwl_mvm_queue_status {
     IWL_MVM_QUEUE_SHARED,
 };
 
+enum iwl_bt_force_ant_mode {
+    BT_FORCE_ANT_DIS = 0,
+    BT_FORCE_ANT_AUTO,
+    BT_FORCE_ANT_BT,
+    BT_FORCE_ANT_WIFI,
+
+    BT_FORCE_ANT_MAX,
+};
+
 #define IWL_MVM_DQA_QUEUE_TIMEOUT    (5 * HZ)
 #define IWL_MVM_INVALID_QUEUE        0xFFFF
 

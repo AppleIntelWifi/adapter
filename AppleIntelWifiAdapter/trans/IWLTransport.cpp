@@ -853,58 +853,59 @@ int IWLTransport::sendCmd(iwl_host_cmd *cmd)
 
 void IWLTransport::txStart()
 {
-//    int nq = m_pDevice->cfg->trans.base_params->num_of_queues;
-//    int chan;
-//    u32 reg_val;
-//    int clear_dwords = (SCD_TRANS_TBL_OFFSET_QUEUE(nq) -
-//                        SCD_CONTEXT_MEM_LOWER_BOUND) / sizeof(u32);
-//    
-//    /* make sure all queue are not stopped/used */
-//    memset(this->queue_stopped, 0, sizeof(this->queue_stopped));
-//    memset(this->queue_used, 0, sizeof(this->queue_used));
-//    
-//    this->scd_base_addr =
-//    iwlReadPRPH(SCD_SRAM_BASE_ADDR);
-//    
-//    WARN_ON(scd_base_addr != 0 &&
-//            scd_base_addr != this->scd_base_addr);
-//    
-//    /* reset context data, TX status and translation data */
-//    iwlWriteMem(this->scd_base_addr +
-//                SCD_CONTEXT_MEM_LOWER_BOUND,
-//                NULL, clear_dwords);
-//    
-//    iwlWritePRPH(SCD_DRAM_BASE_ADDR,
-//                 this->scd_bc_tbls->dma >> 10);
-//    
-//    /* The chain extension of the SCD doesn't work well. This feature is
-//     * enabled by default by the HW, so we need to disable it manually.
-//     */
-//    if (m_pDevice->cfg->trans.base_params->scd_chain_ext_wa)
-//        iwlWritePRPH(SCD_CHAINEXT_EN, 0);
-//    
-//    iwl_trans_ac_txq_enable(trans, trans_pcie->cmd_queue,
-//                            this->cmd_fifo,
-//                            this->cmd_q_wdg_timeout);
-//    
-//    /* Activate all Tx DMA/FIFO channels */
-//    iwl_scd_activate_fifos(trans);
-//    
-//    /* Enable DMA channel */
-//    for (chan = 0; chan < FH_TCSR_CHNL_NUM; chan++)
-//        iwlWriteDirect32(FH_TCSR_CHNL_TX_CONFIG_REG(chan),
-//                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
-//                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE);
-//    
-//    /* Update FH chicken bits */
-//    reg_val = iwlReadDirect32(FH_TX_CHICKEN_BITS_REG);
-//    iwlWriteDirect32(FH_TX_CHICKEN_BITS_REG,
-//                     reg_val | FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN);
-//    
-//    /* Enable L1-Active */
-//    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
-//        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
-//                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
+    int nq = m_pDevice->cfg->trans.base_params->num_of_queues;
+    int chan;
+    u32 reg_val;
+    int clear_dwords = (SCD_TRANS_TBL_OFFSET_QUEUE(nq) -
+                        SCD_CONTEXT_MEM_LOWER_BOUND) / sizeof(u32);
+    
+    /* make sure all queue are not stopped/used */
+    memset(this->queue_stopped, 0, sizeof(this->queue_stopped));
+    memset(this->queue_used, 0, sizeof(this->queue_used));
+    
+    this->scd_base_addr =
+    iwlReadPRPH(SCD_SRAM_BASE_ADDR);
+    
+    WARN_ON(scd_base_addr != 0 &&
+            scd_base_addr != this->scd_base_addr);
+    
+    /* reset context data, TX status and translation data */
+    iwlWriteMem(this->scd_base_addr +
+                SCD_CONTEXT_MEM_LOWER_BOUND,
+                NULL, clear_dwords);
+    
+    iwlWritePRPH(SCD_DRAM_BASE_ADDR,
+                 this->scd_bc_tbls->dma >> 10);
+    
+    /* The chain extension of the SCD doesn't work well. This feature is
+     * enabled by default by the HW, so we need to disable it manually.
+     */
+    if (m_pDevice->cfg->trans.base_params->scd_chain_ext_wa)
+        iwlWritePRPH(SCD_CHAINEXT_EN, 0);
+    
+   // iwl_trans_ac_txq_enable(trans, trans_pcie->cmd_queue,
+   //                         this->cmd_fifo,
+   //                         this->cmd_q_wdg_timeout);
+    
+    /* Activate all Tx DMA/FIFO channels */
+   // iwl_scd_activate_fifos(trans);
+    iwlWritePRPH(SCD_TXFACT, IWL_MASK(0, 7));
+    
+    /* Enable DMA channel */
+    for (chan = 0; chan < FH_TCSR_CHNL_NUM; chan++)
+        iwlWriteDirect32(FH_TCSR_CHNL_TX_CONFIG_REG(chan),
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE);
+    
+    /* Update FH chicken bits */
+    reg_val = iwlReadDirect32(FH_TX_CHICKEN_BITS_REG);
+    iwlWriteDirect32(FH_TX_CHICKEN_BITS_REG,
+                     reg_val | FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN);
+    
+    /* Enable L1-Active */
+    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
+        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
+                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
 }
 
 void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)

@@ -9,7 +9,7 @@
 #ifndef NotificationWait_hpp
 #define NotificationWait_hpp
 
-#include "../TransHdr.h"
+#include "../trans/TransHdr.h"
 
 #include <sys/queue.h>
 #include <linux/types.h>

@@ -241,6 +241,7 @@ public:
     bool is_down;
     int ict_index;
     u32 inta_mask;
+    bool scd_set_active;
     u32 scd_base_addr;//scheduler sram base address in SRAM
     iwl_dma_ptr *scd_bc_tbls;//pointer to the byte count table of the scheduler
     iwl_dma_ptr *kw;//keep warm address
