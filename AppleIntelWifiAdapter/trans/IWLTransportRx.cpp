@@ -1288,7 +1288,7 @@ restart:
         
         if(m_pDevice->cfg->trans.mq_rx_supported) {
             //TODO: implement
-            u16 vid = le32_to_cpu(rxq->bd_32[i]) & 0x0FFF;
+            u16 vid = le32_to_cpu(((__le32*)rxq->used_bd)[i]) & 0x0FFF;
             if ((!vid || vid > ARRAY_SIZE(this->global_table))) {
                 IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
                 goto out;
