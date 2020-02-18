@@ -14,8 +14,8 @@
 #include <linux/types.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IODMACommand.h>
-#include "IWLDeviceBase.h"
-#include "IWLDevice.hpp"
+#include "../device/IWLDeviceBase.h"
+#include "../IWLDevice.hpp"
 
 #define IWL_POLL_INTERVAL 10
 

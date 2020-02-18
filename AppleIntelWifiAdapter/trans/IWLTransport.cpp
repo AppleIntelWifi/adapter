@@ -10,6 +10,7 @@
 #include "IWLDebug.h"
 #include "IWLFH.h"
 #include "tx.h"
+#include "IWLSCD.h"
 
 #define super IWLIO
 
@@ -105,7 +106,7 @@ bool IWLTransport::init(IWLDevice *device)
         this->max_tbs = IWL_TFH_NUM_TBS;
         this->tfd_size = sizeof(struct iwl_tfh_tfd);
     } else {
-        addr_size = 32;
+        addr_size = 36;
         this->max_tbs = IWL_NUM_OF_TBS;
         this->tfd_size = sizeof(struct iwl_tfd);
     }
@@ -851,6 +852,9 @@ int IWLTransport::sendCmd(iwl_host_cmd *cmd)
     return ret;
 }
 
+void iwl_trans_ac_txq_enable(IWLTransport *trans, int queue, int fifo,
+                             unsigned int queue_wdg_timeout);
+
 void IWLTransport::txStart()
 {
     int nq = m_pDevice->cfg->trans.base_params->num_of_queues;
@@ -866,6 +870,8 @@ void IWLTransport::txStart()
     this->scd_base_addr =
     iwlReadPRPH(SCD_SRAM_BASE_ADDR);
     
+    IWL_INFO(0, "scd_base_addr: %x\n", this->scd_base_addr);
+    
     WARN_ON(scd_base_addr != 0 &&
             scd_base_addr != this->scd_base_addr);
     
@@ -874,6 +880,7 @@ void IWLTransport::txStart()
                 SCD_CONTEXT_MEM_LOWER_BOUND,
                 NULL, clear_dwords);
     
+    IWL_INFO(0, "scd_bc_tbls->dma: %x\n", this->scd_bc_tbls->dma);
     iwlWritePRPH(SCD_DRAM_BASE_ADDR,
                  this->scd_bc_tbls->dma >> 10);
     
@@ -883,13 +890,13 @@ void IWLTransport::txStart()
     if (m_pDevice->cfg->trans.base_params->scd_chain_ext_wa)
         iwlWritePRPH(SCD_CHAINEXT_EN, 0);
     
-   // iwl_trans_ac_txq_enable(trans, trans_pcie->cmd_queue,
-   //                         this->cmd_fifo,
-   //                         this->cmd_q_wdg_timeout);
+    iwl_trans_ac_txq_enable(this, this->cmd_queue,
+                            this->cmd_fifo,
+                            this->cmd_q_wdg_timeout);
     
     /* Activate all Tx DMA/FIFO channels */
-   // iwl_scd_activate_fifos(trans);
-    iwlWritePRPH(SCD_TXFACT, IWL_MASK(0, 7));
+    iwl_scd_activate_fifos(this);
+    //iwlWritePRPH(SCD_TXFACT, IWL_MASK(0, 7));
     
     /* Enable DMA channel */
     for (chan = 0; chan < FH_TCSR_CHNL_NUM; chan++)

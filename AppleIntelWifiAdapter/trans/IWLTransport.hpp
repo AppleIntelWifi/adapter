@@ -10,10 +10,10 @@
 #define IWLTransport_hpp
 
 #include "IWLIO.hpp"
-#include "IWLDevice.hpp"
+#include "../IWLDevice.hpp"
 #include "TransHdr.h"
-#include "IWLCtxtInfo.hpp"
-#include "IWLInternal.hpp"
+#include "../IWLCtxtInfo.hpp"
+#include "../IWLInternal.hpp"
 
 struct sk_buff { int something; };
 
@@ -216,6 +216,7 @@ public:
     iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
     unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
     unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];
+    unsigned int cmd_q_wdg_timeout;
     
     //rx
     int num_rx_queues;

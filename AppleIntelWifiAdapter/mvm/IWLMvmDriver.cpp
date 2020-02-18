@@ -375,6 +375,9 @@ bool IWLMvmDriver::drvStart()
     //    if (!hw)
     //        return NULL;
     IWL_INFO(0, "driver start\n");
+    
+    this->trans->scd_set_active = true;
+    
     if (iwl_mvm_has_new_rx_api(&this->m_pDevice->fw)) {
         
     } else {
