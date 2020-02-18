@@ -113,6 +113,7 @@ bool IWLTransport::init(IWLDevice *device)
     this->dma_mask = DMA_BIT_MASK(addr_size);
     this->num_rx_queues = 1;//iwl_trans_alloc
     disableIntr();
+    
     m_pDevice->hw_id = (m_pDevice->deviceID << 16) + m_pDevice->subSystemDeviceID;
     m_pDevice->hw_rf_id = iwlRead32(CSR_HW_RF_ID);
     m_pDevice->hw_rev = iwlRead32(CSR_HW_REV);
@@ -134,6 +135,10 @@ bool IWLTransport::init(IWLDevice *device)
             IWL_ERR(0, "Error while preparing HW\n");
             return false;
         }
+        
+        // recognize the C-step drivers too
+        
+        
         if (finishNicInit()) {
             return false;
         }

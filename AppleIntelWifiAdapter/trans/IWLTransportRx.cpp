@@ -240,7 +240,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie)
 
         rxq->lock = IOSimpleLockAlloc();
         if (trans_pcie->m_pDevice->cfg->trans.mq_rx_supported)
-            rxq->queue_size = -1;
+            rxq->queue_size = MQ_RX_TABLE_SIZE; //oops :P
         else
             rxq->queue_size = RX_QUEUE_SIZE;
 
