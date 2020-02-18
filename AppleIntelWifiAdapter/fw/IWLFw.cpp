@@ -95,9 +95,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
             goto remove_notif;
         }
     }
-    
-    return 0;
-    
+
     //TODO see when it will be happened
     //    /* In case we read the NVM from external file, load it to the NIC */
     //    if (mvm->nvm_file_name) {
@@ -154,7 +152,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
     }
     goto out;
 remove_notif:
-    //iwl_remove_notification(&m_pDevice->notif_wait, &calib_wait);
+    iwl_remove_notification(&m_pDevice->notif_wait, &calib_wait);
 out:
     m_pDevice->rfkill_safe_init_done = false;
     if (!m_pDevice->nvm_data) {
@@ -275,14 +273,30 @@ error:
 
 int IWLMvmDriver::sendPhyCfgCmd()
 {
+    struct iwl_phy_cfg_cmd phy_cfg_cmd;
+    iwl_ucode_type ucode_type = this->m_pDevice->cur_fw_img;
     
-    return 0;
+    phy_cfg_cmd.phy_cfg = cpu_to_le32(iwl_mvm_get_phy_config(m_pDevice));
+    //phy_cfg_cmd.phy_cfg |= cpu_to_le32(m_pDevice->cfg->)
+    phy_cfg_cmd.calib_control.event_trigger =
+        this->m_pDevice->fw.default_calib[ucode_type].event_trigger;
+    phy_cfg_cmd.calib_control.flow_trigger =
+        this->m_pDevice->fw.default_calib[ucode_type].flow_trigger;
+    
+    IWL_INFO(0, "Sending Phy CFG command: 0x%x\n",
+                   phy_cfg_cmd.phy_cfg);
+    
+    return sendCmdPdu(PHY_CONFIGURATION_CMD, 0, sizeof(phy_cfg_cmd), &phy_cfg_cmd);
 }
 
 int IWLMvmDriver::sendTXAntCfg(u8 valid_tx_ant)
 {
+    IWL_INFO(0, "Sending tx ant configuration for antenna: %d\n", valid_tx_ant);
+    struct iwl_tx_ant_cfg_cmd tx_ant_cmd = {
+        .valid = cpu_to_le32(valid_tx_ant),
+    };
     
-    return 0;
+    return sendCmdPdu(TX_ANT_CONFIGURATION_CMD, 0, sizeof(tx_ant_cmd), &tx_ant_cmd);
 }
 
 static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
