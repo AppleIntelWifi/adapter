@@ -690,6 +690,12 @@ void IWLTransport::rxMqHWInit()
         iwlWrite32(RFH_Q_FRBDCB_WIDX_TRG(this->rxq[i].id),
         this->rxq[i].write_actual);
     }
+    
+    if (m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_9000) {
+        if(!m_pDevice->cfg->trans.integrated) {
+            
+        }
+    }
 }
 
 /*
@@ -1282,8 +1288,19 @@ restart:
         
         if(m_pDevice->cfg->trans.mq_rx_supported) {
             //TODO: implement
-            IWL_INFO(0, "mq supported, need to fix\n");
-            break;
+            u16 vid = le32_to_cpu(rxq->bd_32[i]) & 0x0FFF;
+            if ((!vid || vid > ARRAY_SIZE(this->global_table))) {
+                IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
+                goto out;
+            }
+            
+            rxb = this->global_table[vid - 1];
+            if (rxb->invalid) {
+                IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
+                iwlForceNmi();
+                goto out;
+            }
+            rxb->invalid = true;
         } else {
             rxb = _rxq->queue[i];
             
