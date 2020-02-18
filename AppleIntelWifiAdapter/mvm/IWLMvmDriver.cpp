@@ -217,7 +217,7 @@ bool IWLMvmDriver::probe()
             m_pDevice->name = m_pDevice->cfg->name;
         
         
-        IOLog("device name=%s\n", m_pDevice->name);
+        IWL_INFO(0, "device name=%s\n", m_pDevice->name);
         
         if (m_pDevice->cfg->trans.mq_rx_supported) {
             if (!m_pDevice->cfg->num_rbds) {
@@ -232,16 +232,19 @@ bool IWLMvmDriver::probe()
             trans_ops->trans->grabNICAccess(&flags)) {
             u32 hw_step;
             
-            IOLog("HW_STEP_LOCATION_BITS\n");
+            IWL_INFO(0, "HW_STEP_LOCATION_BITS\n");
             
             hw_step = trans_ops->trans->iwlReadUmacPRPHNoGrab(WFPM_CTRL_REG);
             hw_step |= ENABLE_WFPM;
             trans_ops->trans->iwlWriteUmacPRPHNoGrab(WFPM_CTRL_REG, hw_step);
             hw_step = trans_ops->trans->iwlReadPRPHNoGrab(CNVI_AUX_MISC_CHIP);
+            IWL_INFO(0, "AUX CHIP: %x", hw_step);
             hw_step = (hw_step >> HW_STEP_LOCATION_BITS) & 0xF;
+            IWL_INFO(0, "We actually got: %x", hw_step);
             if (hw_step == 0x3)
                 m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xFFFFFFF3) |
                 (SILICON_C_STEP << 2);
+            
             trans_ops->trans->releaseNICAccess(&flags);
         }
     }
@@ -262,6 +265,7 @@ bool IWLMvmDriver::start()
                 m_pDevice->hw_rev);
         return false;
     }
+    IWL_INFO(0, "HW Rev: %0x\n", m_pDevice->hw_rev);
     snprintf(tag, sizeof(tag), "%d", m_pDevice->cfg->ucode_api_max);
     snprintf(firmware_name, sizeof(firmware_name), "%s%s.ucode", m_pDevice->cfg->fw_name_pre, tag);
     IWL_INFO(0, "attempting to load firmware '%s'\n", firmware_name);

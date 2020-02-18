@@ -113,6 +113,14 @@ bool IWLTransport::init(IWLDevice *device)
     this->dma_mask = DMA_BIT_MASK(addr_size);
     this->num_rx_queues = 1;//iwl_trans_alloc
     disableIntr();
+    m_pDevice->hw_id = (m_pDevice->deviceID << 16) + m_pDevice->subSystemDeviceID;
+    m_pDevice->hw_rf_id = iwlRead32(CSR_HW_RF_ID);
+    m_pDevice->hw_rev = iwlRead32(CSR_HW_REV);
+    if (m_pDevice->hw_rev == 0xffffffff) {
+        IWL_ERR(0, "HW_REV=0xFFFFFFFF, PCI issues?\n");
+        return false;
+    }
+    
     /*
      * In the 8000 HW family the format of the 4 bytes of CSR_HW_REV have
      * changed, and now the revision step also includes bit 0-1 (no more
@@ -120,6 +128,7 @@ bool IWLTransport::init(IWLDevice *device)
      * in the old format.
      */
     if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000) {
+        IWL_INFO(0, "Patch CSR_HW_REV (prev: 0x%x)", m_pDevice->hw_rev);
         m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xfff0) | (CSR_HW_REV_STEP(m_pDevice->hw_rev << 2) << 2);
         if (this->prepareCardHW()) {
             IWL_ERR(0, "Error while preparing HW\n");
@@ -129,13 +138,7 @@ bool IWLTransport::init(IWLDevice *device)
             return false;
         }
     }
-    m_pDevice->hw_id = (m_pDevice->deviceID << 16) + m_pDevice->subSystemDeviceID;
-    m_pDevice->hw_rf_id = iwlRead32(CSR_HW_RF_ID);
-    m_pDevice->hw_rev = iwlRead32(CSR_HW_REV);
-    if (m_pDevice->hw_rev == 0xffffffff) {
-        IWL_ERR(0, "HW_REV=0xFFFFFFFF, PCI issues?\n");
-        return false;
-    }
+    
     snprintf(m_pDevice->hw_id_str, sizeof(m_pDevice->hw_id_str),
              "PCI ID: 0x%04X:0x%04X", m_pDevice->deviceID, m_pDevice->subSystemDeviceID);
     IOLog("%s\n", m_pDevice->hw_id_str);
