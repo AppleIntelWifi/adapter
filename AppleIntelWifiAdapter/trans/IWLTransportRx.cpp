@@ -1119,9 +1119,9 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
         clear_bit(STATUS_SYNC_HCMD_ACTIVE, &trans->status);
         IWL_INFO(trans, "Clearing HCMD_ACTIVE for command %s\n", iwl_get_cmd_string(trans, cmd_id));
 
-        IOLockLock(trans_pcie->wait_command_queue);
+        //IOLockLock(trans_pcie->wait_command_queue);
         IOLockWakeup(trans_pcie->wait_command_queue, &trans->status, true);
-        IOLockUnlock(trans_pcie->wait_command_queue);
+        //IOLockUnlock(trans_pcie->wait_command_queue);
     }
     
     if (meta->flags & CMD_MAKE_TRANS_IDLE) {
