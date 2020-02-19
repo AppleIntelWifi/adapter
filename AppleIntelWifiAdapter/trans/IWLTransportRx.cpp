@@ -1299,7 +1299,7 @@ restart:
             
             rxb = this->global_table[vid - 1];
             if (rxb->invalid) {
-                IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
+                IWL_ERR(0, "Invalid rxb from hw (invalid) %u\n", (u32)vid);
                 iwlForceNmi();
                 goto out;
             }
