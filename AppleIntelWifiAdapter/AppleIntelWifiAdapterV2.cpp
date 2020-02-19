@@ -70,7 +70,7 @@ static struct MediumTable
 };
 
 void AppleIntelWifiAdapterV2::free() {
-    IOLog("Driver free()");
+    IWL_INFO(0, "Driver free()");
     if(irqLoop) {
         irqLoop->release();
         irqLoop = NULL;
@@ -86,7 +86,7 @@ void AppleIntelWifiAdapterV2::free() {
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
-    IOLog("Driver init()");
+    IWL_INFO(0, "Driver init()");
     drv = new IWLMvmDriver();
     return super::init(properties);
     
@@ -95,11 +95,11 @@ bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
-    IOLog("Driver Probe()");
+    IWL_INFO(0, "Driver Probe()");
     super::probe(provider, score);
     IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
-        IOLog("Not pci device");
+        IWL_ERR(0, "Not pci device");
         return NULL;
     }
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
@@ -107,7 +107,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemVendorID = pciDevice->configRead16(kIOPCIConfigSubSystemVendorID);
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
-    IOLog("find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
     this->drv->controller = static_cast<IOEthernetController*>(this);
     
     if (!drv->init(pciDevice)) {
@@ -119,7 +119,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
 {
-    IOLog("Driver Start()");
+    IWL_INFO(0, "Driver Start()");
     if (!super::start(provider)) {
         return false;
     }
@@ -181,20 +181,20 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     IONetworkMedium *autoMedium;
     OSDictionary *mediumDict = OSDictionary::withCapacity(MEDIUM_INDEX_COUNT + 1);
     if (!mediumDict) {
-        IOLog("start fail, can not create mediumdict\n");
+        IWL_ERR(0, "start fail, can not create mediumdict\n");
         return false;
     }
     bool result;
     for (int i = MEDIUM_INDEX_AUTO; i < MEDIUM_INDEX_COUNT; i++) {
         medium = IONetworkMedium::medium(mediumTypeArray[i], mediumSpeedArray[i], 0, i);
         if (!medium) {
-            IOLog("start fail, can not create mediumdict\n");
+            IWL_ERR(0, "start fail, can not create mediumdict\n");
             return false;
         }
         result = IONetworkMedium::addMedium(mediumDict, medium);
         medium->release();
         if (!result) {
-            IOLog("start fail, can not addMedium\n");
+            IWL_ERR(0, "start fail, can not addMedium\n");
             return false;
         }
         if (i == MEDIUM_INDEX_AUTO) {
@@ -202,11 +202,11 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         }
     }
     if (!publishMediumDictionary(mediumDict)) {
-        IOLog("start fail, can not publish mediumdict\n");
+        IWL_ERR(0, "start fail, can not publish mediumdict\n");
         return false;
     }
     if (!setSelectedMedium(autoMedium)){
-        IOLog("start fail, can not set current medium\n");
+        IWL_ERR(0, "start fail, can not set current medium\n");
         return false;
     }
     
@@ -232,14 +232,14 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     //    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
     //    setSelectedMedium(m);
     if (!attachInterface((IONetworkInterface**)&netif)) {
-        IOLog("start failed, can not attach interface\n");
+        IWL_ERR(0, "start failed, can not attach interface\n");
         return false;
     }
     
     drv->m_pDevice->interface = netif;
     
     if (!drv->start()) {
-        IOLog("start failed\n");
+        IWL_ERR(0, "start failed\n");
         return false;
     }
     
@@ -374,12 +374,25 @@ IONetworkInterface *AppleIntelWifiAdapterV2::createInterface()
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
-    addrP->bytes[0] = 0x29;
-    addrP->bytes[1] = 0xC2;
-    addrP->bytes[2] = 0xdd;
-    addrP->bytes[3] = 0x8F;
-    addrP->bytes[4] = 0x93;
-    addrP->bytes[5] = 0x4D;
+    if(!this->drv->trans->is_down) {
+        if(this->drv->m_pDevice->nvm_data) {
+            memcpy(addrP->bytes, &this->drv->m_pDevice->nvm_data->hw_addr[0], ETHER_ADDR_LEN);
+            IWL_INFO(0, "Got request for hw addr: returning %02x:%02x:%02x\n", drv->m_pDevice->nvm_data->hw_addr[0],
+                                                                            drv->m_pDevice->nvm_data->hw_addr[1],
+                                                                            drv->m_pDevice->nvm_data->hw_addr[2]);
+        }
+        else {
+            addrP->bytes[0] = 0x29;
+            addrP->bytes[1] = 0xC2;
+            addrP->bytes[2] = 0xdd;
+            addrP->bytes[3] = 0x8F;
+            addrP->bytes[4] = 0x93;
+            addrP->bytes[5] = 0x4D;
+        }
+    }
+    else {
+        return kIOReturnError;
+    }
     return kIOReturnSuccess;
 }
 

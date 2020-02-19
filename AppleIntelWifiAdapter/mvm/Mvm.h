@@ -175,6 +175,36 @@ enum iwl_mvm_queue_status {
     IWL_MVM_QUEUE_SHARED,
 };
 
+enum iwl_bt_force_ant_mode {
+    BT_FORCE_ANT_DIS = 0,
+    BT_FORCE_ANT_AUTO,
+    BT_FORCE_ANT_BT,
+    BT_FORCE_ANT_WIFI,
+
+    BT_FORCE_ANT_MAX,
+};
+
+/**
+ * struct iwl_phy_cfg_cmd - Phy configuration command
+ * @phy_cfg: PHY configuration value, uses &enum iwl_fw_phy_cfg
+ * @calib_control: calibration control data
+ */
+struct iwl_phy_cfg_cmd {
+    __le32    phy_cfg;
+    struct iwl_calib_ctrl calib_control;
+} __packed;
+
+#define PHY_CFG_RADIO_TYPE    (BIT(0) | BIT(1))
+#define PHY_CFG_RADIO_STEP    (BIT(2) | BIT(3))
+#define PHY_CFG_RADIO_DASH    (BIT(4) | BIT(5))
+#define PHY_CFG_PRODUCT_NUMBER    (BIT(6) | BIT(7))
+#define PHY_CFG_TX_CHAIN_A    BIT(8)
+#define PHY_CFG_TX_CHAIN_B    BIT(9)
+#define PHY_CFG_TX_CHAIN_C    BIT(10)
+#define PHY_CFG_RX_CHAIN_A    BIT(12)
+#define PHY_CFG_RX_CHAIN_B    BIT(13)
+#define PHY_CFG_RX_CHAIN_C    BIT(14)
+
 #define IWL_MVM_DQA_QUEUE_TIMEOUT    (5 * HZ)
 #define IWL_MVM_INVALID_QUEUE        0xFFFF
 

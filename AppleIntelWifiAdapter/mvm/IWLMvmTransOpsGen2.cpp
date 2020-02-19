@@ -8,8 +8,8 @@
 
 #include "IWLMvmTransOpsGen2.hpp"
 #include "IWLDebug.h"
-#include "device/IWLCSR.h"
-#include "fw/api/txq.h"
+#include "../device/IWLCSR.h"
+#include "../fw/api/txq.h"
 
 #define super IWLTransOps
 

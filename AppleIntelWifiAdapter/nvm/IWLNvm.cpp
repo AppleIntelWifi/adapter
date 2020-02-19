@@ -401,10 +401,13 @@ int IWLMvmDriver::nvmInit()
         return -ENOMEM;
     for (section = 0; section < NVM_MAX_NUM_SECTIONS; section++) {
         /* we override the constness for initial read */
+        IWL_INFO(0, "Parsing section %d\n", section);
         ret = iwl_nvm_read_section(this, section, nvm_buffer,
                                    size_read);
+        IWL_INFO(0, "ret: %d\n", ret);
         if (ret == -ENODATA) {
             ret = 0;
+            IWL_ERR(0, "Skipped section %d because -ENODATA\n", section);
             continue;
         }
         if (ret < 0)
@@ -413,9 +416,10 @@ int IWLMvmDriver::nvmInit()
         temp = (u8 *)kmemdup(nvm_buffer, ret);
         if (!temp) {
             ret = -ENOMEM;
+            IWL_ERR(0, "Could not duplicate memory from NVM\n");
             break;
         }
-        
+        IWL_INFO(0, "Parsed section %d successfully\n", section);
         iwl_nvm_fixups(m_pDevice->hw_id, section, temp, ret);
         
         m_pDevice->nvm_sections[section].data = temp;
@@ -452,6 +456,15 @@ int IWLMvmDriver::nvmInit()
         return -ENODATA;
     IWL_INFO(0, "nvm version = %x\n",
              m_pDevice->nvm_data->nvm_version);
+    
+    u8* hw_addr = m_pDevice->nvm_data->hw_addr;
+    if(hw_addr) {
+        // ideally, if we're successful then this should pass and we should get the MAC from our card
+        IWL_INFO(0, "addr: %02x:%02x:%02x:%02x:%02x:%02x\n", hw_addr[0],
+        hw_addr[1], hw_addr[2],
+                 hw_addr[3], hw_addr[4], hw_addr[5] );
+    }
+    
     return ret < 0 ? ret : 0;
 }
 

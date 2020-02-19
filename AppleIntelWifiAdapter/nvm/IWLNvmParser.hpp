@@ -11,8 +11,8 @@
 
 #include "IWLeeprom.h"
 #include "IWLTransport.hpp"
-#include "fw/api/nvm-reg.h"
-#include "fw/api/commands.h"
+#include "../fw/api/nvm-reg.h"
+#include "../fw/api/commands.h"
 #include "IWLTransOps.h"
 
 #include <net80211/ieee80211_var.h>

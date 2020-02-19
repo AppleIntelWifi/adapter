@@ -240,7 +240,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie)
 
         rxq->lock = IOSimpleLockAlloc();
         if (trans_pcie->m_pDevice->cfg->trans.mq_rx_supported)
-            rxq->queue_size = -1;
+            rxq->queue_size = MQ_RX_TABLE_SIZE; //oops :P
         else
             rxq->queue_size = RX_QUEUE_SIZE;
 
@@ -690,6 +690,12 @@ void IWLTransport::rxMqHWInit()
         iwlWrite32(RFH_Q_FRBDCB_WIDX_TRG(this->rxq[i].id),
         this->rxq[i].write_actual);
     }
+    
+    if (m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_9000) {
+        if(!m_pDevice->cfg->trans.integrated) {
+            
+        }
+    }
 }
 
 /*
@@ -1120,7 +1126,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
         IWL_INFO(trans, "Clearing HCMD_ACTIVE for command %s\n", iwl_get_cmd_string(trans, cmd_id));
 
         //IOLockLock(trans_pcie->wait_command_queue);
-//        IOLockWakeup(trans_pcie->wait_command_queue, &trans->status, true);
+        IOLockWakeup(trans_pcie->wait_command_queue, &trans->status, true);
         //IOLockUnlock(trans_pcie->wait_command_queue);
     }
     
@@ -1223,6 +1229,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         
         if (rxq->id == 0)
             iwl_notification_wait_notify(&trans->m_pDevice->notif_wait, pkt);
+            
             //opmode->rx(NULL, NULL, &rxcb);
         
         // TODO: Implement
@@ -1271,7 +1278,7 @@ restart:
     
     /* Rx interrupt, but nothing sent from uCode */
     if (i == r)
-        IWL_INFO(trans, "Q %d: HW = SW = %d\n", _rxq->id, r);
+        IWL_INFO(trans, "Q %d: HW = SW = %d (nothing was sent??) \n", _rxq->id, r);
     
     while(i != r) {
         struct iwl_rx_mem_buffer *rxb;
@@ -1280,9 +1287,20 @@ restart:
             emergency = true;
         
         if(m_pDevice->cfg->trans.mq_rx_supported) {
-            //to-do: implement
-            IWL_INFO(0, "mq supported, need to fix\n");
-            break;
+            //TODO: implement
+            u16 vid = le32_to_cpu(((__le32*)rxq->used_bd)[i]) & 0x0FFF;
+            if ((!vid || vid > ARRAY_SIZE(this->global_table))) {
+                IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
+                goto out;
+            }
+            
+            rxb = this->global_table[vid - 1];
+            if (rxb->invalid) {
+                IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
+                iwlForceNmi();
+                goto out;
+            }
+            rxb->invalid = true;
         } else {
             rxb = _rxq->queue[i];
             

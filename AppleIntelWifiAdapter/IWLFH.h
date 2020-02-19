@@ -534,6 +534,9 @@
 /* Instruct FH to increment the retry count of a packet when
  * it is brought from the memory to TX-FIFO
  */
+#define MQ_RX_TABLE_SIZE    512
+#define MQ_RX_TABLE_MASK    (MQ_RX_TABLE_SIZE - 1)
+#define MQ_RX_NUM_RBDS        (MQ_RX_TABLE_SIZE - 1)
 #define FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN    (0x00000002)
 
 #define RX_POOL_SIZE(rbds)    ((rbds) - 1 +    \

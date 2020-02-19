@@ -10,6 +10,7 @@
 #include "IWLDebug.h"
 #include "IWLFH.h"
 #include "tx.h"
+#include "IWLSCD.h"
 
 #define super IWLIO
 
@@ -105,29 +106,14 @@ bool IWLTransport::init(IWLDevice *device)
         this->max_tbs = IWL_TFH_NUM_TBS;
         this->tfd_size = sizeof(struct iwl_tfh_tfd);
     } else {
-        addr_size = 32;
+        addr_size = 36;
         this->max_tbs = IWL_NUM_OF_TBS;
         this->tfd_size = sizeof(struct iwl_tfd);
     }
     this->dma_mask = DMA_BIT_MASK(addr_size);
     this->num_rx_queues = 1;//iwl_trans_alloc
     disableIntr();
-    /*
-     * In the 8000 HW family the format of the 4 bytes of CSR_HW_REV have
-     * changed, and now the revision step also includes bit 0-1 (no more
-     * "dash" value). To keep hw_rev backwards compatible - we'll store it
-     * in the old format.
-     */
-    if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000) {
-        m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xfff0) | (CSR_HW_REV_STEP(m_pDevice->hw_rev << 2) << 2);
-        if (this->prepareCardHW()) {
-            IWL_ERR(0, "Error while preparing HW\n");
-            return false;
-        }
-        if (finishNicInit()) {
-            return false;
-        }
-    }
+    
     m_pDevice->hw_id = (m_pDevice->deviceID << 16) + m_pDevice->subSystemDeviceID;
     m_pDevice->hw_rf_id = iwlRead32(CSR_HW_RF_ID);
     m_pDevice->hw_rev = iwlRead32(CSR_HW_REV);
@@ -135,6 +121,29 @@ bool IWLTransport::init(IWLDevice *device)
         IWL_ERR(0, "HW_REV=0xFFFFFFFF, PCI issues?\n");
         return false;
     }
+    
+    /*
+     * In the 8000 HW family the format of the 4 bytes of CSR_HW_REV have
+     * changed, and now the revision step also includes bit 0-1 (no more
+     * "dash" value). To keep hw_rev backwards compatible - we'll store it
+     * in the old format.
+     */
+    if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_8000) {
+        IWL_INFO(0, "Patch CSR_HW_REV (prev: 0x%x)", m_pDevice->hw_rev);
+        m_pDevice->hw_rev = (m_pDevice->hw_rev & 0xfff0) | (CSR_HW_REV_STEP(m_pDevice->hw_rev << 2) << 2);
+        if (this->prepareCardHW()) {
+            IWL_ERR(0, "Error while preparing HW\n");
+            return false;
+        }
+        
+        // recognize the C-step drivers too
+        
+        
+        if (finishNicInit()) {
+            return false;
+        }
+    }
+    
     snprintf(m_pDevice->hw_id_str, sizeof(m_pDevice->hw_id_str),
              "PCI ID: 0x%04X:0x%04X", m_pDevice->deviceID, m_pDevice->subSystemDeviceID);
     IOLog("%s\n", m_pDevice->hw_id_str);
@@ -819,7 +828,9 @@ void IWLTransport::apmLpXtalEnable()
 void IWLTransport::freeResp(struct iwl_host_cmd *cmd)
 {
     if (cmd->resp_pkt) {
-        IOFree(cmd->resp_pkt, cmd->resp_pkt_len);
+        //IOFree(cmd->resp_pkt, cmd->resp_pkt_len);
+        IWL_WARN(0, "LEAKING PAGE\n");
+        //this->m_pDevice->controller->freePacket((mbuf_t)cmd->resp_pkt);
     }
     cmd->resp_pkt = NULL;
 }
@@ -851,60 +862,67 @@ int IWLTransport::sendCmd(iwl_host_cmd *cmd)
     return ret;
 }
 
+void iwl_trans_ac_txq_enable(IWLTransport *trans, int queue, int fifo,
+                             unsigned int queue_wdg_timeout);
+
 void IWLTransport::txStart()
 {
-//    int nq = m_pDevice->cfg->trans.base_params->num_of_queues;
-//    int chan;
-//    u32 reg_val;
-//    int clear_dwords = (SCD_TRANS_TBL_OFFSET_QUEUE(nq) -
-//                        SCD_CONTEXT_MEM_LOWER_BOUND) / sizeof(u32);
-//    
-//    /* make sure all queue are not stopped/used */
-//    memset(this->queue_stopped, 0, sizeof(this->queue_stopped));
-//    memset(this->queue_used, 0, sizeof(this->queue_used));
-//    
-//    this->scd_base_addr =
-//    iwlReadPRPH(SCD_SRAM_BASE_ADDR);
-//    
-//    WARN_ON(scd_base_addr != 0 &&
-//            scd_base_addr != this->scd_base_addr);
-//    
-//    /* reset context data, TX status and translation data */
-//    iwlWriteMem(this->scd_base_addr +
-//                SCD_CONTEXT_MEM_LOWER_BOUND,
-//                NULL, clear_dwords);
-//    
-//    iwlWritePRPH(SCD_DRAM_BASE_ADDR,
-//                 this->scd_bc_tbls->dma >> 10);
-//    
-//    /* The chain extension of the SCD doesn't work well. This feature is
-//     * enabled by default by the HW, so we need to disable it manually.
-//     */
-//    if (m_pDevice->cfg->trans.base_params->scd_chain_ext_wa)
-//        iwlWritePRPH(SCD_CHAINEXT_EN, 0);
-//    
-//    iwl_trans_ac_txq_enable(trans, trans_pcie->cmd_queue,
-//                            this->cmd_fifo,
-//                            this->cmd_q_wdg_timeout);
-//    
-//    /* Activate all Tx DMA/FIFO channels */
-//    iwl_scd_activate_fifos(trans);
-//    
-//    /* Enable DMA channel */
-//    for (chan = 0; chan < FH_TCSR_CHNL_NUM; chan++)
-//        iwlWriteDirect32(FH_TCSR_CHNL_TX_CONFIG_REG(chan),
-//                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
-//                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE);
-//    
-//    /* Update FH chicken bits */
-//    reg_val = iwlReadDirect32(FH_TX_CHICKEN_BITS_REG);
-//    iwlWriteDirect32(FH_TX_CHICKEN_BITS_REG,
-//                     reg_val | FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN);
-//    
-//    /* Enable L1-Active */
-//    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
-//        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
-//                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
+    int nq = m_pDevice->cfg->trans.base_params->num_of_queues;
+    int chan;
+    u32 reg_val;
+    int clear_dwords = (SCD_TRANS_TBL_OFFSET_QUEUE(nq) -
+                        SCD_CONTEXT_MEM_LOWER_BOUND) / sizeof(u32);
+    
+    /* make sure all queue are not stopped/used */
+    memset(this->queue_stopped, 0, sizeof(this->queue_stopped));
+    memset(this->queue_used, 0, sizeof(this->queue_used));
+    
+    this->scd_base_addr =
+    iwlReadPRPH(SCD_SRAM_BASE_ADDR);
+    
+    IWL_INFO(0, "scd_base_addr: %x\n", this->scd_base_addr);
+    
+    WARN_ON(scd_base_addr != 0 &&
+            scd_base_addr != this->scd_base_addr);
+    
+    /* reset context data, TX status and translation data */
+    iwlWriteMem(this->scd_base_addr +
+                SCD_CONTEXT_MEM_LOWER_BOUND,
+                NULL, clear_dwords);
+    
+    IWL_INFO(0, "scd_bc_tbls->dma: %x\n", this->scd_bc_tbls->dma);
+    iwlWritePRPH(SCD_DRAM_BASE_ADDR,
+                 this->scd_bc_tbls->dma >> 10);
+    
+    /* The chain extension of the SCD doesn't work well. This feature is
+     * enabled by default by the HW, so we need to disable it manually.
+     */
+    if (m_pDevice->cfg->trans.base_params->scd_chain_ext_wa)
+        iwlWritePRPH(SCD_CHAINEXT_EN, 0);
+    
+    iwl_trans_ac_txq_enable(this, this->cmd_queue,
+                            this->cmd_fifo,
+                            this->cmd_q_wdg_timeout);
+    
+    /* Activate all Tx DMA/FIFO channels */
+    iwl_scd_activate_fifos(this);
+    //iwlWritePRPH(SCD_TXFACT, IWL_MASK(0, 7));
+    
+    /* Enable DMA channel */
+    for (chan = 0; chan < FH_TCSR_CHNL_NUM; chan++)
+        iwlWriteDirect32(FH_TCSR_CHNL_TX_CONFIG_REG(chan),
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE |
+                         FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE);
+    
+    /* Update FH chicken bits */
+    reg_val = iwlReadDirect32(FH_TX_CHICKEN_BITS_REG);
+    iwlWriteDirect32(FH_TX_CHICKEN_BITS_REG,
+                     reg_val | FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN);
+    
+    /* Enable L1-Active */
+    if (m_pDevice->cfg->trans.device_family < IWL_DEVICE_FAMILY_8000)
+        iwlClearBitsPRPH(APMG_PCIDEV_STT_REG,
+                         APMG_PCIDEV_STT_VAL_L1_ACT_DIS);
 }
 
 void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)

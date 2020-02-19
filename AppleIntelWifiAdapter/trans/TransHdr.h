@@ -11,7 +11,7 @@
 
 #include <linux/types.h>
 #include "IWLFH.h"
-#include "fw/api/cmdhdr.h"
+#include "../fw/api/cmdhdr.h"
 #include "IWLInternal.hpp"
 
 #include <sys/kernel_types.h>
@@ -573,5 +573,13 @@ iwl_pcie_get_first_tb_dma(struct iwl_txq *txq, int idx)
 {
     return txq->first_tb_dma + sizeof(struct iwl_pcie_first_tb_buf) * idx;
 }
+
+struct iwl_trans_txq_scd_cfg {
+    u8 fifo;
+    u8 sta_id;
+    u8 tid;
+    bool aggregate;
+    int frame_limit;
+};
 
 #endif /* TransHdr_h */

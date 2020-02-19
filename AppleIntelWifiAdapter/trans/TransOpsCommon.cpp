@@ -7,7 +7,7 @@
 //
 
 #include "IWLTransOps.h"
-#include "fw/NotificationWait.hpp"
+#include "../fw/NotificationWait.hpp"
 
 
 bool IWLTransOps::setHWRFKillState(bool state)

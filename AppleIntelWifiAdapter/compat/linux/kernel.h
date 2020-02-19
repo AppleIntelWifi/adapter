@@ -44,7 +44,10 @@
 #define OS_EXPECT(x, v) __builtin_expect((x), (v))
 
 #define likely(x)       OS_EXPECT(!!(x), 1)
-#define unlikely(x)     OS_EXPECT(!!(x), 0)
+#define unlikely(x)     ({ \
+                            OS_EXPECT(!!(x), 0); \
+                            !!(x); \
+                        })
 
 # define do_div(n,base) ({                    \
 uint32_t __base = (base);                \

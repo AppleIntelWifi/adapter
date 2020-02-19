@@ -7,6 +7,7 @@
 //
 
 #include "IWLTransport.hpp"
+#include "IWLSCD.h"
 
 extern const void *bsearch(const void *, const void *, size_t, size_t, int (*)(const void *, const void *));
 
@@ -1163,6 +1164,108 @@ int IWLTransport::pcieSendHCmd(iwl_host_cmd *cmd)
     /* We still can fail on RFKILL that can be asserted while we wait */
     return iwl_pcie_send_hcmd_sync(this, cmd);
 }
+
+#define BUILD_RAxTID(sta_id, tid)    (((sta_id) << 4) + (tid))
+
+static bool
+iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
+             const struct iwl_trans_txq_scd_cfg *cfg,
+             unsigned int queue_wdg_timeout)
+{
+    might_sleep();
+
+    if (WARN_ON_ONCE(trans->state != IWL_TRANS_FW_ALIVE)) {
+        IWL_ERR(trans, "%s bad state = %d\n", __func__, trans->state);
+        return false;
+    }
+
+    struct iwl_txq* txq = trans->txq[queue];
+    int txq_id = queue;
+    int fifo = -1;
+    bool scd_bug = false;
+    if(test_and_set_bit(txq_id, trans->queue_used))
+        IWL_WARN(0, "queue %d used already, expect issues", txq_id);
+    
+    txq->wd_timeout = queue_wdg_timeout;
+    if(cfg) {
+        fifo = cfg->fifo;
+        
+        /* Disable the scheduler prior configuring the cmd queue */
+        if (txq_id == trans->cmd_queue &&
+            trans->scd_set_active)
+            iwl_scd_enable_set_active(trans, 0);
+
+        /* Stop this Tx queue before configuring it */
+        iwl_scd_txq_set_inactive(trans, txq_id);
+
+        /* Set this queue as a chain-building queue unless it is CMD */
+        if (txq_id != trans->cmd_queue)
+            iwl_scd_txq_set_chain(trans, txq_id);
+        if(cfg->aggregate) {
+            u16 ra_tid = BUILD_RAxTID(cfg->sta_id, cfg->tid);
+            IWL_WARN(0, "need to fix aggregate\n");
+            //iwl_pcie_txq_set_ratid_map(ra_tid, txq_id);
+            txq->ampdu = true;
+        } else {
+            iwl_scd_txq_enable_agg(trans, txq_id);
+            ssn = txq->read_ptr;
+        }
+    } else {
+        scd_bug = !trans->m_pDevice->cfg->trans.mq_rx_supported &&
+            !((ssn - txq->write_ptr) & 0x3f) &&
+            (ssn != txq->write_ptr);
+        if (scd_bug)
+            ssn++;
+    }
+    
+    txq->read_ptr = (ssn & 0xff);
+    txq->write_ptr = (ssn & 0xff);
+    
+    if(cfg) {
+        u8 frame_limit = cfg->frame_limit;
+        
+        trans->iwlWritePRPH(SCD_QUEUE_RDPTR(txq_id), ssn);
+        trans->iwlWriteMem32(trans->scd_base_addr +
+                             SCD_CONTEXT_QUEUE_OFFSET(txq_id), 0);
+        
+        trans->iwlWriteMem32(trans->scd_base_addr +
+                            SCD_CONTEXT_QUEUE_OFFSET(txq_id) + sizeof(u32),
+                             SCD_QUEUE_CTX_REG2_VAL(WIN_SIZE, frame_limit) |
+                             SCD_QUEUE_CTX_REG2_VAL(FRAME_LIMIT, frame_limit));
+        trans->iwlWritePRPH(SCD_QUEUE_STATUS_BITS(txq_id),
+                   (1 << SCD_QUEUE_STTS_REG_POS_ACTIVE) |
+                   (cfg->fifo << SCD_QUEUE_STTS_REG_POS_TXF) |
+                   (1 << SCD_QUEUE_STTS_REG_POS_WSL) |
+                   SCD_QUEUE_STTS_REG_MSK);
+        
+        if(txq_id == trans->cmd_queue &&
+            trans->scd_set_active)
+            iwl_scd_enable_set_active(trans, BIT(txq_id));
+        
+        IWL_INFO(0, "Activate queue %d on fifo %d (wrptr: %d)\n", txq_id, fifo, ssn & 0xff);
+    } else {
+        IWL_INFO(0, "Activate queue %d (wrptr: %d)\n", txq_id, ssn & 0xff);
+    }
+    
+    
+    return scd_bug;
+}
+
+void iwl_trans_ac_txq_enable(IWLTransport *trans, int queue, int fifo,
+                 unsigned int queue_wdg_timeout)
+{
+    struct iwl_trans_txq_scd_cfg cfg = {
+        .fifo = fifo,
+        .sta_id = -1,
+        .tid = IWL_MAX_TID_COUNT,
+        .frame_limit = IWL_FRAME_LIMIT,
+        .aggregate = false,
+    };
+
+    iwl_trans_txq_enable_cfg(trans, queue, 0, &cfg, queue_wdg_timeout);
+}
+
+
 
 void IWLTransport::txqCheckWrPtrs()
 {

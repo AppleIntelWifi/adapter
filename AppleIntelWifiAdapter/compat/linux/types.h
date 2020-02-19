@@ -58,8 +58,41 @@
 
 #define list_head       queue_entry
 
-#define WARN_ON(x) (x)
-#define WARN_ON_ONCE(x) (x)
+#ifndef __WARN_printf
+/*
+ * To port this properly we'd have to port warn_slowpath_null(),
+ * which I'm lazy to do so just do a regular print for now. If you
+ * want to port this read kernel/panic.c
+ */
+#define __WARN_printf(func, line, arg...)   do { IOLog("(AppleIntelWifiAdapter) (%s:%d) WARN", func, line);} while (0);
+#endif
+
+#ifndef unlikely
+#include <kernel.h>
+#endif
+
+#ifndef WARN_ON_ONCE
+#define WARN_ON_ONCE(condition, fmt...) ({ \
+    static int __warned; \
+    int __ret_warn_once = !!(condition); \
+        \
+    if(unlikely(__ret_warn_once)) \
+        if(WARN_ON(!__warned, fmt...)) \
+            __warned = 1;    \
+    unlikely(__ret_warn_once); \
+    (bool)__ret_warn_once; \
+})
+#endif
+
+#ifndef WARN_ON
+#define WARN_ON(condition, fmt...) ({ \
+    int __ret_warn_on = !!(condition); \
+    if(unlikely(__ret_warn_on)) \
+        __WARN_printf(__FUNCTION__, __LINE__, fmt...) \
+    unlikely(__ret_warn_on); \
+    (bool)(__ret_warn_on);\
+})
+#endif
 
 #define __stringify OS_STRINGIFY
 
