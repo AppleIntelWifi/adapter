@@ -74,77 +74,78 @@ static const struct iwl_tt_params iwl9000_tt_params = {
     .support_tx_backoff = true,
 };
 
-#define IWL_DEVICE_9000                            \
-    .ucode_api_max = IWL9000_UCODE_API_MAX,                \
-    .ucode_api_min = IWL9000_UCODE_API_MIN,                \
-    .led_mode = IWL_LED_RF_STATE,                    \
-    .nvm_hw_section_num = 10,                    \
-    .non_shared_ant = ANT_B,                    \
-    .dccm_offset = IWL9000_DCCM_OFFSET,                \
-    .dccm_len = IWL9000_DCCM_LEN,                    \
-    .dccm2_offset = IWL9000_DCCM2_OFFSET,                \
-    .dccm2_len = IWL9000_DCCM2_LEN,                    \
-    .smem_offset = IWL9000_SMEM_OFFSET,                \
-    .smem_len = IWL9000_SMEM_LEN,                    \
-    .features = IWL_TX_CSUM_NETIF_FLAGS | NETIF_F_RXCSUM,        \
-    .thermal_params = &iwl9000_tt_params,                \
-    .apmg_not_supported = true,                    \
-    .num_rbds = 512,                        \
-    .vht_mu_mimo_supported = true,                    \
-    .mac_addr_from_csr = true,                    \
-    .nvm_type = IWL_NVM_EXT,                    \
-    .dbgc_supported = true,                        \
-    .min_umac_error_event_table = 0x800000,                \
-    .d3_debug_data_base_addr = 0x401000,                \
-    .d3_debug_data_length = 92 * 1024,                \
-    .ht_params = &iwl9000_ht_params,                \
-    .nvm_ver = IWL9000_NVM_VERSION,                    \
-    .max_ht_ampdu_exponent = IEEE80211_HT_MAX_AMPDU_64K,        \
-    .mon_smem_regs = {                        \
-        .write_ptr = {                        \
-            .addr = LDBG_M2S_BUF_WPTR,            \
-            .mask = LDBG_M2S_BUF_WPTR_VAL_MSK,        \
-        },                            \
-        .cycle_cnt = {                        \
-            .addr = LDBG_M2S_BUF_WRAP_CNT,            \
-            .mask = LDBG_M2S_BUF_WRAP_CNT_VAL_MSK,        \
-        },                            \
-    },                                \
-    .mon_dram_regs = {                        \
-        .write_ptr = {                        \
-            .addr = MON_BUFF_WRPTR_VER2,            \
-            .mask = 0xffffffff,                \
-        },                            \
-        .cycle_cnt = {                        \
-            .addr = MON_BUFF_CYCLE_CNT_VER2,        \
-            .mask = 0xffffffff,                \
-        },                            \
+#define IWL_DEVICE_9000                                     \
+    .trans.device_family = IWL_DEVICE_FAMILY_9000,          \
+    .trans.base_params = &iwl9000_base_params,              \
+    .trans.mq_rx_supported = true,                          \
+    .trans.rf_id = true,                                    \
+    .ucode_api_max = IWL9000_UCODE_API_MAX,                 \
+    .ucode_api_min = IWL9000_UCODE_API_MIN,                 \
+    .led_mode = IWL_LED_RF_STATE,                           \
+    .nvm_hw_section_num = 10,                               \
+    .non_shared_ant = ANT_B,                                \
+    .dccm_offset = IWL9000_DCCM_OFFSET,                     \
+    .dccm_len = IWL9000_DCCM_LEN,                           \
+    .dccm2_offset = IWL9000_DCCM2_OFFSET,                   \
+    .dccm2_len = IWL9000_DCCM2_LEN,                         \
+    .smem_offset = IWL9000_SMEM_OFFSET,                     \
+    .smem_len = IWL9000_SMEM_LEN,                           \
+    .features = IWL_TX_CSUM_NETIF_FLAGS | NETIF_F_RXCSUM,   \
+    .thermal_params = &iwl9000_tt_params,                   \
+    .apmg_not_supported = true,                             \
+    .num_rbds = 512,                                        \
+    .vht_mu_mimo_supported = true,                          \
+    .mac_addr_from_csr = true,                              \
+    .nvm_type = IWL_NVM_EXT,                                \
+    .dbgc_supported = true,                                 \
+    .min_umac_error_event_table = 0x800000,                 \
+    .d3_debug_data_base_addr = 0x401000,                    \
+    .d3_debug_data_length = 92 * 1024,                      \
+    .ht_params = &iwl9000_ht_params,                        \
+    .nvm_ver = IWL9000_NVM_VERSION,                         \
+    .max_ht_ampdu_exponent = IEEE80211_HT_MAX_AMPDU_64K,    \
+    .mon_smem_regs = {                                      \
+        .write_ptr = {                                      \
+            .addr = LDBG_M2S_BUF_WPTR,                      \
+            .mask = LDBG_M2S_BUF_WPTR_VAL_MSK,              \
+        },                                                  \
+        .cycle_cnt = {                                      \
+            .addr = LDBG_M2S_BUF_WRAP_CNT,                  \
+            .mask = LDBG_M2S_BUF_WRAP_CNT_VAL_MSK,          \
+        },                                                  \
+    },                                                      \
+    .mon_dram_regs = {                                      \
+        .write_ptr = {                                      \
+            .addr = MON_BUFF_WRPTR_VER2,                    \
+            .mask = 0xffffffff,                             \
+        },                                                  \
+        .cycle_cnt = {                                      \
+            .addr = MON_BUFF_CYCLE_CNT_VER2,                \
+            .mask = 0xffffffff,                             \
+        },                                                  \
     }
 
-const struct iwl_cfg_trans_params iwl9000_trans_cfg = {
-    .device_family = IWL_DEVICE_FAMILY_9000,
-    .base_params = &iwl9000_base_params,
-    .mq_rx_supported = true,
-    .rf_id = true,
+#define IWL_DEVICE_9560         \
+    .trans.xtal_latency = 5000, \
+    .trans.integrated = true,   \
+    IWL_DEVICE_9000
+
+#define IWL_DEVICE_9560_SHARED_CLK                      \
+    .trans.xtal_latency = 5000,                         \
+    .trans.integrated = true,                           \
+    .trans.extra_phy_cfg_flags = FW_PHY_CFG_SHARED_CLK, \
+    IWL_DEVICE_9000
+
+const struct iwl_cfg iwl9000_trans_cfg = {
+    IWL_DEVICE_9000
 };
 
-const struct iwl_cfg_trans_params iwl9560_trans_cfg = {
-    .device_family = IWL_DEVICE_FAMILY_9000,
-    .base_params = &iwl9000_base_params,
-    .mq_rx_supported = true,
-    .rf_id = true,
-    .integrated = true,
-    .xtal_latency = 5000,
+const struct iwl_cfg iwl9560_cfg = {
+    IWL_DEVICE_9560
 };
 
-const struct iwl_cfg_trans_params iwl9560_shared_clk_trans_cfg = {
-    .device_family = IWL_DEVICE_FAMILY_9000,
-    .base_params = &iwl9000_base_params,
-    .mq_rx_supported = true,
-    .rf_id = true,
-    .integrated = true,
-    .xtal_latency = 5000,
-    .extra_phy_cfg_flags = FW_PHY_CFG_SHARED_CLK
+const struct iwl_cfg iwl9560_shared_clk_cfg = {
+    IWL_DEVICE_9560_SHARED_CLK,
 };
 
 const char iwl9162_name[] = "Intel(R) Wireless-AC 9162";
@@ -170,12 +171,12 @@ const char iwl9560_killer_1550s_name[] =
 
 const struct iwl_cfg iwl9260_2ac_cfg = {
     .fw_name_pre = IWL9260_FW_PRE,
-    IWL_DEVICE_9000,
+    IWL_DEVICE_9000
 };
 
 const struct iwl_cfg iwl9560_2ac_cfg_soc = {
     .fw_name_pre = IWL9000_FW_PRE,
-    IWL_DEVICE_9000,
+    IWL_DEVICE_9560
 };
 
 

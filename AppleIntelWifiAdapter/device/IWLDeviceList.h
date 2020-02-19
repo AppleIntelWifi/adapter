@@ -347,12 +347,12 @@ static const struct pci_device_id iwl_hw_card_ids[] = {
     
     /* 9000 Series */
         {IWL_PCI_DEVICE(0x2526, PCI_ANY_ID, iwl9000_trans_cfg)},
-        {IWL_PCI_DEVICE(0x271B, PCI_ANY_ID, iwl9560_trans_cfg)},
-        {IWL_PCI_DEVICE(0x271C, PCI_ANY_ID, iwl9560_trans_cfg)},
-        {IWL_PCI_DEVICE(0x30DC, PCI_ANY_ID, iwl9560_trans_cfg)},
-        {IWL_PCI_DEVICE(0x31DC, PCI_ANY_ID, iwl9560_shared_clk_trans_cfg)},
-        {IWL_PCI_DEVICE(0x9DF0, PCI_ANY_ID, iwl9560_trans_cfg)},
-        {IWL_PCI_DEVICE(0xA370, PCI_ANY_ID, iwl9560_trans_cfg)},
+        {IWL_PCI_DEVICE(0x271B, PCI_ANY_ID, iwl9560_cfg)},
+        {IWL_PCI_DEVICE(0x271C, PCI_ANY_ID, iwl9560_cfg)},
+        {IWL_PCI_DEVICE(0x30DC, PCI_ANY_ID, iwl9560_cfg)},
+        {IWL_PCI_DEVICE(0x31DC, PCI_ANY_ID, iwl9560_shared_clk_cfg)},
+        {IWL_PCI_DEVICE(0x9DF0, PCI_ANY_ID, iwl9560_cfg)},
+        {IWL_PCI_DEVICE(0xA370, PCI_ANY_ID, iwl9560_cfg)},
     
     /* Qu devices */
         {IWL_PCI_DEVICE(0x02F0, PCI_ANY_ID, iwl_qu_trans_cfg)},
