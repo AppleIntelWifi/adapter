@@ -177,7 +177,6 @@ public:
     mach_vm_address_t dma_mask;
     
     int tfd_size;
-    int addr_size;
     int max_tbs;
     
     //fw

@@ -244,7 +244,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie)
         else
             rxq->queue_size = RX_QUEUE_SIZE;
 
-        struct iwl_dma_ptr *rxq_bd_buf = allocate_dma_buf(free_size * rxq->queue_size, DMA_BIT_MASK(trans_pcie->addr_size));
+        struct iwl_dma_ptr *rxq_bd_buf = allocate_dma_buf(free_size * rxq->queue_size, trans_pcie->dma_mask);
 
         //rxq->bd_mem_ptr
         rxq->bd_dma_ptr = rxq_bd_buf;
@@ -253,7 +253,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie)
         bzero(rxq->bd, free_size * rxq->queue_size);
 
         if (trans_pcie->m_pDevice->cfg->trans.mq_rx_supported) {
-            struct iwl_dma_ptr *used_bd_buf = allocate_dma_buf(sizeof(__le32) * rxq->queue_size, DMA_BIT_MASK(trans_pcie->addr_size));
+            struct iwl_dma_ptr *used_bd_buf = allocate_dma_buf(sizeof(__le32) * rxq->queue_size, trans_pcie->dma_mask);
             rxq->used_bd_dma_ptr = used_bd_buf;
             rxq->used_bd = (__le32 *)used_bd_buf->addr;
             rxq->used_bd_dma = used_bd_buf->dma;
@@ -261,7 +261,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie)
         }
 
         /*Allocate the driver's pointer to receive buffer status */
-        struct iwl_dma_ptr *rxq_rb_stts_buf = allocate_dma_buf(sizeof(*rxq->rb_stts), DMA_BIT_MASK(trans_pcie->addr_size));
+        struct iwl_dma_ptr *rxq_rb_stts_buf = allocate_dma_buf(sizeof(*rxq->rb_stts), trans_pcie->dma_mask);
         rxq->rb_stts_dma_ptr = rxq_rb_stts_buf;
         rxq->rb_stts = (struct iwl_rb_status*)rxq_rb_stts_buf->addr;
         rxq->rb_stts_dma = rxq_rb_stts_buf->dma;
