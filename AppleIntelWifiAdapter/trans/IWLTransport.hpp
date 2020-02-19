@@ -224,6 +224,7 @@ public:
     int rx_buf_size;//Rx buffer size
     iwl_rxq *rxq;//all the RX queue data
     int num_rx_bufs;
+    int global_table_array_size;
     struct iwl_rx_mem_buffer *rx_pool;
     struct iwl_rx_mem_buffer **global_table;
     struct iwl_rb_allocator rba;

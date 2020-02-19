@@ -504,7 +504,6 @@ int IWLTransport::rxInit()
     allocator_pool_size = this->num_rx_queues *
     (RX_CLAIM_REQ_ALLOC - RX_POST_REQ_ALLOC);
     num_alloc = queue_size + allocator_pool_size;
-
     for (i = 0; i < num_alloc; i++) {
         struct iwl_rx_mem_buffer *rxb = &this->rx_pool[i];
 
@@ -516,7 +515,10 @@ int IWLTransport::rxInit()
         rxb->vid = (u16)(i + 1);
         rxb->invalid = true;
     }
-
+    
+    // Store size for later when getting rx commands to check against vid
+    this->global_table_array_size=num_alloc;
+    
     iwl_pcie_rxq_alloc_rbs(this, def_rxq);
 
     IWL_INFO(0, "rxInit init done\n");
@@ -1289,7 +1291,8 @@ restart:
         if(m_pDevice->cfg->trans.mq_rx_supported) {
             //TODO: implement
             u16 vid = le32_to_cpu(((__le32*)rxq->used_bd)[i]) & 0x0FFF;
-            if ((!vid || vid > ARRAY_SIZE(this->global_table))) {
+            
+            if ((!vid || vid > this->global_table_array_size)) {
                 IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);
                 goto out;
             }
