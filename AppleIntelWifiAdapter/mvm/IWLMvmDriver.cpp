@@ -13,6 +13,9 @@
 #include "MvmCmd.hpp"
 #include "txq.h"
 #include "../fw/NotificationWait.hpp"
+#include "IWLMvmSmartFifo.hpp"
+#include "IWLMvmSta.hpp"
+#include "IWLMvmPhy.hpp"
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
@@ -387,6 +390,8 @@ bool IWLMvmDriver::drvStart()
     } else {
         
     }
+    
+    m_pDevice->btForceAntMode = BT_FORCE_ANT_WIFI;
     if (iwl_mvm_has_unified_ucode(m_pDevice)) {
         m_pDevice->cur_fw_img = IWL_UCODE_REGULAR;
     } else {
@@ -437,12 +442,102 @@ bool IWLMvmDriver::drvStart()
 //    };
 //    sendCmd(&cmd);
     
+    
     if (!err) {
         stopDevice();
     } else if (err < 0) {
         IWL_ERR(0, "Failed to run INIT ucode: %d\n", err);
+        goto fail;
     }
+    
+    //iwl_phy_db_free(&this->phy_db);
+     
+
+    
     return true;
+    
+fail:
+    return false;
+    
+}
+
+bool IWLMvmDriver::enableDevice() {
+    int err;
+    
+    iwl_phy_db_init(trans, &this->phy_db);
+    err = trans_ops->startHW();
+    m_pDevice->cur_fw_img = IWL_UCODE_INIT;
+    err = runInitMvmUCode(false);
+    // now we run the proper ucode
+    if(err)
+        goto fail;
+    
+    stopDevice();
+    
+    
+    err = trans_ops->startHW();
+    
+    m_pDevice->cur_fw_img = IWL_UCODE_REGULAR;
+    err = loadUcodeWaitAlive(IWL_UCODE_REGULAR);
+    if(err < 0) {
+        IWL_ERR(0, "Failed to run REGULAR ucode: %d\n", err);
+        goto fail;
+    }
+
+    /*
+
+    */
+    
+    err = iwl_sf_config(this, SF_INIT_OFF);
+    if(err < 0) {
+        IWL_ERR(0, "Smart FIFO failed to activate: %d\n", err);
+        goto fail;
+    }
+
+    err = sendTXAntCfg(iwl_mvm_get_valid_tx_ant(m_pDevice));
+    if(err < 0) {
+        IWL_ERR(0, "Failed to send TX ant: %d\n", err);
+        goto fail;
+    }
+    
+    if(!iwl_mvm_has_unified_ucode(m_pDevice)) {
+        err = iwl_send_phy_db_data(&phy_db);
+        if(err < 0) {
+            IWL_ERR(0, "Failed to send phy db: %d\n", err);
+            goto fail;
+        }
+    }
+    
+    IOSleep(100);
+    
+    err = sendPhyCfgCmd();
+    if (err < 0) {
+        IWL_ERR(0, "Failed to send phy cfg cmd: %d\n", err);
+        goto fail;
+    }
+    
+    
+    err = sendBTInitConf();
+    if(err < 0) {
+        IWL_ERR(0, "Failed to activate BT coex: %d\n", err);
+        goto fail;
+    }
+    
+    err = iwl_mvm_add_aux_sta(this);
+    if(err < 0) {
+        IWL_ERR(0, "Failed to add aux station: %d\n", err);
+        goto fail;
+    }
+    
+    
+    for(int i = 0; i < NUM_PHY_CTX; i++)
+    {
+        if ((err = iwl_phy_ctxt_add(this,
+            &this->m_pDevice->phy_ctx[i], &m_pDevice->ie_ic.ic_channels[1], 1, 1)) != 0)
+            goto fail;
+    }
+fail:
+    return false;
 }
 
 

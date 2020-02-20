@@ -354,7 +354,7 @@ static mbuf_t iwl_pcie_rx_alloc_page(IWLTransport *trans, u32 *offset)
     if(m == 0) {
         IWL_WARN(0, "allocatePacket failed!\n");
     }
-    IWL_WARN(0, "allocated the normal way\n");
+    //IWL_WARN(0, "allocated the normal way\n");
     //mbuf_allocpacket(MBUF_DONTWAIT, PAGE_SIZE, &size, &m);
     return m;
 }
@@ -377,7 +377,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
     while (1) {
         unsigned int offset;
 
-        IWL_INFO(0, "Locking rxq\n");
+        //IWL_INFO(0, "Locking rxq\n");
         IOSimpleLockLock(rxq->lock);
         if (TAILQ_EMPTY(&rxq->rx_used)) {
             IWL_INFO(0, "rx_used empty");
@@ -386,14 +386,14 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
         }
         IOSimpleLockUnlock(rxq->lock);
 
-        IWL_INFO(0, "Allocating rx page\n");
+        //IWL_INFO(0, "Allocating rx page\n");
         page = iwl_pcie_rx_alloc_page(trans, &offset);
         if (page == 0) {
             IWL_ERR(0, "iwl_pcie_rxq_alloc_rbs alloc page failed\n");
             return;
         }
 
-        IWL_INFO(0, "Locking rxq again\n");
+        //IWL_INFO(0, "Locking rxq again\n");
         IOSimpleLockLock(rxq->lock);
 
         if (TAILQ_EMPTY(&rxq->rx_used)) {
@@ -406,7 +406,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
         TAILQ_REMOVE(&rxq->rx_used, rxb, list);
         IOSimpleLockUnlock(rxq->lock);
 
-        IWL_INFO(0, "Getting physical rep of memory\n");
+        //IWL_INFO(0, "Getting physical rep of memory\n");
         rxb->page = page;
         rxb->offset = offset;
         rxb->cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
@@ -428,7 +428,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
         rxb->page_dma = rxb->vec.location;
 
         //rxb->page_dma = mbuf_data_to_physical(page);
-        IWL_INFO(0, "Locking rxq for the final time\n");
+        //IWL_INFO(0, "Locking rxq for the final time\n");
         IOSimpleLockLock(rxq->lock);
 
         TAILQ_INSERT_TAIL(&rxq->rx_free, rxb, list);
@@ -436,7 +436,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
 
         IOSimpleLockUnlock(rxq->lock);
         
-        IWL_INFO(0, "iwl_pcie_rxq_alloc_rbs succeed\n");
+        //IWL_INFO(0, "iwl_pcie_rxq_alloc_rbs succeed\n");
     }
 }
 
@@ -1010,6 +1010,7 @@ void IWLTransport::rxqCheckWrPtr()
  */
 int IWLTransport::rxStop()
 {
+    IWL_INFO(0, "Stopping Rx dma channels\n");
     if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
         /* TODO: remove this once fw does it */
         iwlWriteUmacPRPH(RFH_RXF_DMA_CFG_GEN3, 0);
@@ -1231,6 +1232,15 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         
         if (rxq->id == 0)
             iwl_notification_wait_notify(&trans->m_pDevice->notif_wait, pkt);
+        
+        
+        switch(pkt->hdr.cmd) {
+            case MVM_ALIVE:
+                break;
+            
+            default:
+                break;
+        }
             
             //opmode->rx(NULL, NULL, &rxcb);
         

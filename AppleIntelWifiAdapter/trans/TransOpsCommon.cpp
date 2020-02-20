@@ -174,3 +174,7 @@ int IWLTransOps::startHW()
     checkHWRFKill();
     return 0;
 }
+
+bool IWLTransOps::fwRunning() {
+    return test_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &this->trans->status);
+}

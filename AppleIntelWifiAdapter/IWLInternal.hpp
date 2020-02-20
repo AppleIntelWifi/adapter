@@ -23,6 +23,7 @@ struct iwl_dma_ptr {
 };
 
 struct iwl_dma_ptr* allocate_dma_buf(size_t size, mach_vm_address_t physical_mask);
+struct iwl_dma_ptr* allocate_dma_buf32(size_t size);
 
 void free_dma_buf(struct iwl_dma_ptr *dma_ptr);
 

@@ -214,6 +214,7 @@ public:
     bool rfkill_safe_init_done;
     iwl_notif_wait_data notif_wait;
     IOLock *rx_sync_waitq;
+    iwl_phy_ctx phy_ctx[NUM_PHY_CTX];
 
     // MARK: queue info
     union {
@@ -321,7 +322,7 @@ static inline u32 iwl_mvm_get_phy_config(IWLDevice *mvm)
     phy_config |= valid_tx_ant << FW_PHY_CFG_TX_CHAIN_POS |
               valid_rx_ant << FW_PHY_CFG_RX_CHAIN_POS;
     
-    IWL_INFO(0, "phy_config=%d\n", phy_config);
+    IWL_INFO(0, "phy_config=%u\n", phy_config);
 
     return mvm->fw.phy_config & phy_config;
 }

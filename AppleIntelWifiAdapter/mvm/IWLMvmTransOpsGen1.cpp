@@ -20,7 +20,10 @@ int IWLMvmTransOpsGen1::nicInit()
     IOSimpleLockUnlock(trans->irq_lock);
     if (ret)
         return ret;
-    setPwr(false);
+    
+    if(trans->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_7000)
+        setPwr(false);
+    
     nicConfig();
     
     IWL_INFO(0, "Allocating both queues\n");
@@ -36,6 +39,38 @@ int IWLMvmTransOpsGen1::nicInit()
         trans->setBit(CSR_MAC_SHADOW_REG_CTRL, 0x800FFFFF);
         IWL_INFO(trans, "Enabling shadow registers in device\n");
     }
+
+    
+    
+    ieee80211com* ic = &trans->m_pDevice->ie_ic;
+    ic->ic_phytype = IEEE80211_T_OFDM;
+    ic->ic_opmode = IEEE80211_M_STA;
+    ic->ic_caps =
+            IEEE80211_C_IBSS |
+            IEEE80211_C_WEP |
+            IEEE80211_C_TX_AMPDU |
+            IEEE80211_C_PMGT |
+            IEEE80211_C_SHSLOT |
+            IEEE80211_C_SHPREAMBLE |
+            IEEE80211_C_RSN |
+            IEEE80211_C_QOS |
+            IEEE80211_C_TXPMGT
+            //IEEE80211_C_BGSCAN     
+            ;
+    
+    
+    for(int i = 0; i < NUM_PHY_CTX; i++) {
+        trans->m_pDevice->phy_ctx[i].id = i;
+        trans->m_pDevice->phy_ctx[i].color = 0;
+        trans->m_pDevice->phy_ctx[i].ref = 0;
+        trans->m_pDevice->phy_ctx[i].channel = NULL;
+        
+    }
+    
+    
+    
+    
+    
     
     return 0;
 }
@@ -228,8 +263,9 @@ void IWLMvmTransOpsGen1::stopDeviceDirectly()
     trans->clearBit(CSR_GP_CNTRL,
                     CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
     /* Stop the device, and put it in low power state */
-    apmStop(false);
+    apmStop(true);
     trans->swReset();
+    
     /*
      * Upon stop, the IVAR table gets erased, so msi-x won't
      * work. This causes a bug in RF-KILL flows, since the interrupt
@@ -375,7 +411,6 @@ void IWLMvmTransOpsGen1::apmStop(bool op_mode_leave)
         trans->apmLpXtalEnable();
         return;
     }
-    trans->swReset();
     /*
      * Clear "initialization complete" bit to move adapter from
      * D0A* (powered-up Active) --> D0U* (Uninitialized) state.

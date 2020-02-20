@@ -59,6 +59,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
+#include "../../compat/linux/types.h"
 
 #ifndef __iwl_fw_api_sf_h__
 #define __iwl_fw_api_sf_h__
