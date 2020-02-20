@@ -61,6 +61,8 @@ private:
     IOEthernetInterface *netif;
     IOCommandGate *gate;
     IOWorkLoop* irqLoop;
+    
+    void releaseAll();
 };
 
 #endif

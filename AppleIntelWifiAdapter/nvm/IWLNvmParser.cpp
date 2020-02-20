@@ -374,16 +374,15 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
         channel->max_power = IWL_DEFAULT_MAX_TX_POWER;
 
         /* don't put limitations in case we're using LAR */
-        if (!(sbands_flags & IWL_NVM_SBANDS_FLAGS_LAR))
             channel->ic_flags = iwl_get_channel_flags(nvm_chan[ch_idx],
                                    ch_idx, band,
                                    ch_flags, cfg, data);
-        else
-            channel->ic_flags = 0;
 
         iwl_nvm_print_channel_flags(channel->hw_value, ch_flags);
         IWL_INFO(dev, "Ch. %d: %ddBm\n",
                  channel->hw_value, channel->max_power);
+        
+        memcpy(&dev->ie_ic.ic_channels[ch_idx], channel, sizeof(ieee80211_channel));
     }
 
     return n_channels;

@@ -11,6 +11,7 @@
 
 void iwl_phy_db_init(IWLTransport *trans, struct iwl_phy_db *phy_db)
 {
+    memset(phy_db, 0, sizeof(iwl_phy_db));
     phy_db->trans = trans;
     phy_db->n_group_txp = -1;
     phy_db->n_group_papd = -1;
@@ -79,7 +80,9 @@ void iwl_phy_db_free(struct iwl_phy_db *phy_db)
     for (i = 0; i < phy_db->n_group_txp; i++)
         iwl_phy_db_free_section(phy_db, IWL_PHY_DB_CALIB_CHG_TXP, i);
     IOFree(phy_db->calib_ch_group_txp, sizeof(*phy_db->calib_ch_group_txp));
-    IOFree(phy_db, sizeof(*phy_db));
+    
+    phy_db->trans->m_pDevice->controller->freePacket((mbuf_t)phy_db);
+    //IOFree(phy_db, sizeof(*phy_db));
 }
 
 int iwl_phy_db_set_section(struct iwl_phy_db *phy_db,
@@ -238,7 +241,7 @@ static int iwl_send_phy_db_cmd(struct iwl_phy_db *phy_db, u16 type,
 {
     struct iwl_phy_db_cmd phy_db_cmd;
     struct iwl_host_cmd cmd = {
-        .id = PHY_DB_CMD,
+        .id = PHY_DB_CMD
     };
     
     IWL_INFO(0,

@@ -7,6 +7,8 @@
 //
 
 #include "IWLMvmDriver.hpp"
+#include "IWLMvmSmartFifo.hpp"
+#include <sys/param.h>
 
 static bool iwl_wait_phy_db_entry(struct iwl_notif_wait_data *notif_wait,
                                   struct iwl_rx_packet *pkt, void *data)
@@ -117,6 +119,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
         goto remove_notif;
     }
     
+    
     m_pDevice->rfkill_safe_init_done = true;
     
     /* Send TX valid antennas before triggering calibrations */
@@ -150,6 +153,7 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
         IWL_ERR(0, "Failed to run INIT calibrations: %d\n",
                 ret);
     }
+    
     goto out;
 remove_notif:
     iwl_remove_notification(&m_pDevice->notif_wait, &calib_wait);
@@ -271,22 +275,69 @@ error:
     return ret;
 }
 
+static void iwl_mvm_phy_filter_init(IWLMvmDriver *mvm,
+                    struct iwl_phy_specific_cfg *phy_filters)
+{
+    /*
+     * TODO: read specific phy config from BIOS
+     * ACPI table for this feature has not been defined yet,
+     * so for now we use hardcoded values.
+     */
+
+    if (IWL_MVM_PHY_FILTER_CHAIN_A) {
+        phy_filters->filter_cfg_chain_a =
+            cpu_to_le32(IWL_MVM_PHY_FILTER_CHAIN_A);
+    }
+    if (IWL_MVM_PHY_FILTER_CHAIN_B) {
+        phy_filters->filter_cfg_chain_b =
+            cpu_to_le32(IWL_MVM_PHY_FILTER_CHAIN_B);
+    }
+    if (IWL_MVM_PHY_FILTER_CHAIN_C) {
+        phy_filters->filter_cfg_chain_c =
+            cpu_to_le32(IWL_MVM_PHY_FILTER_CHAIN_C);
+    }
+    if (IWL_MVM_PHY_FILTER_CHAIN_D) {
+        phy_filters->filter_cfg_chain_d =
+            cpu_to_le32(IWL_MVM_PHY_FILTER_CHAIN_D);
+    }
+}
+
 int IWLMvmDriver::sendPhyCfgCmd()
 {
-    struct iwl_phy_cfg_cmd phy_cfg_cmd;
+    struct iwl_phy_cfg_cmd_v3 phy_cfg_cmd;
     iwl_ucode_type ucode_type = this->m_pDevice->cur_fw_img;
-    
+    IWL_INFO(0, "Ucode type: %d\n", ucode_type);
+    struct iwl_phy_specific_cfg phy_filters = {};
     phy_cfg_cmd.phy_cfg = cpu_to_le32(iwl_mvm_get_phy_config(m_pDevice));
     //phy_cfg_cmd.phy_cfg |= cpu_to_le32(m_pDevice->cfg->)
+    
+    if(trans->m_pDevice->cfg->tx_with_siso_diversity) {
+        phy_cfg_cmd.phy_cfg =
+        cpu_to_le32(FW_PHY_CFG_CHAIN_SAD_ENABLED);
+    }
+    
+    phy_cfg_cmd.phy_cfg |= cpu_to_le32(trans->m_pDevice->cfg->trans.extra_phy_cfg_flags);
+    
     phy_cfg_cmd.calib_control.event_trigger =
         this->m_pDevice->fw.default_calib[ucode_type].event_trigger;
     phy_cfg_cmd.calib_control.flow_trigger =
         this->m_pDevice->fw.default_calib[ucode_type].flow_trigger;
     
+    u8 cmd_ver = iwl_fw_lookup_cmd_ver(&trans->m_pDevice->fw, IWL_ALWAYS_LONG_GROUP, PHY_CONFIGURATION_CMD);
+    
+    if(cmd_ver == 3) {
+        iwl_mvm_phy_filter_init(this, &phy_filters);
+        memcpy(&phy_cfg_cmd.phy_specific_cfg, &phy_filters,
+               sizeof(struct iwl_phy_specific_cfg));
+    }
+    
     IWL_INFO(0, "Sending Phy CFG command: 0x%x\n",
                    phy_cfg_cmd.phy_cfg);
     
-    return sendCmdPdu(PHY_CONFIGURATION_CMD, 0, sizeof(phy_cfg_cmd), &phy_cfg_cmd);
+    size_t cmd_size = (cmd_ver == 3) ? sizeof(struct iwl_phy_cfg_cmd_v3) :
+    sizeof(struct iwl_phy_cfg_cmd_v1);
+    
+    return sendCmdPdu(PHY_CONFIGURATION_CMD, 0, cmd_size, &phy_cfg_cmd);
 }
 
 int IWLMvmDriver::sendTXAntCfg(u8 valid_tx_ant)
@@ -335,6 +386,187 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
     
     return true;
 }
+
+bool free_paging(IWLMvmDriver* drv) {
+    if(drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
+        if(drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
+            for(int i = 0; i < NUM_OF_FW_PAGING_BLOCKS; i++) {
+                if(drv->m_pDevice->fw_paging_db[i].fw_paging_block) {
+                    free_dma_buf(drv->m_pDevice->fw_paging_db[i].fw_paging_block);
+                    drv->m_pDevice->fw_paging_db[i].fw_paging_block = NULL;
+                }
+            }
+            memset(drv->m_pDevice->fw_paging_db, 0, sizeof(drv->m_pDevice->fw_paging_db));
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+    
+    
+    return true;
+}
+
+bool alloc_pages(IWLMvmDriver* drv, fw_img* img) {
+    int blk_idx = 0;
+    if(drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
+        if(drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
+            return false;
+        }
+    }
+    
+    int num_pages = img->paging_mem_size / FW_PAGING_SIZE;
+    drv->m_pDevice->num_of_paging_blk = howmany(num_pages, NUM_OF_PAGE_PER_GROUP);
+    drv->m_pDevice->num_of_pages_in_last_blk = num_pages -
+                NUM_OF_PAGE_PER_GROUP * (drv->m_pDevice->num_of_paging_blk - 1);
+    
+    IWL_INFO(0, "Paging: allocating mem for %d paging blocks, "
+    "each block holds 8 pages, last block holds %d pages\n", drv->m_pDevice->num_of_paging_blk, drv->m_pDevice->num_of_pages_in_last_blk);
+    
+    int error;
+    
+    iwl_dma_ptr* ptr = allocate_dma_buf(4096, drv->trans->dma_mask);
+    if(ptr) {
+        drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_block = ptr;
+    }
+    else {
+        free_paging(drv);
+        return false;
+    }
+    
+    drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_size = FW_PAGING_SIZE;
+    
+    IWL_INFO(0, "Allocated 4k bytes for paging..");
+    
+    for (blk_idx = 1; blk_idx < drv->m_pDevice->num_of_paging_blk + 1; blk_idx++) {
+        /* allocate block of IWM_PAGING_BLOCK_SIZE (32K) */
+        /* XXX Use iwm_dma_contig_alloc for allocating */
+        iwl_dma_ptr* p = allocate_dma_buf(PAGING_BLOCK_SIZE, drv->trans->dma_mask);
+        if (!p) {
+            /* free all the previous pages since we failed */
+            free_paging(drv);
+            //iwm_free_fw_paging(sc);
+            return ENOMEM;
+        }
+        
+        drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_block = p;
+
+        drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_size =
+            PAGING_BLOCK_SIZE;
+
+        IWL_INFO(0, "Allocated 32k for paging");
+    }
+    
+    return false;
+}
+
+bool fill_paging(IWLMvmDriver* drv, fw_img* img) {
+    int sec_idx, idx;
+    uint32_t offset = 0;
+
+    /*
+     * find where is the paging image start point:
+     * if CPU2 exist and it's in paging format, then the image looks like:
+     * CPU1 sections (2 or more)
+     * CPU1_CPU2_SEPARATOR_SECTION delimiter - separate between CPU1 to CPU2
+     * CPU2 sections (not paged)
+     * PAGING_SEPARATOR_SECTION delimiter - separate between CPU2
+     * non paged to CPU2 paging sec
+     * CPU2 paging CSS
+     * CPU2 paging image (including instruction and data)
+     */
+    for (sec_idx = 0; sec_idx < img->num_sec; sec_idx++) {
+        if (img->sec[sec_idx].offset ==
+            PAGING_SEPARATOR_SECTION) {
+            sec_idx++;
+            break;
+        }
+    }
+    
+    if (sec_idx >= img->num_sec - 1) {
+        IWL_ERR(0, "Missing CSS/Paging sectors..\n");
+        free_paging(drv);
+        return EINVAL;
+    }
+    
+    IWL_INFO(0, "Copy CSS to paging db (%d/%d)\n", sec_idx, img->num_sec);
+    
+    memcpy(drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr,
+    img->sec[sec_idx].data, drv->m_pDevice->fw_paging_db[0].fw_paging_size);
+    
+    sec_idx++;
+    
+    for (idx = 1; idx < drv->m_pDevice->num_of_paging_blk; idx++) {
+        memcpy(drv->m_pDevice->fw_paging_db[idx].fw_paging_block->addr,
+               (const char *)img->sec[sec_idx].data + offset,
+               drv->m_pDevice->fw_paging_db[idx].fw_paging_size);
+
+        IWL_INFO(0, "Paging: copied %d paging bytes to block %d\n", drv->m_pDevice->fw_paging_db[idx].fw_paging_size, idx);
+
+        offset += drv->m_pDevice->fw_paging_db[idx].fw_paging_size;
+    }
+
+    /* copy the last paging block */
+    if (drv->m_pDevice->num_of_pages_in_last_blk > 0) {
+        memcpy(drv->m_pDevice->fw_paging_db[idx].fw_paging_block->addr,
+            (const char *)img->sec[sec_idx].data + offset,
+            FW_PAGING_SIZE * drv->m_pDevice->num_of_pages_in_last_blk);
+
+        IWL_INFO(0, "Paging: copied %d pages in the last block %d\n",
+            drv->m_pDevice->num_of_pages_in_last_blk, idx);
+    }
+    
+    return 0;
+    
+}
+
+int save_paging(IWLMvmDriver* drv, fw_img* img) {
+    int err;
+
+    err = alloc_pages(drv, img);
+    if (err)
+        return err;
+
+    return fill_paging(drv, img);
+}
+
+int send_paging(IWLMvmDriver* drv, fw_img* img) {
+    iwl_fw_paging_cmd fw_paging_cmd = {
+        .flags = htole32(PAGING_CMD_IS_SECURED |
+                         PAGING_CMD_IS_ENABLED |
+                         (drv->m_pDevice->num_of_pages_in_last_blk <<
+                          PAGING_CMD_NUM_OF_PAGES_IN_LAST_GRP_POS)),
+        .block_size = htole32(BLOCK_2_EXP_SIZE),
+        .block_num = htole32(drv->m_pDevice->num_of_paging_blk),
+    };
+    
+    
+    size_t size = sizeof(iwl_fw_paging_cmd);
+    int blk_idx;
+
+    if (!iwl_mvm_has_new_tx_api(drv->m_pDevice))
+        size -= (sizeof(uint64_t) - sizeof(uint32_t)) *
+            NUM_OF_FW_PAGING_BLOCKS;
+    
+    for (blk_idx = 0; blk_idx < drv->m_pDevice->num_of_paging_blk + 1; blk_idx++) {
+        dma_addr_t dev_phy_addr =
+            drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_block->dma;
+        if (iwl_mvm_has_new_tx_api(drv->m_pDevice)) {
+            //fw_paging_cmd.device_phy_addr.addr64[blk_idx] =
+            //    htole64(dev_phy_addr);
+        } else {
+            dev_phy_addr = htole32(dev_phy_addr >> PAGE_2_EXP_SIZE);
+            fw_paging_cmd.device_phy_addr[blk_idx] = dev_phy_addr;
+        }
+    }
+    
+    return drv->sendCmdPdu(iwl_cmd_id(FW_PAGING_BLOCK_CMD, IWL_ALWAYS_LONG_GROUP, 0), 0, sizeof(fw_paging_cmd),
+                           &fw_paging_cmd);
+}
+
 
 int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
 {
@@ -455,6 +687,21 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
     BIT(IWL_MAX_TID_COUNT + 2);
     
     set_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &m_pDevice->status);
+    
+    if(m_pDevice->fw.img[m_pDevice->cur_fw_img].paging_mem_size) {
+        ret = save_paging(this, &m_pDevice->fw.img[m_pDevice->cur_fw_img]);
+        if(ret)
+            return ret;
+        
+        ret = send_paging(this,  &m_pDevice->fw.img[m_pDevice->cur_fw_img]);
+        
+        if(ret) {
+            free_paging(this);
+            
+            return ret;
+        }
+        
+    }
     
     return 0;
 }

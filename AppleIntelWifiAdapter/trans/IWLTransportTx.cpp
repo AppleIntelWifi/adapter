@@ -1167,7 +1167,7 @@ int IWLTransport::pcieSendHCmd(iwl_host_cmd *cmd)
 
 #define BUILD_RAxTID(sta_id, tid)    (((sta_id) << 4) + (tid))
 
-static bool
+bool
 iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
              const struct iwl_trans_txq_scd_cfg *cfg,
              unsigned int queue_wdg_timeout)
@@ -1274,5 +1274,30 @@ void IWLTransport::txqCheckWrPtrs()
 
 void IWLTransport::txStop()
 {
+    IWL_INFO(0, "Stopping TX DMA channels\n");
+    IOInterruptState state;
+    int ch, ret;
+    u32 mask = 0;
+    
+    IOSimpleLockLock(irq_lock);
+    
+    if(!grabNICAccess(&state))
+        goto out;
+    
+    for (ch = 0; ch < FH_TCSR_CHNL_NUM; ch++) {
+        iwlWrite32(FH_TCSR_CHNL_TX_CONFIG_REG(ch), 0x0);
+        mask |= FH_TSSR_TX_STATUS_REG_MSK_CHNL_IDLE(ch);
+    }
+    
+    ret = iwlPollBit(FH_TSSR_TX_STATUS_REG, mask, mask, 5000);
+    if(ret < 0)
+        IWL_ERR(this, "failing on interrupt to disable DMA channel %d [0x%0x]\n",
+                ch, iwlRead32(FH_TSSR_TX_STATUS_REG));
+    
+    releaseNICAccess(&state);
+    
+out:
+    IOSimpleLockUnlock(irq_lock);
+    return;
     
 }

@@ -133,9 +133,17 @@
 		02E38D0A23E26E7200264FA9 /* _string.c in Sources */ = {isa = PBXBuildFile; fileRef = 02E38D0923E26CB500264FA9 /* _string.c */; };
 		02E38D0D23E2EA0A00264FA9 /* timeout.c in Sources */ = {isa = PBXBuildFile; fileRef = 02E38D0C23E2E89A00264FA9 /* timeout.c */; };
 		02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */; };
-		68604F1723F5F4490066F562 /* iwlwifi-8265-36.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 6864313723F5F0CD002F3C52 /* iwlwifi-8265-36.ucode */; };
+		685D176023FE242700E54345 /* iwlwifi-8265-36.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 685D175F23FE242600E54345 /* iwlwifi-8265-36.ucode */; };
+		685D5B8823FDF12B00C8C041 /* IWLMvmPhy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */; };
+		685D5B8923FDF12B00C8C041 /* IWLMvmPhy.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */; };
 		68604F1823F5F44B0066F562 /* iwlwifi-8265-34.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */; };
 		6860E55023F6349C0041CD2D /* TransHdr.h in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7923EE70D3003FF602 /* TransHdr.h */; };
+		686162A223FDDA290023A4D2 /* IWLMvmSmartFifo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686162A023FDDA290023A4D2 /* IWLMvmSmartFifo.cpp */; };
+		686162A323FDDA290023A4D2 /* IWLMvmSmartFifo.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686162A123FDDA290023A4D2 /* IWLMvmSmartFifo.hpp */; };
+		686162A623FDE74E0023A4D2 /* IWLMvmScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686162A423FDE74E0023A4D2 /* IWLMvmScan.cpp */; };
+		686162A723FDE74E0023A4D2 /* IWLMvmScan.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686162A523FDE74E0023A4D2 /* IWLMvmScan.hpp */; };
+		686162AA23FDE7670023A4D2 /* IWLMvmSta.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686162A823FDE7670023A4D2 /* IWLMvmSta.cpp */; };
+		686162AB23FDE7670023A4D2 /* IWLMvmSta.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */; };
 		6868731B23FA49ED001C7DEA /* HackIONetworkInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = 6868731923FA49ED001C7DEA /* HackIONetworkInterface.h */; };
 		6868731C23FA49ED001C7DEA /* HackIOEthernetInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = 6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */; };
 		6868731E23FA4AB4001C7DEA /* IWLSCD.h in Headers */ = {isa = PBXBuildFile; fileRef = 6868731D23FA4AB4001C7DEA /* IWLSCD.h */; };
@@ -354,7 +362,15 @@
 		02E38D0C23E2E89A00264FA9 /* timeout.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = timeout.c; sourceTree = "<group>"; };
 		02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = CTimeout.cpp; sourceTree = "<group>"; };
 		02E9939423D8971800E97773 /* random.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = random.h; sourceTree = "<group>"; };
-		6864313723F5F0CD002F3C52 /* iwlwifi-8265-36.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-36.ucode"; sourceTree = "<group>"; };
+		685D175F23FE242600E54345 /* iwlwifi-8265-36.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-36.ucode"; sourceTree = "<group>"; };
+		685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmPhy.cpp; sourceTree = "<group>"; };
+		685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmPhy.hpp; sourceTree = "<group>"; };
+		686162A023FDDA290023A4D2 /* IWLMvmSmartFifo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmSmartFifo.cpp; sourceTree = "<group>"; };
+		686162A123FDDA290023A4D2 /* IWLMvmSmartFifo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmSmartFifo.hpp; sourceTree = "<group>"; };
+		686162A423FDE74E0023A4D2 /* IWLMvmScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmScan.cpp; sourceTree = "<group>"; };
+		686162A523FDE74E0023A4D2 /* IWLMvmScan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmScan.hpp; sourceTree = "<group>"; };
+		686162A823FDE7670023A4D2 /* IWLMvmSta.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmSta.cpp; sourceTree = "<group>"; };
+		686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmSta.hpp; sourceTree = "<group>"; };
 		68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-34.ucode"; sourceTree = "<group>"; };
 		6868731923FA49ED001C7DEA /* HackIONetworkInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIONetworkInterface.h; path = AppleIntelWifiAdapter/HackIONetworkInterface.h; sourceTree = SOURCE_ROOT; };
 		6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIOEthernetInterface.h; path = AppleIntelWifiAdapter/HackIOEthernetInterface.h; sourceTree = SOURCE_ROOT; };
@@ -521,12 +537,12 @@
 		026E8CE32356FD4D000BFD46 /* firmware */ = {
 			isa = PBXGroup;
 			children = (
+				685D175F23FE242600E54345 /* iwlwifi-8265-36.ucode */,
 				F8C2809623C22311000827EA /* iwlwifi-3160-17.ucode */,
 				F8C280A123C22313000827EA /* iwlwifi-3168-29.ucode */,
 				F8C2808523C2230F000827EA /* iwlwifi-7260-17.ucode */,
 				F8C2809723C22312000827EA /* iwlwifi-7265-17.ucode */,
 				024ADE3A23F7A199005909F6 /* iwlwifi-7265D-27.ucode */,
-				6864313723F5F0CD002F3C52 /* iwlwifi-8265-36.ucode */,
 				68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */,
 				F8C2808823C2230F000827EA /* iwlwifi-8000C-36.ucode */,
 				F8C2807A23C2230D000827EA /* iwlwifi-9000-pu-b0-jf-b0-46.ucode */,
@@ -690,6 +706,14 @@
 				0252C5DA23EBC513001975DB /* Mvm.h */,
 				0252C5E023EC17CD001975DB /* MvmCmd.hpp */,
 				0257B9A423E5A7E3005013A0 /* MvmTransOps.cpp */,
+				686162A023FDDA290023A4D2 /* IWLMvmSmartFifo.cpp */,
+				686162A123FDDA290023A4D2 /* IWLMvmSmartFifo.hpp */,
+				686162A423FDE74E0023A4D2 /* IWLMvmScan.cpp */,
+				686162A523FDE74E0023A4D2 /* IWLMvmScan.hpp */,
+				686162A823FDE7670023A4D2 /* IWLMvmSta.cpp */,
+				686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */,
+				685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */,
+				685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */,
 			);
 			path = mvm;
 			sourceTree = "<group>";
@@ -797,6 +821,7 @@
 				6868731B23FA49ED001C7DEA /* HackIONetworkInterface.h in Headers */,
 				02577D8A23EF98B6003FF602 /* IWLCtxtInfo.hpp in Headers */,
 				02CEFD6423D7DE8E00B620E6 /* sk.h in Headers */,
+				686162AB23FDE7670023A4D2 /* IWLMvmSta.hpp in Headers */,
 				02CEFD8323D7DE8E00B620E6 /* rijndael.h in Headers */,
 				02CEFD5E23D7DE8E00B620E6 /* podd.h in Headers */,
 				68FC255423F5C060004958FC /* HackIO80211Interface.h in Headers */,
@@ -818,6 +843,7 @@
 				02577D7E23EEA4D9003FF602 /* NotificationWait.hpp in Headers */,
 				024DDD5923CCAD26002716C8 /* IWLMvmTransOpsGen1.hpp in Headers */,
 				02CEFD8A23D7DE8E00B620E6 /* des_locl.h in Headers */,
+				686162A723FDE74E0023A4D2 /* IWLMvmScan.hpp in Headers */,
 				02C2288623DBFA870016AD53 /* ieee80211_mira.h in Headers */,
 				02CEFD6723D7DE8E00B620E6 /* spr.h in Headers */,
 				02CEFD8423D7DE8E00B620E6 /* sha1.h in Headers */,
@@ -842,6 +868,7 @@
 				02CEFD6F23D7DE8E00B620E6 /* key_wrap.h in Headers */,
 				02CEFCE623D5F09600B620E6 /* IWLUcodeParse.hpp in Headers */,
 				0252C5E223EC17CD001975DB /* MvmCmd.hpp in Headers */,
+				686162A323FDDA290023A4D2 /* IWLMvmSmartFifo.hpp in Headers */,
 				02CEFD5C23D7DE8E00B620E6 /* poly1305.h in Headers */,
 				6860E55023F6349C0041CD2D /* TransHdr.h in Headers */,
 				02DCDEEB23C334DD00997FA0 /* IWLTransport.hpp in Headers */,
@@ -852,6 +879,7 @@
 				02CEFD7A23D7DE8E00B620E6 /* chacha_private.h in Headers */,
 				02577D7823EE68F1003FF602 /* IWLPhyDb.hpp in Headers */,
 				02CEFD9B23D7E24B00B620E6 /* timeout.h in Headers */,
+				685D5B8923FDF12B00C8C041 /* IWLMvmPhy.hpp in Headers */,
 				026E8CCD2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp in Headers */,
 				02C2287E23DBFA870016AD53 /* ieee80211_proto.h in Headers */,
 				0252C5D923EBB7C0001975DB /* IWLInternal.hpp in Headers */,
@@ -927,6 +955,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				685D176023FE242700E54345 /* iwlwifi-8265-36.ucode in Resources */,
 				02CEFCDC23D45C1200B620E6 /* iwlwifi-cc-a0-48.ucode in Resources */,
 				F8C280E823C2231D000827EA /* iwlwifi-3168-29.ucode in Resources */,
 				68604F1823F5F44B0066F562 /* iwlwifi-8265-34.ucode in Resources */,
@@ -934,7 +963,6 @@
 				02CEFCDB23D45C1200B620E6 /* iwlwifi-Qu-c0-jf-b0-48.ucode in Resources */,
 				F8C280DE23C2231D000827EA /* iwlwifi-7265-17.ucode in Resources */,
 				02CEFCDF23D45C1200B620E6 /* iwlwifi-Qu-c0-hr-b0-48.ucode in Resources */,
-				68604F1723F5F4490066F562 /* iwlwifi-8265-36.ucode in Resources */,
 				F8C280CC23C2231D000827EA /* iwlwifi-7260-17.ucode in Resources */,
 				F8C280D323C2231D000827EA /* iwlwifi-9260-th-b0-jf-b0-46.ucode in Resources */,
 				F8C280DD23C2231D000827EA /* iwlwifi-3160-17.ucode in Resources */,
@@ -986,7 +1014,9 @@
 				02CEFD8123D7DE8E00B620E6 /* cast.c in Sources */,
 				02CEFDB223D835B500B620E6 /* gmac.c in Sources */,
 				02CEFD8023D7DE8E00B620E6 /* blf.c in Sources */,
+				686162A623FDE74E0023A4D2 /* IWLMvmScan.cpp in Sources */,
 				0257B9A523E5A7E3005013A0 /* MvmTransOps.cpp in Sources */,
+				686162AA23FDE7670023A4D2 /* IWLMvmSta.cpp in Sources */,
 				0252C5DC23EC00CA001975DB /* IWLTransportRx.cpp in Sources */,
 				02C2287123DBFA870016AD53 /* ieee80211.c in Sources */,
 				02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */,
@@ -1005,6 +1035,7 @@
 				02C2287823DBFA870016AD53 /* ieee80211_crypto_bip.c in Sources */,
 				024DDD5423CCA79C002716C8 /* IWLMvmTransOpsGen2.cpp in Sources */,
 				02443B5823D1E9A4009C675B /* IWLMvmDriver.cpp in Sources */,
+				686162A223FDDA290023A4D2 /* IWLMvmSmartFifo.cpp in Sources */,
 				02CEFCE523D5F09600B620E6 /* IWLUcodeParse.cpp in Sources */,
 				02CEFD6A23D7DE8E00B620E6 /* michael.c in Sources */,
 				02C2288923DBFA870016AD53 /* ieee80211_pae_output.c in Sources */,
@@ -1012,6 +1043,7 @@
 				02577D7D23EEA4D9003FF602 /* NotificationWait.cpp in Sources */,
 				02C2287323DBFA870016AD53 /* ieee80211_input.c in Sources */,
 				02C2288323DBFA870016AD53 /* ieee80211_crypto_wep.c in Sources */,
+				685D5B8823FDF12B00C8C041 /* IWLMvmPhy.cpp in Sources */,
 				02C2288823DBFA870016AD53 /* ieee80211_node.c in Sources */,
 				02DCDEEA23C334DD00997FA0 /* IWLTransport.cpp in Sources */,
 				02C2288523DBFA870016AD53 /* ieee80211_crypto.c in Sources */,

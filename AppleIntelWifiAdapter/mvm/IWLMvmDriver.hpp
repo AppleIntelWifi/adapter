@@ -87,6 +87,11 @@ public:
     
     int sendCmdStatus(struct iwl_host_cmd *cmd, u32 *status);//iwl_mvm_send_cmd_status
     
+    int sendCmdPduStatus(u32 id, u16 len, const void* data, u32* status);
+    
+    
+    bool enableDevice();
+    
 public:
     IOEthernetController* controller;
     IWLDevice *m_pDevice;

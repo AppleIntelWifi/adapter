@@ -192,4 +192,12 @@ struct iwl_phy_context_cmd {
 	struct iwl_phy_context_cmd_tail tail;
 } __packed; /* PHY_CONTEXT_CMD_API_VER_1 */
 
+
+struct iwl_phy_ctx {
+    uint16_t id;
+    uint16_t color;
+    uint32_t ref;
+    struct ieee80211_channel *channel;
+};
+
 #endif /* __iwl_fw_api_phy_ctxt_h__ */

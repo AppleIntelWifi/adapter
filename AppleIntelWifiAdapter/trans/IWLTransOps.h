@@ -36,6 +36,8 @@ public:
     
     bool checkHWRFKill();
     
+    bool fwRunning();
+    
     virtual int nicInit() = 0;
 
     /*
@@ -56,6 +58,7 @@ public:
     virtual void stopDeviceDirectly() = 0;//_iwl_trans_pcie_gen2_stop_device and _iwl_trans_pcie_stop_device
     
     virtual int forcePowerGating() = 0;
+    
     
 private:
     
