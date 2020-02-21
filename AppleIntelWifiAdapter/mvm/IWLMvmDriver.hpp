@@ -104,11 +104,16 @@ public:
     
     void iwm_setup_ht_rates();
     
+    int iwm_binding_cmd(struct iwm_node *in, uint32_t action);
+    
     typedef int (*BgScanAction)(struct ieee80211com *ic);
     int iwm_bgscan(struct ieee80211com *ic);
     
     typedef struct ieee80211_node *(*NodeAllocAction)(struct ieee80211com *ic);
     struct ieee80211_node *iwm_node_alloc(struct ieee80211com *ic);
+    
+    typedef int (*NewStateAction)(struct ieee80211com *, enum ieee80211_state, int);
+    int iwm_newstate(struct ieee80211com *, enum ieee80211_state, int);
     
 public:
     IOEthernetController* controller;
