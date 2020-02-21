@@ -116,11 +116,16 @@ struct ifmedia {
     ifm_stat_cb_t    ifm_status;    /* media status driver callback */
 };
 
-//Not needed now, replace by iokit methods.
 //
-///* Initialize an interface's struct if_media field. */
-//void    ifmedia_init(struct ifmedia *, uint64_t, ifm_change_cb_t,
-//         ifm_stat_cb_t);
+/* Initialize an interface's struct if_media field. */
+static inline void ifmedia_init(struct ifmedia *ifm, uint64_t dontcare_mask)
+{
+    TAILQ_INIT(&ifm->ifm_list);
+    ifm->ifm_cur = NULL;
+    ifm->ifm_media = 0;
+    ifm->ifm_mask = dontcare_mask;        /* IF don't-care bits */
+}
+
 //
 ///* Add one supported medium to a struct ifmedia. */
 //void    ifmedia_add(struct ifmedia *, uint64_t, int, void *);
@@ -481,7 +486,7 @@ ifmedia_add(struct ifmedia *ifm, uint64_t mword, int data, void *aux)
     entry->ifm_media = mword;
     entry->ifm_data = data;
     entry->ifm_aux = aux;
-
+    
     TAILQ_INSERT_TAIL(&ifm->ifm_list, entry, ifm_list);
 }
 

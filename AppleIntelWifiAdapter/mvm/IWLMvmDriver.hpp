@@ -11,14 +11,16 @@
 
 #include <libkern/OSKextLib.h>
 #include <IOKit/IOLib.h>
+#include <libkern/c++/OSObject.h>
 
 #include "IWLTransOps.h"
 #include "../fw/IWLUcodeParse.hpp"
 #include "IWLNvmParser.hpp"
 #include "IWLPhyDb.hpp"
+#include "IWMHdr.h"
 
-class IWLMvmDriver {
-    
+class IWLMvmDriver : public OSObject {
+    OSDeclareDefaultStructors( IWLMvmDriver );
 public:
     
     /* MARK: IOKit-related initialization code */
@@ -91,6 +93,20 @@ public:
     
     
     bool enableDevice();
+    
+    
+    ///openbsd ieee80211
+    bool ieee80211Init();
+    
+    bool ieee80211Run();
+    
+    void iwm_setup_ht_rates();
+    
+    typedef int (*BgScanAction)(struct ieee80211com *ic);
+    int iwm_bgscan(struct ieee80211com *ic);
+    
+    typedef struct ieee80211_node *(*NodeAllocAction)(struct ieee80211com *ic);
+    struct ieee80211_node *iwm_node_alloc(struct ieee80211com *ic);
     
 public:
     IOEthernetController* controller;

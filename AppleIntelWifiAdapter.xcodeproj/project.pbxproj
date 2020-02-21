@@ -155,6 +155,8 @@
 		68E385C023F4BBA5000DADA4 /* CTimeout.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02E38D0B23E2E7B600264FA9 /* CTimeout.hpp */; };
 		68FC255423F5C060004958FC /* HackIO80211Interface.h in Headers */ = {isa = PBXBuildFile; fileRef = 68FC255223F5C060004958FC /* HackIO80211Interface.h */; };
 		68FC255523F5C060004958FC /* HackIO80211Interface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 68FC255323F5C060004958FC /* HackIO80211Interface.cpp */; };
+		F85B1D4B23FF6850008105E4 /* IWLMac80211.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */; };
+		F85B1D4D23FF6D87008105E4 /* IWMHdr.h in Headers */ = {isa = PBXBuildFile; fileRef = F85B1D4C23FF6D87008105E4 /* IWMHdr.h */; };
 		F8C2805B23C1FFD9000827EA /* IWLDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8C2805923C1FFD9000827EA /* IWLDevice.cpp */; };
 		F8C2805C23C1FFD9000827EA /* IWLDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */; };
 		F8C2806923C20AEA000827EA /* nl80211.h in Headers */ = {isa = PBXBuildFile; fileRef = F8C2806823C20AEA000827EA /* nl80211.h */; };
@@ -377,6 +379,8 @@
 		6868731D23FA4AB4001C7DEA /* IWLSCD.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = IWLSCD.h; sourceTree = "<group>"; };
 		68FC255223F5C060004958FC /* HackIO80211Interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HackIO80211Interface.h; sourceTree = "<group>"; };
 		68FC255323F5C060004958FC /* HackIO80211Interface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HackIO80211Interface.cpp; sourceTree = "<group>"; };
+		F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMac80211.cpp; sourceTree = "<group>"; };
+		F85B1D4C23FF6D87008105E4 /* IWMHdr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWMHdr.h; sourceTree = "<group>"; };
 		F8C2805923C1FFD9000827EA /* IWLDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLDevice.cpp; sourceTree = "<group>"; };
 		F8C2805A23C1FFD9000827EA /* IWLDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLDevice.hpp; sourceTree = "<group>"; };
 		F8C2805D23C20000000827EA /* IWLDeviceList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWLDeviceList.h; sourceTree = "<group>"; };
@@ -714,6 +718,8 @@
 				686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */,
 				685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */,
 				685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */,
+				F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */,
+				F85B1D4C23FF6D87008105E4 /* IWMHdr.h */,
 			);
 			path = mvm;
 			sourceTree = "<group>";
@@ -847,6 +853,7 @@
 				02C2288623DBFA870016AD53 /* ieee80211_mira.h in Headers */,
 				02CEFD6723D7DE8E00B620E6 /* spr.h in Headers */,
 				02CEFD8423D7DE8E00B620E6 /* sha1.h in Headers */,
+				F85B1D4D23FF6D87008105E4 /* IWMHdr.h in Headers */,
 				02C2287F23DBFA870016AD53 /* ieee80211_rssadapt.h in Headers */,
 				686F711323F4BE60008A0E88 /* IWLDebug.h in Headers */,
 				02443B5923D1E9A4009C675B /* IWLMvmDriver.hpp in Headers */,
@@ -983,6 +990,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				02577D7723EE68F1003FF602 /* IWLPhyDb.cpp in Sources */,
+				F85B1D4B23FF6850008105E4 /* IWLMac80211.cpp in Sources */,
 				02E38D0D23E2EA0A00264FA9 /* timeout.c in Sources */,
 				02577D8223EEBCEF003FF602 /* IWLNvm.cpp in Sources */,
 				02CEFD7423D7DE8E00B620E6 /* md5.c in Sources */,

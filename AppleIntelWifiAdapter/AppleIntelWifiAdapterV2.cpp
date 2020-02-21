@@ -10,6 +10,7 @@
 
 OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
 OSDefineMetaClassAndStructors(HackIO80211Interface, IOEthernetInterface)
+OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject)
 
 enum
 {
@@ -86,7 +87,6 @@ void AppleIntelWifiAdapterV2::releaseAll() {
     }
     if (drv) {
         drv->release();
-        delete drv;
         drv = NULL;
     }
 }

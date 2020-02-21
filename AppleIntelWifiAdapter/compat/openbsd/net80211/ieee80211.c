@@ -346,7 +346,8 @@ ieee80211_media_init(struct ifnet *ifp)
     /*
      * Fill in media characteristics.
      */
-    //	ifmedia_init(&ic->ic_media, 0, media_change, media_stat);
+    ifmedia_init(&ic->ic_media, 0);
+    
     maxrate = 0;
     memset(&allrates, 0, sizeof(allrates));
     for (mode = IEEE80211_MODE_AUTO; mode <= IEEE80211_MODE_11G; mode++) {

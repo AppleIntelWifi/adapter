@@ -17,8 +17,11 @@
 #include "IWLMvmSta.hpp"
 #include "IWLMvmPhy.hpp"
 
+#define super OSObject
+
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
+    super::init();
     this->fwLoadLock = IOLockAlloc();
     this->m_pDevice = new IWLDevice();
     this->m_pDevice->controller = controller;
@@ -60,6 +63,7 @@ void IWLMvmDriver::release()
         delete this->m_pDevice;
         this->m_pDevice = NULL;
     }
+    super::free();
 }
 
 bool IWLMvmDriver::probe()
@@ -382,6 +386,10 @@ bool IWLMvmDriver::drvStart()
     //    if (!hw)
     //        return NULL;
     IWL_INFO(0, "driver start\n");
+    if (!ieee80211Init()) {
+        IWL_ERR(0, "ieee80211 init fail.\n");
+        return false;
+    }
     
     this->trans->scd_set_active = true;
     
@@ -529,6 +537,7 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
+    ieee80211Run();
     
     for(int i = 0; i < NUM_PHY_CTX; i++)
     {
@@ -536,6 +545,7 @@ bool IWLMvmDriver::enableDevice() {
             &this->m_pDevice->phy_ctx[i], &m_pDevice->ie_ic.ic_channels[1], 1, 1)) != 0)
             goto fail;
     }
+    
 fail:
     return false;
 }

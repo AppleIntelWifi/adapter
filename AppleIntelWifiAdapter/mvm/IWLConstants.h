@@ -11,6 +11,8 @@
 
 #include "fw-api.h"
 
+#define DRIVER_NAME "IntelWifi"
+
 #define IWL_MVM_UAPSD_NOAGG_BSSIDS_NUM        20
 
 #define IWL_MVM_DEFAULT_PS_TX_DATA_TIMEOUT    (100 * USEC_PER_MSEC)
