@@ -115,7 +115,7 @@ public:
     struct ieee80211_node *iwm_node_alloc(struct ieee80211com *ic);
     
     typedef int (*NewStateAction)(struct ieee80211com *, enum ieee80211_state, int);
-    int iwm_newstate(struct ieee80211com *, enum ieee80211_state, int);
+    static int iwm_newstate(struct ieee80211com *, enum ieee80211_state, int);
     
 public:
     IOEthernetController* controller;

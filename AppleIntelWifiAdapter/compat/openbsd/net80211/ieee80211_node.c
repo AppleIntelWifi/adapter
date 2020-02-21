@@ -806,9 +806,9 @@ ieee80211_node_raise_inact(void *arg, struct ieee80211_node *ni)
  * Begin an active scan.
  */
 void
-ieee80211_begin_scan(struct ifnet *ifp)
+ieee80211_begin_scan(struct ieee80211com *ic)
 {
-	struct ieee80211com *ic = (struct ieee80211com *)ifp;
+    struct ifnet *ifp = &ic->ic_if;
 
 	/*
 	 * In all but hostap mode scanning starts off in
@@ -847,16 +847,16 @@ ieee80211_begin_scan(struct ifnet *ifp)
 	ic->ic_scan_count = 0;
 
 	/* Scan the next channel. */
-	ieee80211_next_scan(ifp);
+	ieee80211_next_scan(ic);
 }
 
 /*
  * Switch to the next channel marked for scanning.
  */
 void
-ieee80211_next_scan(struct ifnet *ifp)
+ieee80211_next_scan(struct ieee80211com *ic)
 {
-	struct ieee80211com *ic = (struct ieee80211com *)ifp;
+    struct ifnet *ifp = &ic->ic_if;
 	struct ieee80211_channel *chan;
 
 	chan = ic->ic_bss->ni_chan;
@@ -1395,7 +1395,7 @@ ieee80211_end_scan(struct ifnet *ifp)
 		    (ic->ic_caps & IEEE80211_C_SCANALLBAND))
 			ic->ic_scan_count++;
 
-		ieee80211_next_scan(ifp);
+		//ieee80211_next_scan(ifp);
 		return;
 	}
 

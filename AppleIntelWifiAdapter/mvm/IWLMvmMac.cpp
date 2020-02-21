@@ -14,12 +14,12 @@ int iwl_legacy_config_umac_scan(IWLMvmDriver* drv) {
 }
 
 int iwl_config_umac_scan(IWLMvmDriver* drv) {
-    struct iwl_scan_config_v1 cfg;
+    struct iwl_scan_config cfg;
     iwl_host_cmd hcmd = {
         .id = iwl_cmd_id(SCAN_CFG_CMD, IWL_ALWAYS_LONG_GROUP, 0),
-        .len[0] = sizeof(cfg),
-        .data[0] = &cfg,
-        .dataflags[0] = IWL_HCMD_DFL_NOCOPY
+        .len = { sizeof(cfg), },
+        .data = { &cfg, },
+        .dataflags = { IWL_HCMD_DFL_NOCOPY }
     };
     
     if(!iwl_mvm_is_reduced_config_scan_supported(drv->m_pDevice))

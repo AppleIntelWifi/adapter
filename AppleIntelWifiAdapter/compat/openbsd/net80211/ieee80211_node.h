@@ -474,8 +474,8 @@ void ieee80211_node_attach(struct ifnet *);
 void ieee80211_node_lateattach(struct ifnet *);
 void ieee80211_node_detach(struct ifnet *);
 
-void ieee80211_begin_scan(struct ifnet *);
-void ieee80211_next_scan(struct ifnet *);
+void ieee80211_begin_scan(struct ieee80211com *);
+void ieee80211_next_scan(struct ieee80211com *);
 void ieee80211_end_scan(struct ifnet *);
 void ieee80211_reset_scan(struct ifnet *);
 struct ieee80211_node *ieee80211_alloc_node(struct ieee80211com *,

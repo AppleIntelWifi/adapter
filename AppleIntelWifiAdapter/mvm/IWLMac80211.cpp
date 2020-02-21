@@ -62,7 +62,7 @@ bool IWLMvmDriver::ieee80211Init()
     ic->ic_bgscan_start = OSMemberFunctionCast(BgScanAction, this, &IWLMvmDriver::iwm_bgscan);
     /* Override 802.11 state transition machine. */
     //    sc->sc_newstate = ic->ic_newstate;
-    ic->ic_newstate = OSMemberFunctionCast(NewStateAction, this, &IWLMvmDriver::iwm_newstate);
+    ic->ic_newstate = (NewStateAction)&IWLMvmDriver::iwm_newstate;
     return true;
 }
 
@@ -88,7 +88,7 @@ bool IWLMvmDriver::ieee80211Run()
     ieee80211_channel_init(ifp);
     ieee80211_media_init(ifp);
     
-    ieee80211_begin_scan(ifp);
+    ieee80211_begin_scan(ic);
     struct iwm_node *in = (struct iwm_node *)m_pDevice->ie_ic.ic_bss;
     ieee80211_amrr_node_init(&m_pDevice->ie_amrr, &in->in_amn);
     ieee80211_mira_node_init(&in->in_mn);
@@ -130,8 +130,18 @@ struct ieee80211_node *IWLMvmDriver::iwm_node_alloc(struct ieee80211com *ic)
 int IWLMvmDriver::iwm_newstate(struct ieee80211com *ic, enum ieee80211_state nstate, int arg)
 {
     struct ifnet *ifp = &ic->ic_if;
+    
+    if(!ifp) {
+        IWL_ERR(0, "got null ifp\n");
+        return -1;
+    }
     IWLMvmDriver *sc = (IWLMvmDriver*)ifp->if_softc;
     struct iwm_node *in = (struct iwm_node *)ic->ic_bss;
+    
+    if(!in) {
+        IWL_ERR(0, "could not get bss\n");
+        return -1;
+    }
     
     if (ic->ic_state == IEEE80211_S_RUN) {
         //        timeout_del(&sc->sc_calib_to);

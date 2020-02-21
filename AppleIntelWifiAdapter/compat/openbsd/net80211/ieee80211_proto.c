@@ -1092,7 +1092,7 @@ justcleanup:
 				ieee80211_create_ibss(ic, ic->ic_des_chan);
 			} else
 #endif
-				ieee80211_begin_scan(ifp);
+				//ieee80211_begin_scan(ifp);
 			break;
 		case IEEE80211_S_SCAN:
 			/* scan next */
@@ -1120,7 +1120,7 @@ justcleanup:
 			ni = ieee80211_find_node(ic, ic->ic_bss->ni_macaddr);
 			if (ni != NULL)
 				ni->ni_fails++;
-			ieee80211_begin_scan(ifp);
+			//ieee80211_begin_scan(ifp);
 			break;
 		}
 		break;

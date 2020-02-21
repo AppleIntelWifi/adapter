@@ -135,7 +135,6 @@
 		02E38D0F23E2EC5800264FA9 /* CTimeout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */; };
 		685D176023FE242700E54345 /* iwlwifi-8265-36.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 685D175F23FE242600E54345 /* iwlwifi-8265-36.ucode */; };
 		685D545E23FF98DB00C7499B /* IWLMvmMac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685D545C23FF98DB00C7499B /* IWLMvmMac.cpp */; };
-		685D545F23FF98DB00C7499B /* IWLMvmMac.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 685D545D23FF98DB00C7499B /* IWLMvmMac.hpp */; };
 		685D5B8823FDF12B00C8C041 /* IWLMvmPhy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */; };
 		685D5B8923FDF12B00C8C041 /* IWLMvmPhy.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */; };
 		68604F1823F5F44B0066F562 /* iwlwifi-8265-34.ucode in Resources */ = {isa = PBXBuildFile; fileRef = 68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */; };
@@ -368,7 +367,7 @@
 		02E9939423D8971800E97773 /* random.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = random.h; sourceTree = "<group>"; };
 		685D175F23FE242600E54345 /* iwlwifi-8265-36.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-36.ucode"; sourceTree = "<group>"; };
 		685D545C23FF98DB00C7499B /* IWLMvmMac.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmMac.cpp; sourceTree = "<group>"; };
-		685D545D23FF98DB00C7499B /* IWLMvmMac.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmMac.hpp; sourceTree = "<group>"; };
+		685D5460240043C100C7499B /* IWLMvmMac.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmMac.hpp; sourceTree = "<group>"; };
 		685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmPhy.cpp; sourceTree = "<group>"; };
 		685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmPhy.hpp; sourceTree = "<group>"; };
 		686162A023FDDA290023A4D2 /* IWLMvmSmartFifo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmSmartFifo.cpp; sourceTree = "<group>"; };
@@ -715,9 +714,9 @@
 				685D5B8623FDF12B00C8C041 /* IWLMvmPhy.cpp */,
 				685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */,
 				685D545C23FF98DB00C7499B /* IWLMvmMac.cpp */,
-				685D545D23FF98DB00C7499B /* IWLMvmMac.hpp */,
 				F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */,
 				F85B1D4C23FF6D87008105E4 /* IWMHdr.h */,
+				685D5460240043C100C7499B /* IWLMvmMac.hpp */,
 			);
 			path = mvm;
 			sourceTree = "<group>";
@@ -836,7 +835,6 @@
 				0257B9AE23E6DD2A005013A0 /* IWLNvmParser.hpp in Headers */,
 				02CEFD7623D7DE8E00B620E6 /* castsb.h in Headers */,
 				02CEFD7B23D7DE8E00B620E6 /* cryptodev.h in Headers */,
-				685D545F23FF98DB00C7499B /* IWLMvmMac.hpp in Headers */,
 				02CEFD7223D7DE8E00B620E6 /* md5.h in Headers */,
 				02C2288123DBFA870016AD53 /* ieee80211_priv.h in Headers */,
 				686F711223F4BE60008A0E88 /* IWLConstants.h in Headers */,
