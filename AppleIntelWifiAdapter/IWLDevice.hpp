@@ -215,6 +215,8 @@ public:
     iwl_notif_wait_data notif_wait;
     IOLock *rx_sync_waitq;
     iwl_phy_ctx phy_ctx[NUM_PHY_CTX];
+    
+    u8 scan_rx_ant;
 
     // MARK: queue info
     union {
@@ -308,6 +310,13 @@ static inline u8 iwl_mvm_get_valid_rx_ant(IWLDevice *mvm)
     return mvm->nvm_data && mvm->nvm_data->valid_rx_ant ?
            mvm->fw.valid_rx_ant & mvm->nvm_data->valid_rx_ant :
            mvm->fw.valid_rx_ant;
+}
+
+static u8 iwl_mvm_scan_rx_ant(IWLDevice *mvm)
+{
+    if (mvm->scan_rx_ant != ANT_NONE)
+        return mvm->scan_rx_ant;
+    return iwl_mvm_get_valid_rx_ant(mvm);
 }
 
 static inline u32 iwl_mvm_get_phy_config(IWLDevice *mvm)

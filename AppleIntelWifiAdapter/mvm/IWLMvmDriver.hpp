@@ -91,6 +91,8 @@ public:
     
     int sendCmdPduStatus(u32 id, u16 len, const void* data, u32* status);
     
+    int sendPowerStatus();
+    
     
     bool enableDevice();
     

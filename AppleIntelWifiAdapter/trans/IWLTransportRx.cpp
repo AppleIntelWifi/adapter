@@ -1233,10 +1233,30 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         if (rxq->id == 0)
             iwl_notification_wait_notify(&trans->m_pDevice->notif_wait, pkt);
         
+        u32 cmd_id = iwl_cmd_id(pkt->hdr.cmd, pkt->hdr.group_id, 0);;
         
-        switch(pkt->hdr.cmd) {
+        switch(cmd_id) {
             case MVM_ALIVE:
                 break;
+                
+            case DTS_MEASUREMENT_NOTIFICATION:
+            case WIDE_ID(PHY_OPS_GROUP,
+                DTS_MEASUREMENT_NOTIF_WIDE): {
+                struct iwl_dts_measurement_notif_v1 *notif1;
+                struct iwl_dts_measurement_notif_v2 *notif2;
+
+                if (iwl_rx_packet_payload_len(pkt) == sizeof(*notif1)) {
+                    notif1 = (iwl_dts_measurement_notif_v1*)pkt->data;
+                    IWL_INFO(0, "DTS temp=%d C\n", notif1->temp);
+                    break;
+                }
+                if (iwl_rx_packet_payload_len(pkt) == sizeof(*notif2)) {
+                    notif2 = (iwl_dts_measurement_notif_v2*)pkt->data;
+                    IWL_INFO(0, "DTS temp=%d C\n", notif2->temp);
+                    break;
+                }
+                break;
+            }
             
             default:
                 break;

@@ -15,6 +15,7 @@
 #include "../fw/NotificationWait.hpp"
 #include "IWLMvmSmartFifo.hpp"
 #include "IWLMvmSta.hpp"
+#include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
 
 #define super OSObject
@@ -552,6 +553,26 @@ bool IWLMvmDriver::enableDevice() {
             goto fail;
     }
     
+    err = this->sendPowerStatus();
+    if(err < 0) {
+        IWL_ERR(0, "Failed to send power status command: %d\n", err);
+        goto fail;
+    }
+    
+    err = (this->updateMcc("ZZ", MCC_SOURCE_OLD_FW) == NULL);
+    if(err < 0) {
+        IWL_ERR(0, "Failed to update MCC: %d\n", err);
+        goto fail;
+    }
+    
+    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
+        err = iwl_config_umac_scan(this);
+        if(err < 0) {
+            IWL_ERR(0, "Failed to init scan config: %d\n", err);
+            goto fail;
+        }
+    }
+    
 fail:
     return false;
 }
@@ -777,3 +798,18 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
     return 0;
 }
 
+int IWLMvmDriver::sendPowerStatus() {
+    iwl_device_power_cmd cmd = {
+        .flags = 0
+    };
+    
+    if(!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_DEVICE_PS_CMD)) {
+        return 0;
+    }
+    
+    cmd.flags |= htole16(DEVICE_POWER_FLAGS_CAM_MSK);
+    
+    IWL_INFO(0, "Sending power command with flags (0x%0x)\n", cmd.flags);
+    
+    return sendCmdPdu(POWER_TABLE_CMD, 0, sizeof(cmd), &cmd);
+}
