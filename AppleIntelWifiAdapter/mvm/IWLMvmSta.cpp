@@ -43,7 +43,7 @@ int iwl_mvm_add_aux_sta(IWLMvmDriver* drv) {
     int err;
     uint32_t status;
     
-    err = iwl_enable_txq(drv, 1, IWL_MVM_DQA_AUX_QUEUE, IWL_MVM_TX_FIFO_MCAST);
+    err = iwl_enable_txq(drv, 0, IWL_MVM_DQA_AUX_QUEUE, IWL_MVM_TX_FIFO_MCAST);
     if(err)
         return err;
     

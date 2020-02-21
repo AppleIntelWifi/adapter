@@ -629,7 +629,7 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
      */
     IWL_INFO(0, "Waiting for alive signal");
     ret = iwl_wait_notification(&m_pDevice->notif_wait, &alive_wait,
-                                MVM_UCODE_ALIVE_TIMEOUT * 100);
+                                MVM_UCODE_ALIVE_TIMEOUT);
     
     if (ret) {
         if (m_pDevice->cfg->trans.device_family >=

@@ -18,15 +18,12 @@ static inline bool iwl_mvm_has_ultra_hb_channel(IWLMvmDriver *mvm)
 static inline void *iwl_mvm_chan_info_cmd_tail(IWLMvmDriver* mvm,
                            struct iwl_fw_channel_info *ci)
 {
-    return (u8 *)ci + (iwl_mvm_has_ultra_hb_channel(mvm) ?
-               sizeof(struct iwl_fw_channel_info) :
-               sizeof(struct iwl_fw_channel_info_v1));
+    return (u8 *)ci + (sizeof(struct iwl_fw_channel_info_v1));
 }
 
 static inline size_t iwl_mvm_chan_info_padding(IWLMvmDriver* mvm)
 {
-    return iwl_mvm_has_ultra_hb_channel(mvm) ? 0 :
-        sizeof(struct iwl_fw_channel_info) -
+    return sizeof(struct iwl_fw_channel_info) -
         sizeof(struct iwl_fw_channel_info_v1);
 }
 
@@ -35,12 +32,12 @@ static inline void iwl_mvm_set_chan_info(IWLMvmDriver* mvm,
                      u32 chan, u8 band, u8 width,
                      u8 ctrl_pos)
 {
-    if (iwl_mvm_has_ultra_hb_channel(mvm)) {
+    /*if (iwl_mvm_has_ultra_hb_channel(mvm)) {
         ci->channel = cpu_to_le32(chan);
         ci->band = band;
         ci->width = width;
         ci->ctrl_pos = ctrl_pos;
-    } else {
+    } else { */
         struct iwl_fw_channel_info_v1 *ci_v1 =
                     (struct iwl_fw_channel_info_v1 *)ci;
 
@@ -48,7 +45,7 @@ static inline void iwl_mvm_set_chan_info(IWLMvmDriver* mvm,
         ci_v1->band = band;
         ci_v1->width = width;
         ci_v1->ctrl_pos = ctrl_pos;
-    }
+    //}
 }
 
 int
@@ -80,12 +77,16 @@ iwl_phy_ctxt_apply(IWLMvmDriver* drv,
     struct iwl_phy_context_cmd cmd;
     int ret;
     
+    if(iwl_mvm_has_ultra_hb_channel(drv)) {
+        IWL_INFO(0, "got ultra hb chan\n");
+    }
+    
     u16 len = sizeof(cmd) - iwl_mvm_chan_info_padding(drv);
     iwl_phy_ctxt_cmd_hdr(drv, ctxt, &cmd, action, apply_time);
     iwl_phy_ctxt_cmd_data(drv, &cmd, ctxt->channel,
         chains_static, chains_dynamic);
     
-    ret = drv->sendCmdPdu(PHY_CONTEXT_CMD, 0, sizeof(cmd), &cmd);
+    ret = drv->sendCmdPdu(PHY_CONTEXT_CMD, 0, len, &cmd);
     if(ret) {
         IWL_ERR(0, "Could not send phy context?\n");
     }
@@ -103,7 +104,7 @@ iwl_phy_ctxt_cmd_data(IWLMvmDriver* drv,
     iwl_mvm_set_chan_info(drv, &cmd->ci, ieee80211_chan2ieee(ic, chan),
                                             IEEE80211_IS_CHAN_2GHZ(chan) ?
                                             PHY_BAND_24 : PHY_BAND_5,
-                                            PHY_VHT_CHANNEL_MODE20,
+                                            PHY_VHT_CHANNEL_MODE40,
                           PHY_VHT_CTRL_POS_1_BELOW);
 
     /* Set rx the chains */

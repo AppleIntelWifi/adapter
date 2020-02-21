@@ -410,8 +410,10 @@ int IWLMvmDriver::nvmInit()
             IWL_ERR(0, "Skipped section %d because -ENODATA\n", section);
             continue;
         }
-        if (ret < 0)
+        if (ret < 0) {
+            IWL_ERR(0, "Unhandled error: %d\n", ret);
             break;
+        }
         size_read += ret;
         temp = (u8 *)kmemdup(nvm_buffer, ret);
         if (!temp) {

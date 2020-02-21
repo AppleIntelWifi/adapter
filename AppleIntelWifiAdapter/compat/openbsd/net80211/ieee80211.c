@@ -153,10 +153,12 @@ ieee80211_channel_init(struct ifnet *ifp)
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11B;
             if (IEEE80211_IS_CHAN_PUREG(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11G;
+            /*
             if (IEEE80211_IS_CHAN_N(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11N;
             if (IEEE80211_IS_CHAN_AC(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11AC;
+             */
         }
     }
     /* validate ic->ic_curmode */

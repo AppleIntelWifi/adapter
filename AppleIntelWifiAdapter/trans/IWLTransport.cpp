@@ -830,6 +830,7 @@ void IWLTransport::freeResp(struct iwl_host_cmd *cmd)
     if (cmd->resp_pkt) {
         //IOFree(cmd->resp_pkt, cmd->resp_pkt_len);
         IWL_WARN(0, "LEAKING PAGE\n");
+        // maybe this doesn't actually leak the page?
         //this->m_pDevice->controller->freePacket((mbuf_t)cmd->resp_pkt);
     }
     cmd->resp_pkt = NULL;

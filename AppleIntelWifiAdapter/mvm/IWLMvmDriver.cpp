@@ -477,6 +477,7 @@ bool IWLMvmDriver::enableDevice() {
     err = trans_ops->startHW();
     m_pDevice->cur_fw_img = IWL_UCODE_INIT;
     err = runInitMvmUCode(false);
+    
     // now we run the proper ucode
     if(err)
         goto fail;
@@ -532,6 +533,7 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
+    
     err = iwl_mvm_add_aux_sta(this);
     if(err < 0) {
         IWL_ERR(0, "Failed to add aux station: %d\n", err);
@@ -540,8 +542,11 @@ bool IWLMvmDriver::enableDevice() {
     
     ieee80211Run();
     
+    
     for(int i = 0; i < NUM_PHY_CTX; i++)
     {
+        this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_ic.ic_channels[1];
+        IWL_INFO(0, "flags of channel: %d",m_pDevice->ie_ic.ic_channels[1].ic_flags);
         if ((err = iwl_phy_ctxt_add(this,
             &this->m_pDevice->phy_ctx[i], &m_pDevice->ie_ic.ic_channels[1], 1, 1)) != 0)
             goto fail;
@@ -551,11 +556,15 @@ fail:
     return false;
 }
 
+bool free_paging(IWLMvmDriver* drv);
 
 void IWLMvmDriver::stopDevice()
 {
     clear_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &trans->m_pDevice->status);
     trans_ops->stopDevice();
+    
+    free_paging(this);
+    
     //TODO xvt fw paging mode
     //    iwl_free_fw_paging(&mvm->fwrt);
 }

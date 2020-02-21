@@ -5,7 +5,7 @@
 //  Created by 钟先耀 on 2020/2/2.
 //  Copyright © 2020 钟先耀. All rights reserved.
 //
-
+#include "../compat/openbsd/net80211/ieee80211_var.h"
 #include "IWLNvmParser.hpp"
 #include "IWLDebug.h"
 
@@ -214,7 +214,7 @@ static inline void iwl_nvm_print_channel_flags(int chan, u32 flags)
 static u32 iwl_get_channel_flags(u8 ch_num, int ch_idx, enum nl80211_band band,
                  u32 nvm_flags, const struct iwl_cfg *cfg, struct iwl_nvm_data *data)
 {
-//    u32 flags = IEEE80211_CHAN_NO_HT40;
+    //u32 flags = IEEE80211_CHAN_HT;
 //
 //    if (band == NL80211_BAND_2GHZ && (nvm_flags & NVM_CHANNEL_40MHZ)) {
 //        if (ch_num <= LAST_2GHZ_HT_PLUS)
@@ -286,7 +286,6 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
 {
     int ch_idx = 0;
     int n_channels = 0;
-    struct ieee80211_channel *channel;
     u32 ch_flags;
     int num_of_ch;
     const u16 *nvm_chan;
@@ -303,9 +302,16 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     }
 
     for (; ch_idx < num_of_ch; ch_idx++) {
+        memset(&dev->ie_ic.ic_channels[ch_idx], 0, sizeof(ieee80211_channel));
+        struct ieee80211_channel channel;
         enum nl80211_band band =
             iwl_nl80211_band_from_channel_idx(ch_idx);
+        
+        if(v4) {
+            IWL_INFO(0, "weird thing\n");
+        }
 
+        
         if (v4)
             ch_flags =
                 __le32_to_cpup((__le32 *)nvm_ch_flags + ch_idx);
@@ -314,8 +320,15 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
                 __le16_to_cpup((__le16 *)nvm_ch_flags + ch_idx);
 
         if (band == NL80211_BAND_5GHZ &&
-            !data->sku_cap_band_52ghz_enable)
+            !data->sku_cap_band_52ghz_enable) {
+            IWL_INFO(0, "Skipping ch_idx %d because 5Ghz is not supported by the SKU\n", ch_idx);
             continue;
+        }
+        
+        
+        channel.hw_value = nvm_chan[ch_idx];
+        channel.max_power = IWL_DEFAULT_MAX_TX_POWER;
+        
 
         /* workaround to disable wide channels in 5GHz */
         if ((sbands_flags & IWL_NVM_SBANDS_FLAGS_NO_WIDE_IN_5GHZ) &&
@@ -328,42 +341,7 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
         if (ch_flags & NVM_CHANNEL_160MHZ)
             data->vht160_supported = true;
 
-        if (!(sbands_flags & IWL_NVM_SBANDS_FLAGS_LAR) &&
-            !(ch_flags & NVM_CHANNEL_VALID)) {
-            /*
-             * Channels might become valid later if lar is
-             * supported, hence we still want to add them to
-             * the list of supported channels to cfg80211.
-             */
-            iwl_nvm_print_channel_flags(nvm_chan[ch_idx], ch_flags);
-            continue;
-        }
 
-        channel = &data->channels[n_channels];
-        n_channels++;
-
-        channel->hw_value = nvm_chan[ch_idx];
-        switch (band) {
-            case NL80211_BAND_2GHZ:
-                channel->ic_band = IEEE80211_CHAN_2GHZ;
-                break;
-            case NL80211_BAND_5GHZ:
-                channel->ic_band = IEEE80211_CHAN_5GHZ;
-                break;
-            case NL80211_BAND_6GHZ:
-                channel->ic_band = IEEE80211_CHAN_6GHZ;
-                break;
-            case NL80211_BAND_60GHZ:
-                channel->ic_band = IEEE80211_CHAN_60GHZ;
-                break;
-                
-            default:
-                
-                break;
-        }
-        channel->ic_freq =
-            ieee80211_ieee2mhz(
-                channel->hw_value, channel->ic_band);
 
         /* Initialize regulatory-based run-time data */
 
@@ -371,18 +349,52 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
          * Default value - highest tx power value.  max_power
          * is not used in mvm, and is used for backwards compatibility
          */
-        channel->max_power = IWL_DEFAULT_MAX_TX_POWER;
 
         /* don't put limitations in case we're using LAR */
-            channel->ic_flags = iwl_get_channel_flags(nvm_chan[ch_idx],
-                                   ch_idx, band,
-                                   ch_flags, cfg, data);
-
-        iwl_nvm_print_channel_flags(channel->hw_value, ch_flags);
-        IWL_INFO(dev, "Ch. %d: %ddBm\n",
-                 channel->hw_value, channel->max_power);
+        u32 flags = IEEE80211_CHAN_2GHZ;
         
-        memcpy(&dev->ie_ic.ic_channels[ch_idx], channel, sizeof(ieee80211_channel));
+        if (band == NL80211_BAND_2GHZ) {
+            channel.ic_flags = IEEE80211_CHAN_CCK
+            | IEEE80211_CHAN_OFDM
+            | IEEE80211_CHAN_DYN
+            | IEEE80211_CHAN_2GHZ;
+            channel.ic_band = IEEE80211_CHAN_2GHZ;
+        } else {
+            channel.ic_band = IEEE80211_CHAN_5GHZ;
+            channel.ic_flags = IEEE80211_CHAN_A;
+        }
+        if (!(ch_flags & NVM_CHANNEL_ACTIVE)) {
+            channel.ic_flags |= IEEE80211_CHAN_PASSIVE;
+        }
+        if (data->sku_cap_11n_enable) {
+            channel.ic_flags |= IEEE80211_CHAN_HT;
+        }
+        
+        channel.ic_freq =
+            ieee80211_ieee2mhz(
+                channel.hw_value, channel.ic_band);
+        
+        if (!(sbands_flags & IWL_NVM_SBANDS_FLAGS_LAR) &&
+            !(ch_flags & NVM_CHANNEL_VALID)) {
+            /*
+             * Channels might become valid later if lar is
+             * supported, hence we still want to add them to
+             * the list of supported channels to cfg80211.
+             */
+            IWL_INFO(0, "Ch. %d: INVALID (%d)\n", channel.hw_value, ch_idx);
+            iwl_nvm_print_channel_flags(channel.hw_value, ch_flags);
+            continue;
+        }
+        
+        IWL_INFO(0, "Ch. %d: %ddBm (%d)\n",
+                 channel.hw_value, channel.max_power, ch_idx);
+        iwl_nvm_print_channel_flags(channel.hw_value, ch_flags);
+        
+        memcpy(&dev->ie_ic.ic_channels[n_channels], &channel, sizeof(channel));
+        
+        n_channels++;
+        
+        //channel->ic_flags = flags;
     }
 
     return n_channels;
@@ -760,6 +772,7 @@ static void iwl_set_radio_cfg(const struct iwl_cfg *cfg,
                   struct iwl_nvm_data *data,
                   u32 radio_cfg)
 {
+    
     if (cfg->nvm_type != IWL_NVM_EXT) {
         data->radio_cfg_type = NVM_RF_CFG_TYPE_MSK(radio_cfg);
         data->radio_cfg_step = NVM_RF_CFG_STEP_MSK(radio_cfg);
@@ -996,6 +1009,7 @@ iwl_parse_nvm_data(IWLTransport *trans, const struct iwl_cfg *cfg,
 
         lar_enabled = true;
     } else {
+        IWL_INFO(0, "nvm_type == IWL_NVM_EXT\n");
         u16 lar_offset = data->nvm_version < 0xE39 ?
                  NVM_LAR_OFFSET_OLD :
                  NVM_LAR_OFFSET;
