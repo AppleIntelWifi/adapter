@@ -45,6 +45,7 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 
 void IWLMvmDriver::release()
 {
+    ieee80211Release();
     if (this->fwLoadLock) {
         IOLockFree(this->fwLoadLock);
         this->fwLoadLock = NULL;

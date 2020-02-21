@@ -56,6 +56,7 @@ bool IWLMvmDriver::ieee80211Init()
     //    task_set(&sc->htprot_task, iwm_htprot_task, sc);
     ieee80211_ifattach(ifp);
     ifp->iface = m_pDevice->interface;
+    ifp->output_queue = m_pDevice->controller->getOutputQueue();
     ieee80211_media_init(ifp);
     ic->ic_node_alloc = OSMemberFunctionCast(NodeAllocAction, this, &IWLMvmDriver::iwm_node_alloc);
     ic->ic_bgscan_start = OSMemberFunctionCast(BgScanAction, this, &IWLMvmDriver::iwm_bgscan);
@@ -84,7 +85,7 @@ bool IWLMvmDriver::ieee80211Run()
     ieee80211_channel_init(ifp);
     ieee80211_media_init(ifp);
     
-//    ieee80211_begin_scan(ifp);
+    ieee80211_begin_scan(ifp);
     struct iwm_node *in = (struct iwm_node *)m_pDevice->ie_ic.ic_bss;
     ieee80211_amrr_node_init(&m_pDevice->ie_amrr, &in->in_amn);
     ieee80211_mira_node_init(&in->in_mn);
@@ -92,6 +93,19 @@ bool IWLMvmDriver::ieee80211Run()
     in->in_ni.ni_txrate = 0;
     in->in_ni.ni_txmcs = 0;
     return true;
+}
+
+void IWLMvmDriver::ieee80211Release()
+{
+    struct ieee80211com *ic = &m_pDevice->ie_ic;
+    struct ifnet *ifp = &ic->ic_if;
+    IOLog("ifp->if_softc==NULL:%s", ifp->if_softc==NULL ? "true":"false");
+    if (ifp->if_softc != NULL) {
+        struct iwm_node *in = (struct iwm_node *)m_pDevice->ie_ic.ic_bss;
+        ieee80211_mira_cancel_timeouts(&in->in_mn);
+        ieee80211_ifdetach(ifp);
+        IOFree(in, sizeof(struct iwm_node));
+    }
 }
 
 int IWLMvmDriver::iwm_bgscan(struct ieee80211com *ic)

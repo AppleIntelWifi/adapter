@@ -98,6 +98,8 @@ public:
     ///openbsd ieee80211
     bool ieee80211Init();
     
+    void ieee80211Release();
+    
     bool ieee80211Run();
     
     void iwm_setup_ht_rates();

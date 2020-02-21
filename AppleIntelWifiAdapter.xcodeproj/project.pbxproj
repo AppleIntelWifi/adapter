@@ -490,7 +490,6 @@
 		026E8CCB2356F0ED000BFD46 /* AppleIntelWifiAdapter */ = {
 			isa = PBXGroup;
 			children = (
-				68622AB923FC7911003B83C7 /* ieee80211 */,
 				026E8CD62356F2AD000BFD46 /* apple80211 */,
 				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */,
 				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */,
@@ -677,13 +676,6 @@
 				024F4C6E23DC882A00501864 /* _buf.h */,
 			);
 			path = sys;
-			sourceTree = "<group>";
-		};
-		68622AB923FC7911003B83C7 /* ieee80211 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = ieee80211;
 			sourceTree = "<group>";
 		};
 		6868731523FA43D6001C7DEA /* nvm */ = {
