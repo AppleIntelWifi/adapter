@@ -11,6 +11,9 @@
 /* Channel info utils */
 static inline bool iwl_mvm_has_ultra_hb_channel(IWLMvmDriver *mvm)
 {
+    if( mvm->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_8000)
+        return false;
+        
     return fw_has_capa(&mvm->m_pDevice->fw.ucode_capa,
                IWL_UCODE_TLV_CAPA_ULTRA_HB_CHANNELS);
 }
@@ -18,12 +21,15 @@ static inline bool iwl_mvm_has_ultra_hb_channel(IWLMvmDriver *mvm)
 static inline void *iwl_mvm_chan_info_cmd_tail(IWLMvmDriver* mvm,
                            struct iwl_fw_channel_info *ci)
 {
-    return (u8 *)ci + (sizeof(struct iwl_fw_channel_info_v1));
+    return (u8 *)ci + (iwl_mvm_has_ultra_hb_channel(mvm) ?
+               sizeof(struct iwl_fw_channel_info) :
+               sizeof(struct iwl_fw_channel_info_v1));
 }
 
 static inline size_t iwl_mvm_chan_info_padding(IWLMvmDriver* mvm)
 {
-    return sizeof(struct iwl_fw_channel_info) -
+    return iwl_mvm_has_ultra_hb_channel(mvm) ? 0 :
+        sizeof(struct iwl_fw_channel_info) -
         sizeof(struct iwl_fw_channel_info_v1);
 }
 
@@ -32,12 +38,12 @@ static inline void iwl_mvm_set_chan_info(IWLMvmDriver* mvm,
                      u32 chan, u8 band, u8 width,
                      u8 ctrl_pos)
 {
-    /*if (iwl_mvm_has_ultra_hb_channel(mvm)) {
+    if (iwl_mvm_has_ultra_hb_channel(mvm)) {
         ci->channel = cpu_to_le32(chan);
         ci->band = band;
         ci->width = width;
         ci->ctrl_pos = ctrl_pos;
-    } else { */
+    } else {
         struct iwl_fw_channel_info_v1 *ci_v1 =
                     (struct iwl_fw_channel_info_v1 *)ci;
 
@@ -45,7 +51,7 @@ static inline void iwl_mvm_set_chan_info(IWLMvmDriver* mvm,
         ci_v1->band = band;
         ci_v1->width = width;
         ci_v1->ctrl_pos = ctrl_pos;
-    //}
+    }
 }
 
 int
