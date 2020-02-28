@@ -9,7 +9,10 @@ Generally any device that is not a gen2 device (AX-series/Wi-Fi 6 not supported)
 If your card does not, please open an issue here: https://github.com/AppleIntelWifi/device-logs
 
 ## Build instructions
+Ensure `xcpretty` has been installed on your machine.
+
 ```
-sudo chown -R root:wheel AppleIntelWifiAdapterV2.kext/
-sudo kextload -v AppleIntelWifiAdapterV2.kext/
+./build.sh
+sudo chown -R root:wheel ./build/Build/Products/Debug/AppleIntelWifiAdapterV2.kext/
+sudo kextload -v ./build/Build/Products/Debug/AppleIntelWifiAdapterV2.kext/
 ```
