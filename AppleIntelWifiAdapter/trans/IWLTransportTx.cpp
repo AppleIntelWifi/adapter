@@ -44,7 +44,7 @@ static int iwl_queue_space(const struct iwl_txq *q)
      * modulo by TFD_QUEUE_SIZE_MAX and is well defined.
      */
     used = (q->write_ptr - q->read_ptr) & (TFD_QUEUE_SIZE_MAX - 1);
-    
+    IWL_INFO(0, "QID %d (wrptr: %d, rdptr: %d, used: %d)", q->id, q->write_ptr, q->read_ptr, used);
     if (WARN_ON(used > max))
         return 0;
     
