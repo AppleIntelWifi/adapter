@@ -957,6 +957,12 @@ struct iwl_fw_dbg_conf_tlv {
 
 #define IWL_FW_CMD_VER_UNKNOWN 99
 
+struct iwl_fw_ini_header {
+    __le32 version;
+    __le32 domain;
+    u8 data[];
+} __packed; /* FW_TLV_DEBUG_HEADER_S_VER_1 */
+
 /**
  * struct iwl_fw_cmd_version - firmware command version entry
  * @cmd: command ID
@@ -970,6 +976,123 @@ struct iwl_fw_cmd_version {
     u8 cmd_ver;
     u8 notif_ver;
 } __packed;
+
+struct iwl_fw_ini_debug_info_tlv {
+    struct iwl_fw_ini_header hdr;
+    __le32 image_type;
+    u8 debug_cfg_name[];
+} __packed; /* FW_TLV_DEBUG_INFO_API_S_VER_1 */
+
+/**
+ * struct iwl_fw_ini_allocation_tlv - Allocates DRAM buffers
+ *
+ * @hdr: debug header
+ * @alloc_id: allocation id. One of &enum iwl_fw_ini_allocation_id
+ * @buf_location: buffer location. One of &enum iwl_fw_ini_buffer_location
+ * @req_size: requested buffer size
+ * @max_frags_num: maximum number of fragments
+ * @min_size: minimum buffer size
+ */
+struct iwl_fw_ini_allocation_tlv {
+    struct iwl_fw_ini_header hdr;
+    __le32 alloc_id;
+    __le32 buf_location;
+    __le32 req_size;
+    __le32 max_frags_num;
+    __le32 min_size;
+} __packed; /* FW_TLV_DEBUG_BUFFER_ALLOCATION_API_S_VER_1 */
+
+
+struct iwl_ucode_status {
+    uint32_t uc_error_event_table;
+    uint32_t uc_umac_error_event_table;
+    uint32_t uc_log_event_table;
+
+    int uc_ok;
+    int uc_intr;
+};
+
+
+/*
+ * Note: This structure is read from the device with IO accesses,
+ * and the reading already does the endian conversion. As it is
+ * read with uint32_t-sized accesses, any members with a different size
+ * need to be ordered correctly though!
+ */
+struct iwl_error_event_table {
+    uint32_t valid;        /* (nonzero) valid, (0) log is empty */
+    uint32_t error_id;        /* type of error */
+    uint32_t trm_hw_status0;    /* TRM HW status */
+    uint32_t trm_hw_status1;    /* TRM HW status */
+    uint32_t blink2;        /* branch link */
+    uint32_t ilink1;        /* interrupt link */
+    uint32_t ilink2;        /* interrupt link */
+    uint32_t data1;        /* error-specific data */
+    uint32_t data2;        /* error-specific data */
+    uint32_t data3;        /* error-specific data */
+    uint32_t bcon_time;        /* beacon timer */
+    uint32_t tsf_low;        /* network timestamp function timer */
+    uint32_t tsf_hi;        /* network timestamp function timer */
+    uint32_t gp1;        /* GP1 timer register */
+    uint32_t gp2;        /* GP2 timer register */
+    uint32_t fw_rev_type;    /* firmware revision type */
+    uint32_t major;        /* uCode version major */
+    uint32_t minor;        /* uCode version minor */
+    uint32_t hw_ver;        /* HW Silicon version */
+    uint32_t brd_ver;        /* HW board version */
+    uint32_t log_pc;        /* log program counter */
+    uint32_t frame_ptr;        /* frame pointer */
+    uint32_t stack_ptr;        /* stack pointer */
+    uint32_t hcmd;        /* last host command header */
+    uint32_t isr0;        /* isr status register LMPM_NIC_ISR0:
+                 * rxtx_flag */
+    uint32_t isr1;        /* isr status register LMPM_NIC_ISR1:
+                 * host_flag */
+    uint32_t isr2;        /* isr status register LMPM_NIC_ISR2:
+                 * enc_flag */
+    uint32_t isr3;        /* isr status register LMPM_NIC_ISR3:
+                 * time_flag */
+    uint32_t isr4;        /* isr status register LMPM_NIC_ISR4:
+                 * wico interrupt */
+    uint32_t last_cmd_id;    /* last HCMD id handled by the firmware */
+    uint32_t wait_event;        /* wait event() caller address */
+    uint32_t l2p_control;    /* L2pControlField */
+    uint32_t l2p_duration;    /* L2pDurationField */
+    uint32_t l2p_mhvalid;    /* L2pMhValidBits */
+    uint32_t l2p_addr_match;    /* L2pAddrMatchStat */
+    uint32_t lmpm_pmg_sel;    /* indicate which clocks are turned on
+                 * (LMPM_PMG_SEL) */
+    uint32_t u_timestamp;    /* indicate when the date and time of the
+                 * compilation */
+    uint32_t flow_handler;    /* FH read/write pointers, RX credit */
+} __packed /* LOG_ERROR_TABLE_API_S_VER_3 */;
+
+/*
+ * UMAC error struct - relevant starting from family 8000 chip.
+ * Note: This structure is read from the device with IO accesses,
+ * and the reading already does the endian conversion. As it is
+ * read with u32-sized accesses, any members with a different size
+ * need to be ordered correctly though!
+ */
+struct iwl_umac_error_event_table {
+    uint32_t valid;        /* (nonzero) valid, (0) log is empty */
+    uint32_t error_id;    /* type of error */
+    uint32_t blink1;    /* branch link */
+    uint32_t blink2;    /* branch link */
+    uint32_t ilink1;    /* interrupt link */
+    uint32_t ilink2;    /* interrupt link */
+    uint32_t data1;        /* error-specific data */
+    uint32_t data2;        /* error-specific data */
+    uint32_t data3;        /* error-specific data */
+    uint32_t umac_major;
+    uint32_t umac_minor;
+    uint32_t frame_pointer;    /* core register 27 */
+    uint32_t stack_pointer;    /* core register 28 */
+    uint32_t cmd_header;    /* latest host cmd sent to UMAC */
+    uint32_t nic_isr_pref;    /* ISR status register */
+} __packed;
+
+
 
 static inline size_t _iwl_tlv_array_len(const struct iwl_ucode_tlv *tlv,
                     size_t fixed_size, size_t var_size)

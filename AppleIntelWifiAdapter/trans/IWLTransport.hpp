@@ -147,6 +147,8 @@ public:
     
     void irqHandleError();
     
+    void dumpErrorLog();
+    
     //tx
     void freeResp(struct iwl_host_cmd *cmd);
     
@@ -233,6 +235,8 @@ public:
     dma_addr_t base_rb_stts_dma;//base physical address of receive buffer status
     iwl_dma_ptr *base_rb_stts_ptr;//base physical dma object of receive buffer status
     
+    u8* recovery_buf;
+    
     //interrupt
     bool use_ict;
     __le32 *ict_tbl;
@@ -248,6 +252,8 @@ public:
     iwl_dma_ptr *kw;//keep warm address
     u8 no_reclaim_cmds[1];
     
+    
+    intptr_t trans_ops;
 private:
     
     int setHWReady();
@@ -276,7 +282,17 @@ void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans);
 
 static inline void *rxb_addr(struct iwl_rx_cmd_buffer *r)
 {
-    return (void *)((u8*)mbuf_data((mbuf_t)r->_page) + r->_offset);
+    mbuf_t page = (mbuf_t)r->_page;
+    /*
+    size_t sz = mbuf_len(page);
+    bool past = false;
+    while (sz < r->_offset) {
+        past = true;
+        page = mbuf_next(page);
+        sz = mbuf_len(page);
+    }
+    */
+    return (void *)((u8*)mbuf_data((mbuf_t)page) + (r->_offset));
 }
 
 static inline int rxb_offset(struct iwl_rx_cmd_buffer *r)
@@ -292,6 +308,7 @@ static inline mbuf_t rxb_steal_page(struct iwl_rx_cmd_buffer *r)
 
 static inline void iwl_free_rxb(struct iwl_rx_cmd_buffer *r)
 {
+    r->_page = NULL;
     //__free_pages(r->_page, r->_rx_page_order);
 }
 

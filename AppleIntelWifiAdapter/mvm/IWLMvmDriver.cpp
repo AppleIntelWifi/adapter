@@ -40,6 +40,7 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
     } else {
         IWL_INFO(0, "gen1 device\n");
         this->trans_ops = new IWLMvmTransOpsGen1(this->trans);
+        this->trans->trans_ops = (intptr_t)this->trans_ops;
     }
     return true;
 }
@@ -480,11 +481,11 @@ bool IWLMvmDriver::enableDevice() {
     err = runInitMvmUCode(false);
     
     // now we run the proper ucode
+    
     if(err)
         goto fail;
     
     stopDevice();
-    
     
     err = trans_ops->startHW();
     
@@ -573,7 +574,26 @@ bool IWLMvmDriver::enableDevice() {
         }
     }
     
+    for(int ac = 0; ac < 4; ac++) //WME_NUM_AC == 4
+    {
+        err = iwl_enable_txq(this, 0, ac + IWL_MVM_DQA_MIN_MGMT_QUEUE, iwl_mvm_ac_to_tx_fifo[ac]);
+        if(err) {
+            IWL_ERR(0, "Could not enable tx queue %d (error %d)\n", ac, err);
+            goto fail;
+        }
+    }
+    
+    err = iwl_disable_beacon_filter(this);
+    if(err) {
+        IWL_ERR(0, "Could not disable beacon filter (%d)\n", err);
+        goto fail;
+    }
+    
+    return 0;
+    
 fail:
+    
+    this->stopDevice();
     return false;
 }
 
@@ -813,3 +833,4 @@ int IWLMvmDriver::sendPowerStatus() {
     
     return sendCmdPdu(POWER_TABLE_CMD, 0, sizeof(cmd), &cmd);
 }
+

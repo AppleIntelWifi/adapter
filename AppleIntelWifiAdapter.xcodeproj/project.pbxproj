@@ -232,7 +232,7 @@
 		0252C64F23EC1B58001975DB /* scan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = scan.h; sourceTree = "<group>"; };
 		02577D7523EE68F1003FF602 /* IWLPhyDb.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLPhyDb.cpp; sourceTree = "<group>"; };
 		02577D7623EE68F1003FF602 /* IWLPhyDb.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLPhyDb.hpp; sourceTree = "<group>"; };
-		02577D7923EE70D3003FF602 /* TransHdr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TransHdr.h; sourceTree = "<group>"; };
+		02577D7923EE70D3003FF602 /* TransHdr.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = TransHdr.h; sourceTree = "<group>"; };
 		02577D7A23EE7A9F003FF602 /* IWLConstants.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = IWLConstants.h; sourceTree = "<group>"; };
 		02577D7B23EEA4D9003FF602 /* NotificationWait.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NotificationWait.cpp; sourceTree = "<group>"; };
 		02577D7C23EEA4D9003FF602 /* NotificationWait.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NotificationWait.hpp; sourceTree = "<group>"; };

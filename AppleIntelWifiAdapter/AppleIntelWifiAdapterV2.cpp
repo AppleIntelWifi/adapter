@@ -273,7 +273,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     if(!drv->drvStart()) {
         IWL_ERR(0, "Driver failed to start\n");
         releaseAll();
-        return true;
+        return false;
     }
     
     //    if(!drv->m_pDevice->firmwareLoadToBuf) {

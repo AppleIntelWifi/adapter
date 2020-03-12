@@ -4,3 +4,6 @@ build
 xcuserdata
 xcshareddata
 project.xcworkspace
+log.txt
+load-remote.sh
+out

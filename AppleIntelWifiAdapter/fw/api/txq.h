@@ -111,6 +111,13 @@ enum iwl_mvm_tx_fifo {
 	IWL_MVM_TX_FIFO_CMD = 7,
 };
 
+const u8 iwl_mvm_ac_to_tx_fifo[] = {
+    IWL_MVM_TX_FIFO_VO,
+    IWL_MVM_TX_FIFO_VI,
+    IWL_MVM_TX_FIFO_BE,
+    IWL_MVM_TX_FIFO_BK,
+};
+
 enum iwl_gen2_tx_fifo {
 	IWL_GEN2_TX_FIFO_CMD = 0,
 	IWL_GEN2_EDCA_TX_FIFO_BK,

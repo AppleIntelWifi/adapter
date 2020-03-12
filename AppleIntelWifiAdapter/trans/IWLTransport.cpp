@@ -200,6 +200,16 @@ bool IWLTransport::finishNicInit()
 
 void IWLTransport::release()
 {
+    if (this->rba.alloc_wq) {
+        this->rba.alloc_wq->release();
+        this->rba.alloc_wq = NULL;
+    }
+    
+    if(this->rba.lock) {
+        IOSimpleLockFree(this->rba.lock);
+        this->rba.lock = NULL;
+    }
+    
     if (this->irq_lock) {
         IOSimpleLockFree(this->irq_lock);
         this->irq_lock = NULL;
@@ -830,6 +840,7 @@ void IWLTransport::freeResp(struct iwl_host_cmd *cmd)
     if (cmd->resp_pkt) {
         //IOFree(cmd->resp_pkt, cmd->resp_pkt_len);
         IWL_WARN(0, "LEAKING PAGE\n");
+        
         // maybe this doesn't actually leak the page?
         //this->m_pDevice->controller->freePacket((mbuf_t)cmd->resp_pkt);
     }
@@ -949,4 +960,8 @@ void iwl_pcie_clear_cmd_in_flight(IWLTransport *trans)
     trans->m_pDevice->holdNICWake = false;
     trans->clearBit(CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
     //__iwl_trans_pcie_clear_bit(trans, CSR_GP_CNTRL, CSR_GP_CNTRL_REG_FLAG_MAC_ACCESS_REQ);
+}
+
+void IWLTransport::dumpErrorLog() {
+    //this->m_pDevice->
 }

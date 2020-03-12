@@ -22,13 +22,13 @@ public:
     IWLTransOps(IWLTransport *trans);
     virtual ~IWLTransOps() {}
     
-    void nicConfig();
+    void nicConfig(); // nic_config
     
-    int startHW();
+    int startHW(); // start
     
     bool setHWRFKillState(bool state);
     
-    void setRfKillState(bool state);//iwl_trans_pcie_rf_kill
+    void setRfKillState(bool state); //iwl_trans_pcie_rf_kill
     
     void handleStopRFKill(bool was_in_rfkill);
     
@@ -40,6 +40,7 @@ public:
     
     virtual int nicInit() = 0;
 
+    void fwError();
     /*
     * Start up NIC's basic functionality after it has been reset
     * (e.g. after platform boot, or shutdown via iwl_pcie_apm_stop())
@@ -58,6 +59,10 @@ public:
     virtual void stopDeviceDirectly() = 0;//_iwl_trans_pcie_gen2_stop_device and _iwl_trans_pcie_stop_device
     
     virtual int forcePowerGating() = 0;
+    
+    virtual void sendRecoveryCmd(u32 flags);
+    
+    virtual void restartNIC(bool fw_error);
     
     
 private:

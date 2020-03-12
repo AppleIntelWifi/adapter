@@ -12,4 +12,6 @@ if [ ! -d "$BUILD" ]; then
 mkdir $BUILD
 fi
 
+(./unload.sh | true)
+sudo chown -R $USER "$BUILD"
 xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD" | xcpretty

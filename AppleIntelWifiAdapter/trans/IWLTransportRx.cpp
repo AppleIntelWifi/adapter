@@ -19,6 +19,13 @@
  * iwl_rxq_space - Return number of free slots available in queue.
  */
 
+void move_to_allocator(iwl_rb_allocator* rba, iwl_rxq* rxq) {
+    if (!TAILQ_EMPTY(&rxq->rx_used)) {
+        TAILQ_CONCAT(&rba->rbd_empty, &rxq->rx_used, list);
+        TAILQ_INIT(&rxq->rx_used);
+    }
+}
+
 static void iwl_pcie_rx_allocator_get(IWLTransport *trans, struct iwl_rxq *rxq)
 {
     //struct iwl_trans_pcie *trans_pcie = IWL_TRANS_GET_PCIE_TRANS(trans);
@@ -38,14 +45,18 @@ static void iwl_pcie_rx_allocator_get(IWLTransport *trans, struct iwl_rxq *rxq)
         return;
     }
     
-    //IOSimpleLockLock(rba->lock);
+    IOSimpleLockLock(rba->lock);
     for (i = 0; i < RX_CLAIM_REQ_ALLOC; i++) {
         /* Get next free Rx buffer, remove it from free list */
+    
         struct iwl_rx_mem_buffer *rxb = TAILQ_FIRST(&rba->rbd_allocated);
+        if(!rxb)
+            continue;
+        
         TAILQ_REMOVE(&rba->rbd_allocated, rxb, list);
         TAILQ_INSERT_TAIL(&rxq->rx_free, rxb, list);
     }
-    //IOSimpleLockUnlock(rba->lock);
+    IOSimpleLockUnlock(rba->lock);
     
     rxq->used_count -= RX_CLAIM_REQ_ALLOC;
     rxq->free_count += RX_CLAIM_REQ_ALLOC;
@@ -62,6 +73,9 @@ static int iwl_rxq_space(const struct iwl_rxq *rxq)
      * The following is equivalent to modulo by RX_QUEUE_SIZE and is well
      * defined for negative dividends.
      */
+    
+    
+    IWL_INFO(0, "RQID %d (wrptr: %d, rdptr: %d, size: %d)", rxq->id, rxq->write, rxq->read, rxq->queue_size);
     return (rxq->read - rxq->write - 1) & (rxq->queue_size - 1);
 }
 
@@ -399,7 +413,7 @@ void iwl_pcie_rxq_alloc_rbs(IWLTransport *trans,
         if (TAILQ_EMPTY(&rxq->rx_used)) {
             IOSimpleLockUnlock(rxq->lock);
             IWL_INFO(0, "rx_used empty");
-            mbuf_freem(page);
+            //mbuf_freem(page);
             return;
         }
         rxb = TAILQ_FIRST(&rxq->rx_used);
@@ -469,6 +483,7 @@ int IWLTransport::rxInit()
     TAILQ_INIT(&rba->rbd_allocated);
     TAILQ_INIT(&rba->rbd_empty);
     IOSimpleLockUnlock(rba->lock);
+    rba->alloc_wq = IOWorkLoop::workLoop();
 
     /* free all first - we might be reconfigured for a different size */
     iwl_pcie_free_rbs_pool(this);
@@ -760,7 +775,7 @@ void IWLTransport::rxMqRestock(struct iwl_rxq *rxq)
     }
 }
 
-void IWLTransport::rxSqRestock(struct iwl_rxq *rxq)
+void IWLTransport::rxSqRestock(struct iwl_rxq *_rxq)
 {
     struct iwl_rx_mem_buffer *rxb;
     
@@ -777,34 +792,39 @@ void IWLTransport::rxSqRestock(struct iwl_rxq *rxq)
         return;
     }
     
-    IOSimpleLockLock(rxq->lock);
+    //IOSimpleLockLock(_rxq->lock);
     
-    IWL_INFO(0, "restocking with space of %d, free: %d\n", iwl_rxq_space(rxq), rxq->free_count);
-    while ((iwl_rxq_space(rxq) > 0) && (rxq->free_count)) {
-        __le32 *bd = (__le32 *)rxq->bd;
+    IWL_INFO(0, "restocking (space: %d, free: %d, used: %d)\n", iwl_rxq_space(_rxq), _rxq->free_count, _rxq->used_count);
+    while ((iwl_rxq_space(_rxq) > 0) && (_rxq->free_count)) {
+        __le32 *bd = (__le32 *)_rxq->bd;
         /* The overwritten rxb must be a used one */
-        rxb = rxq->queue[rxq->write];
+        rxb = _rxq->queue[_rxq->write];
         //        BUG_ON(rxb && rxb->page);
         
         /* Get next free Rx buffer, remove from free list */
-        rxb = TAILQ_FIRST(&rxq->rx_free);
-        TAILQ_REMOVE(&rxq->rx_free, rxb, list);
+        rxb = TAILQ_FIRST(&_rxq->rx_free);
+        
+        if(!rxb) {
+            IWL_ERR(0, "RXB should never be null?\n");
+            return;
+        }
+        TAILQ_REMOVE(&_rxq->rx_free, rxb, list);
         rxb->invalid = false;
         
         /* Point to Rx buffer via next RBD in circular buffer */
         bd[rxq->write] = iwl_pcie_dma_addr2rbd_ptr(rxb->page_dma);
-        rxq->queue[rxq->write] = rxb;
-        rxq->write = (rxq->write + 1) & RX_QUEUE_MASK;
-        rxq->free_count--;
+        _rxq->queue[_rxq->write] = rxb;
+        _rxq->write = (_rxq->write + 1) & RX_QUEUE_MASK;
+        _rxq->free_count--;
     }
-    IOSimpleLockUnlock(rxq->lock);
+    //IOSimpleLockUnlock(_rxq->lock);
     
     /* If we've added more space for the firmware to place data, tell it.
      * Increment device's write pointer in multiples of 8. */
-    if (rxq->write_actual != (rxq->write & ~0x7)) {
-        IOSimpleLockLock(rxq->lock);
-        rxqIncWrPtr(rxq);
-        IOSimpleLockUnlock(rxq->lock);
+    if (_rxq->write_actual != (_rxq->write & ~0x7)) {
+        //IOSimpleLockLock(_rxq->lock);
+        rxqIncWrPtr(_rxq);
+        //IOSimpleLockUnlock(_rxq->lock);
     }
 }
 
@@ -826,6 +846,8 @@ void IWLTransport::restockBd(struct iwl_rxq *rxq, struct iwl_rx_mem_buffer *rxb)
     IWL_INFO(0, "Assigned virtual RB ID %u to queue %d index %d\n",
              (u32)rxb->vid, rxq->id, rxq->write);
 }
+
+
 
 /*
  * iwl_pcie_rxq_inc_wr_ptr - Update the write pointer for the RX queue
@@ -1028,11 +1050,15 @@ int IWLTransport::rxStop()
     }
 }
 
-static inline bool iwl_queue_used(const struct iwl_txq *q, int i)
+static inline bool iwl_queue_used(struct iwl_txq *q, int i)
 {
-    return q->write_ptr >= q->read_ptr ?
-    (i >= q->read_ptr && i < q->write_ptr) :
-    !(i < q->read_ptr && i >= q->write_ptr);
+    int index = iwl_pcie_get_cmd_index(q, i);
+    int r = iwl_pcie_get_cmd_index(q, q->read_ptr);
+    int w = iwl_pcie_get_cmd_index(q, q->write_ptr);
+
+    return w >= r ?
+        (index >= r && index < w) :
+        !(index < r && index >= w);
 }
 
 void iwl_pcie_cmdq_reclaim(IWLTransport *trans, int txq_id, int idx)
@@ -1042,6 +1068,8 @@ void iwl_pcie_cmdq_reclaim(IWLTransport *trans, int txq_id, int idx)
     IOInterruptState state;
     int nfreed = 0;
     
+    idx = iwl_pcie_get_cmd_index(txq, idx);
+    u16 r = iwl_pcie_get_cmd_index(txq, txq->read_ptr);
     //lockdep_assert_held(&txq->lock);
     
     if ((idx >= TFD_QUEUE_SIZE_MAX) || (!iwl_queue_used(txq, idx))) {
@@ -1052,20 +1080,29 @@ void iwl_pcie_cmdq_reclaim(IWLTransport *trans, int txq_id, int idx)
         return;
     }
     
-    for (idx = iwl_queue_inc_wrap(idx); txq->read_ptr != idx;
-         txq->read_ptr = iwl_queue_inc_wrap(txq->read_ptr)) {
+    IWL_INFO(0, "cmd queue reclaim (idx: %d, r: %d, rd: %d, wr: %d)\n", idx, r, txq->read_ptr, txq->write_ptr);
+    for (idx = iwl_queue_inc_wrap(idx); r != idx;
+          r = iwl_queue_inc_wrap(r)) {
+        txq->read_ptr = iwl_queue_inc_wrap(txq->read_ptr);
         
         if (nfreed++ > 0) {
             IWL_ERR(trans, "HCMD skipped: index (%d) %d %d\n", idx, txq->write_ptr, txq->read_ptr);
             //iwl_force_nmi(trans);
+        } else {
+            IWL_INFO(0, "incremented read ptr (ptr: %d)\n", txq->read_ptr);
         }
     }
     
     if (txq->read_ptr == txq->write_ptr) {
-        //state = IOSimpleLockLockDisableInterrupt(trans_pcie->reg_lock);
+        state = IOSimpleLockLockDisableInterrupt(trans->m_pDevice->registerRWLock);
         iwl_pcie_clear_cmd_in_flight(trans);
-        //IOSimpleLockUnlockEnableInterrupt(trans_pcie->reg_lock, state);
+        IOSimpleLockUnlockEnableInterrupt(trans->m_pDevice->registerRWLock, state);
     }
+    
+    
+  
+    
+    
     
     //iwl_pcie_txq_progress(txq);
 }
@@ -1097,7 +1134,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
     }
     
     //spin_lock_bh(&txq->lock);
-    //IOSimpleLockLock(txq->lock);
+    IOSimpleLockLock(txq->lock);
     
     cmd_index = iwl_pcie_get_cmd_index(txq, index);
     cmd = (iwl_device_cmd*)txq->entries[cmd_index].cmd;
@@ -1116,7 +1153,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
         meta->source->_rx_page_order = iwl_trans_get_rb_size_order((iwl_amsdu_size)trans->rx_buf_size);
     }
     
-    if (meta->flags & CMD_WANT_ASYNC_CALLBACK)
+    //if (meta->flags & CMD_WANT_ASYNC_CALLBACK)
         //iwl_op_mode_async_cb(trans->op_mode, cmd);
     
     iwl_pcie_cmdq_reclaim(trans, txq_id, index);
@@ -1148,9 +1185,123 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
     meta->flags = 0;
     
     //spin_unlock_bh(&txq->lock);
-    //IOSimpleLockUnlock(txq->lock);
+    IOSimpleLockUnlock(txq->lock);
 }
 
+int allocate_rxb(OSObject* target, void* arg0, void* arg1, void* arg2, void* arg3) {
+    iwl_rb_allocator* rba = (iwl_rb_allocator*)arg0;
+    IWLTransport* trans = (IWLTransport*)arg1;
+    TAILQ_HEAD(, iwl_rx_mem_buffer) local_empty;
+    TAILQ_INIT(&local_empty);
+    
+    
+    TAILQ_HEAD(, iwl_rx_mem_buffer) local_allocated;
+    int pending = rba->req_pending;
+    
+    IOSimpleLockLock(rba->lock);
+    TAILQ_CONCAT(&local_empty, &rba->rbd_empty, list);
+    TAILQ_INIT(&rba->rbd_empty);
+    IOSimpleLockUnlock(rba->lock);
+    
+    
+    while(pending) {
+        TAILQ_INIT(&local_allocated);
+        for(int i = 0; i < RX_CLAIM_REQ_ALLOC;) {
+            struct iwl_rx_mem_buffer* rxb;
+            mbuf_t page;
+            
+            WARN_ON(TAILQ_EMPTY(&local_empty));
+            rxb = TAILQ_FIRST(&local_empty);
+            
+            
+            if(!rxb) {
+                IWL_ERR(0, "rxb == null\n");
+                continue;
+            }
+            
+            if(rxb->page)
+                IWL_ERR(0, "page isn't null\n");
+            
+            page = iwl_pcie_rx_alloc_page(trans, &rxb->offset);
+            
+            if(!page)
+                continue;
+            rxb->page = page;
+            
+            IOMbufNaturalMemoryCursor* cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
+            int err = cursor->getPhysicalSegments(rxb->page, &rxb->vec, 1);
+            if(err == 0) {
+                rxb->page = NULL;
+                IWL_ERR(0, "Unable to map\n");
+                continue;
+            }
+            
+            rxb->page_dma = rxb->vec.location;
+            
+            TAILQ_REMOVE(&local_empty, rxb, list);
+            
+            TAILQ_INSERT_TAIL(&local_allocated, rxb, list);
+            i++;
+        }
+        
+        OSDecrementAtomic(&rba->req_pending);
+        pending--;
+        if(!pending) {
+            pending = rba->req_pending;
+            if(pending)
+                IWL_INFO(0, "Got more pending\n");
+        }
+        
+        IOSimpleLockLock(rba->lock);
+        if(!TAILQ_EMPTY(&local_allocated)) {
+            TAILQ_CONCAT(&rba->rbd_allocated, &local_allocated, list);
+        } else {
+            IWL_ERR(0, "local_allocated should not be null\n");
+        }
+        
+        if(!TAILQ_EMPTY(&rba->rbd_empty)) {
+            TAILQ_CONCAT(&local_empty, &rba->rbd_empty, list);
+            TAILQ_INIT(&rba->rbd_empty);
+        }
+        IOSimpleLockUnlock(rba->lock);
+        
+        OSIncrementAtomic(&rba->req_ready);
+        //rba->req_ready++;
+    }
+    IOSimpleLockLock(rba->lock);
+    if(!TAILQ_EMPTY(&local_empty)) {
+        TAILQ_CONCAT(&rba->rbd_empty, &local_empty, list);
+    }
+    IOSimpleLockUnlock(rba->lock);
+    
+    
+    return 0;
+}
+
+static void iwl_pcie_rx_reuse_rbd(IWLTransport *trans,
+                  struct iwl_rx_mem_buffer *rxb,
+                  struct iwl_rxq *rxq, bool emergency)
+{
+     IWLTransport* trans_pcie = trans;
+     struct iwl_rb_allocator *rba = &trans_pcie->rba;
+     TAILQ_INSERT_TAIL(&rxq->rx_used, rxb, list);
+    
+    if(unlikely(emergency))
+        return;
+    
+    rxq->used_count++;
+    
+    if ((rxq->used_count % RX_CLAIM_REQ_ALLOC) == RX_POST_REQ_ALLOC) {
+        move_to_allocator(rba, rxq);
+        OSIncrementAtomic(&rba->req_pending);
+        //rba->req_pending++;
+        //OSIncrementAtomic(&rba->req_pending);
+        
+        rba->alloc_wq->runAction(&allocate_rxb, NULL, rba, trans);
+    }
+    
+    
+}
 
 
 static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, struct iwl_rx_mem_buffer *rxb,
@@ -1294,6 +1445,32 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         page_stolen |= rxcb._page_stolen;
         offset += LNX_ALIGN(len, FH_RSCSR_FRAME_ALIGN);
     }
+    
+    if(page_stolen) {
+        IWL_ERR(0, "page stolen, free here\n");
+        //mbuf_freem(rxb->page);
+        rxb->page = NULL;
+    }
+    
+    if(rxb->page != NULL) {
+        IWL_ERR(0, "rx failed\n");
+        IOMbufNaturalMemoryCursor* cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
+        int err = cursor->getPhysicalSegments(rxb->page, &rxb->vec, 1);
+        
+        if(err == 0) {
+            IWL_ERR(0, "LEAK PAGE\n");
+            rxb->page = NULL;
+            iwl_pcie_rx_reuse_rbd(trans, rxb, rxq, emergency);
+        } else {
+            rxb->page_dma = rxb->vec.location;
+            TAILQ_INSERT_TAIL(&rxq->rx_free, rxb, list);
+            rxq->free_count++;
+        }
+    } else {
+        iwl_pcie_rx_reuse_rbd(trans, rxb, rxq, emergency);
+    }
+    
+    
 }
 
 void IWLTransport::handleRx(int queue) {
@@ -1302,7 +1479,7 @@ void IWLTransport::handleRx(int queue) {
     bool emergency = false;
         
 restart:
-    r = le16_to_cpu(rxq->rb_stts->closed_rb_num) & 0x0FFF;
+    r = le16_to_cpu(_rxq->rb_stts->closed_rb_num) & 0x0FFF;
     i = _rxq->read;
     
     /* W/A 9000 device step A0 wrap-around bug */
@@ -1314,6 +1491,13 @@ restart:
     
     while(i != r) {
         struct iwl_rx_mem_buffer *rxb;
+        
+        u32 rb_pending_alloc = rba.req_pending * RX_CLAIM_REQ_ALLOC;
+        if(unlikely(rb_pending_alloc >= _rxq->queue_size / 2 && !emergency)) {
+            move_to_allocator(&rba, _rxq);
+            emergency = true;
+            IWL_ERR(0, "RX path is in emergency. Pending allocs: %d\n", rb_pending_alloc);
+        }
         
         if (_rxq->used_count == _rxq->queue_size / 2)
             emergency = true;
@@ -1341,23 +1525,25 @@ restart:
             _rxq->queue[i] = NULL;
         }
         
-        IWL_INFO(trans, "Q %d: HW = %d, SW = %d\n", _rxq->id, r, i);
-        iwl_pcie_rx_handle_rb(this, rxq, rxb, emergency);
+        iwl_pcie_rx_handle_rb(this, _rxq, rxb, emergency);
+        
+        IWL_INFO(trans, "Q %d: HW = %d, SW = %d (total: %d, used: %d, free: %d)\n", _rxq->id, r, i, _rxq->queue_size, _rxq->used_count, _rxq->free_count
+                 );
         
         i = (i + 1) & (_rxq->queue_size - 1);
         if (_rxq->used_count >= RX_CLAIM_REQ_ALLOC)
-            iwl_pcie_rx_allocator_get(this, rxq);
+            iwl_pcie_rx_allocator_get(this, _rxq);
         
         if (_rxq->used_count % RX_CLAIM_REQ_ALLOC == 0 && !emergency) {
             struct iwl_rb_allocator *rba = &this->rba;
             
             /* Add the remaining empty RBDs for allocator use */
-            //IOSimpleLockLock(rba->lock);
+            IOInterruptState state = IOSimpleLockLockDisableInterrupt(rba->lock);
             if (!TAILQ_EMPTY(&_rxq->rx_used)) {
                 TAILQ_CONCAT(&rba->rbd_empty, &_rxq->rx_used, list);
                 TAILQ_INIT(&_rxq->rx_used);
             }
-            //IOSimpleLockUnlock(rba->lock);
+            IOSimpleLockUnlockEnableInterrupt(rba->lock, state);
         } else if (emergency) {
             IWL_INFO(0, "EMERGENCY!\n");
             count++;

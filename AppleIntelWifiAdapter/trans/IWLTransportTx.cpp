@@ -8,6 +8,7 @@
 
 #include "IWLTransport.hpp"
 #include "IWLSCD.h"
+#include "IWLTransOps.h"
 
 extern const void *bsearch(const void *, const void *, size_t, size_t, int (*)(const void *, const void *));
 
@@ -44,7 +45,7 @@ static int iwl_queue_space(const struct iwl_txq *q)
      * modulo by TFD_QUEUE_SIZE_MAX and is well defined.
      */
     used = (q->write_ptr - q->read_ptr) & (TFD_QUEUE_SIZE_MAX - 1);
-    IWL_INFO(0, "QID %d (wrptr: %d, rdptr: %d, used: %d)", q->id, q->write_ptr, q->read_ptr, used);
+    IWL_INFO(0, "QID %d (wrptr: %d, rdptr: %d, used: %d, max: %d)\n", q->id, q->write_ptr, q->read_ptr, used, max);
     if (WARN_ON(used > max))
         return 0;
     
@@ -483,7 +484,9 @@ int IWLTransport::txInit() {
         alloc = true;
     }
     
+    /* Deactivates TX scheduler */
     iwlWritePRPH(SCD_TXFACT, 0);
+    
     iwlWriteDirect32(FH_KW_MEM_ADDR_REG, (u32)this->kw->dma >> 4);
     
     for (txq_id = 0; txq_id < m_pDevice->cfg->trans.base_params->num_of_queues; txq_id++) {
@@ -815,11 +818,14 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
         idx = -EINVAL;
         goto free_dup_buf;
     }
+    //mbuf_gethdr(MBUF_DONTWAIT, MBUF_TYPE_DATA, txq->entries->skb)
     
     //    spin_lock_bh(&txq->lock);
+    IOSimpleLockLock(txq->lock);
     
     if (iwl_queue_space(txq) < ((cmd->flags & CMD_ASYNC) ? 2 : 1)) {
         //        spin_unlock_bh(&txq->lock);
+        IOSimpleLockUnlock(txq->lock);
         
         IWL_ERR(trans, "No space in command queue\n");
         //TODO
@@ -827,6 +833,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
         idx = -ENOSPC;
         goto free_dup_buf;
     }
+    
     
     idx = iwl_pcie_get_cmd_index(txq, txq->write_ptr);
     out_cmd = (struct iwl_device_cmd *)txq->entries[idx].cmd;
@@ -956,6 +963,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
         IWL_INFO(trans, "txq->entries[%d].free_buf is not null", idx);
         iwh_free((void *)txq->entries[idx].free_buf);
     }
+    
     txq->entries[idx].free_buf = dup_buf;
     
     /* start timer if queue currently empty */
@@ -981,6 +989,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
     IOSimpleLockUnlockEnableInterrupt(trans->m_pDevice->registerRWLock, flags);
     
 out:
+    IOSimpleLockUnlock(txq->lock);
     //    spin_unlock_bh(&txq->lock);
 free_dup_buf:
     //    if (idx < 0)
@@ -1028,6 +1037,11 @@ void IWLTransport::syncNmi()
      */
     if (interrupts_enabled)
         enableIntr();
+    
+    
+    IWLTransOps* ops = (IWLTransOps*)trans_ops;
+    
+    ops->fwError();
     
     //        iwl_trans_fw_error(trans);
 }
@@ -1122,6 +1136,7 @@ cancel:
     
     if (cmd->resp_pkt) {
         IWL_INFO(0, "free resp pkt\n");
+        
 //        trans->freeResp(cmd);
         cmd->resp_pkt = NULL;
     }
@@ -1207,7 +1222,7 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
             //iwl_pcie_txq_set_ratid_map(ra_tid, txq_id);
             txq->ampdu = true;
         } else {
-            iwl_scd_txq_enable_agg(trans, txq_id);
+            iwl_scd_txq_disable_agg(trans, txq_id);
             ssn = txq->read_ptr;
         }
     } else {

@@ -249,6 +249,7 @@ public:
         .remove_when_gone = false,
     };
     
+    
     // MARK: pci device info
     uint32_t hw_rf_id;
     uint32_t hw_rev;
@@ -260,6 +261,8 @@ public:
     IOSimpleLock *registerRWLock;
     
     bool holdNICWake;
+    
+    iwl_ucode_status uc;
     
 private:
      

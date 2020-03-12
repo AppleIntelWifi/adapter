@@ -101,13 +101,14 @@ bool IWLMvmDriver::ieee80211Run()
 void IWLMvmDriver::ieee80211Release()
 {
     struct ieee80211com *ic = &m_pDevice->ie_ic;
+    
     struct ifnet *ifp = &ic->ic_if;
     IOLog("ifp->if_softc==NULL:%s", ifp->if_softc==NULL ? "true":"false");
     if (ifp->if_softc != NULL) {
         struct iwm_node *in = (struct iwm_node *)m_pDevice->ie_ic.ic_bss;
         ieee80211_mira_cancel_timeouts(&in->in_mn);
         ieee80211_ifdetach(ifp);
-        IOFree(in, sizeof(struct iwm_node));
+        //IOFree(in, sizeof(struct iwm_node));
     }
 }
 

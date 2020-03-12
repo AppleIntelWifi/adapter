@@ -522,8 +522,8 @@ struct iwl_beacon_filter_cmd {
 	__le32 bf_escape_timer;
 	__le32 ba_escape_timer;
 	__le32 ba_enable_beacon_abort;
-	__le32 bf_threshold_absolute_low[2];
-	__le32 bf_threshold_absolute_high[2];
+//	__le32 bf_threshold_absolute_low[2];
+//	__le32 bf_threshold_absolute_high[2];
 } __packed; /* BEACON_FILTER_CONFIG_API_S_VER_4 */
 
 /* Beacon filtering and beacon abort */

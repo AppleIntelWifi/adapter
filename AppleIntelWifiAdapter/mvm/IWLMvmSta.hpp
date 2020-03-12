@@ -17,6 +17,8 @@
  * structure, so sending the size of the relevant API's structure is enough to
  * support both API versions.
  */
+
+int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo);
 static inline int iwl_mvm_add_sta_cmd_size(IWLDevice *mvm)
 {
     if (iwl_mvm_has_new_rx_api(mvm) ||

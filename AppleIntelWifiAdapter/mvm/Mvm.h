@@ -17,6 +17,11 @@
 struct iwl_mvm_alive_data {
     bool valid;
     u32 scd_base_addr;
+    
+    uint32_t uc_error_event_table;
+    uint32_t uc_umac_error_event_table;
+    uint32_t uc_log_event_table;
+    int uc_ok;
 };
 
 /**

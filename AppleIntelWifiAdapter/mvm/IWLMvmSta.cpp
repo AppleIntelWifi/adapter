@@ -7,6 +7,7 @@
 //
 
 #include "IWLMvmSta.hpp"
+#include "../trans/IWLSCD.h"
 
 bool
 iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
@@ -14,25 +15,85 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
                          unsigned int queue_wdg_timeout);
 
 int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
-    struct iwl_scd_txq_cfg_cmd cfg = {
-        .tx_fifo = fifo,
+    /*
+    struct iwl_trans_txq_scd_cfg cfg = {
+        .fifo = fifo,
         .sta_id = sta_id,
-        .action = 1,
-        .scd_queue = qid,
-        .window = IWL_FRAME_LIMIT,
         .aggregate = false,
     };
-    int err;
-    
-    if((err = drv->sendCmdPdu(SCD_QUEUE_CFG, 0, sizeof(cfg), &cfg))) {
-        return err;
-    }
+    */
     IOInterruptState state;
     if(!drv->trans->grabNICAccess(&state))
         return 1;
     
-    drv->trans->iwlWritePRPHNoGrab(SCD_EN_CTRL, drv->trans->iwlReadPRPHNoGrab(SCD_EN_CTRL) | qid);
     
+
+    int err;
+    
+    //err = iwl_trans_txq_enable_cfg(drv->trans, qid, 0, &cfg, 0);
+    
+    drv->trans->iwlWrite32(HBUS_TARG_WRPTR, qid << 8 | 0);
+    
+    if(qid == IWL_MVM_DQA_CMD_QUEUE) {
+        drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_STATUS_BITS(qid),
+                                       (0 << SCD_QUEUE_STTS_REG_POS_ACTIVE)
+                                       | (1 << SCD_QUEUE_STTS_REG_POS_SCD_ACT_EN));
+        drv->trans->releaseNICAccess(&state);
+        
+        drv->trans->iwlClearBitsPRPH(SCD_AGGR_SEL, (1 << qid));
+        
+        if(!drv->trans->grabNICAccess(&state))
+            return 1;
+        
+        drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_RDPTR(qid), 0);
+        drv->trans->releaseNICAccess(&state);
+        
+        drv->trans->iwlWriteMem32(drv->trans->scd_base_addr + SCD_CONTEXT_QUEUE_OFFSET(qid), 0);
+        
+        drv->trans->iwlWriteMem32(drv->trans->scd_base_addr + SCD_CONTEXT_QUEUE_OFFSET(qid) +
+            sizeof(uint32_t),
+            ((IWL_FRAME_LIMIT << SCD_QUEUE_CTX_REG2_WIN_SIZE_POS) &
+             SCD_QUEUE_CTX_REG2_WIN_SIZE) |
+            ((IWL_FRAME_LIMIT
+                << SCD_QUEUE_CTX_REG2_FRAME_LIMIT_POS) &
+            SCD_QUEUE_CTX_REG2_FRAME_LIMIT));
+        
+        if(!drv->trans->grabNICAccess(&state))
+            return 1;
+        
+        drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_STATUS_BITS(qid),
+                                       (1 << SCD_QUEUE_STTS_REG_POS_ACTIVE) |
+                                       (fifo << SCD_QUEUE_STTS_REG_POS_TXF) |
+                                       (1 << SCD_QUEUE_STTS_REG_POS_WSL) |
+                                       SCD_QUEUE_STTS_REG_MSK);
+        
+        err = 0;
+        
+        
+    } else {
+        struct iwl_scd_txq_cfg_cmd cfg = {
+            .tx_fifo = fifo,
+            .sta_id = sta_id,
+            .action = 1,
+            .scd_queue = qid,
+            .window = IWL_FRAME_LIMIT,
+            .aggregate = false,
+        };
+        
+
+        drv->trans->releaseNICAccess(&state);
+        
+        if((err = drv->sendCmdPdu(SCD_QUEUE_CFG, 0, sizeof(cfg), &cfg))) {
+            return err;
+
+        }
+        
+        
+        if(!drv->trans->grabNICAccess(&state))
+            return 1;
+    }
+    
+    drv->trans->iwlWritePRPHNoGrab(SCD_EN_CTRL, drv->trans->iwlReadPRPHNoGrab(SCD_EN_CTRL) | qid);
     drv->trans->releaseNICAccess(&state);
     
     return err;
@@ -43,7 +104,7 @@ int iwl_mvm_add_aux_sta(IWLMvmDriver* drv) {
     int err;
     uint32_t status;
     
-    err = iwl_enable_txq(drv, 0, IWL_MVM_DQA_AUX_QUEUE, IWL_MVM_TX_FIFO_MCAST);
+    err = iwl_enable_txq(drv, 1, IWL_MVM_DQA_AUX_QUEUE, IWL_MVM_TX_FIFO_MCAST);
     if(err)
         return err;
     

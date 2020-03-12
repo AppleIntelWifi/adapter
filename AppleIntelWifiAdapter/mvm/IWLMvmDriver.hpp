@@ -106,6 +106,7 @@ public:
     
     void iwm_setup_ht_rates();
     
+    
     int iwm_binding_cmd(struct iwm_node *in, uint32_t action);
     
     typedef int (*BgScanAction)(struct ieee80211com *ic);

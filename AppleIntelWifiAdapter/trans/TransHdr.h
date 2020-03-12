@@ -469,6 +469,8 @@ struct iwl_pcie_first_tb_buf {
  * where N is a number between 0 and 7. This means that the SW
  * data is a window overlayed over the HW queue.
  */
+
+
 struct iwl_txq {
     void *tfds;
     struct iwl_dma_ptr* tfds_dma;
@@ -552,6 +554,7 @@ struct iwl_self_init_dram {
  * @rx_alloc: work struct for background calls
  */
 struct iwl_rb_allocator {
+    class IOWorkLoop* alloc_wq;
     int req_pending;
     int req_ready;
     TAILQ_HEAD(, iwl_rx_mem_buffer) rbd_allocated;
@@ -581,5 +584,12 @@ struct iwl_trans_txq_scd_cfg {
     bool aggregate;
     int frame_limit;
 };
+
+enum iwl_ini_cfg_state {
+    IWL_INI_CFG_STATE_NOT_LOADED,
+    IWL_INI_CFG_STATE_LOADED,
+    IWL_INI_CFG_STATE_CORRUPTED,
+};
+
 
 #endif /* TransHdr_h */

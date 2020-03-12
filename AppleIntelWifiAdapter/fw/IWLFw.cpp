@@ -208,7 +208,7 @@ int IWLMvmDriver::runUnifiedMvmUcode(bool read_nvm)
                                NULL);
     /* Will also start the device */
     ret = loadUcodeWaitAlive(IWL_UCODE_REGULAR);
-    return 0;
+    
     if (ret) {
         IWL_ERR(mvm, "Failed to start RT ucode: %d\n", ret);
         goto error;
@@ -354,8 +354,7 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
                          struct iwl_rx_packet *pkt, void *data)
 {
     IWL_INFO(0, "iwl alive.\n");
-//    IWLDevice *mvm =
-//    container_of(notif_wait, typeof(IWLDevice), notif_wait);
+    //IWLDevice *mvm = container_of(notif_wait, typeof(IWLDevice), notif_wait);
     struct iwl_mvm_alive_data *alive_data = (struct iwl_mvm_alive_data *)data;
     struct mvm_alive_resp_v3 *palive3;
     struct mvm_alive_resp *palive;
@@ -367,12 +366,17 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
 
     if (iwl_rx_packet_payload_len(pkt) == sizeof(*palive)) {
         palive = (struct mvm_alive_resp *)pkt->data;
+        
         umac = &palive->umac_data;
         lmac1 = &palive->lmac_data[0];
         lmac2 = &palive->lmac_data[1];
         status = le16_to_cpu(palive->status);
     } else {
         palive3 = (struct mvm_alive_resp_v3 *)pkt->data;
+        
+        alive_data->uc_error_event_table = palive3->lmac_data.dbg_ptrs.error_event_table_ptr;
+        alive_data->uc_umac_error_event_table = palive3->umac_data.dbg_ptrs.error_info_addr;
+        alive_data->uc_log_event_table = palive3->lmac_data.dbg_ptrs.log_event_table_ptr;
         umac = &palive3->umac_data;
         lmac1 = &palive3->lmac_data;
         status = le16_to_cpu(palive3->status);
@@ -380,6 +384,7 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
     
     alive_data->scd_base_addr = le32_to_cpu(lmac1->dbg_ptrs.scd_base_ptr);
     alive_data->valid = status == IWL_ALIVE_STATUS_OK;
+    
     
 //    alive_data->scd_base_addr = 0;
 //    alive_data->valid = 1;
@@ -666,6 +671,11 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
     }
     
     trans_ops->fwAlive(alive_data.scd_base_addr);
+    
+    this->trans->m_pDevice->uc.uc_error_event_table = alive_data.uc_error_event_table;
+    this->trans->m_pDevice->uc.uc_umac_error_event_table = alive_data.uc_umac_error_event_table;
+    this->trans->m_pDevice->uc.uc_log_event_table = alive_data.uc_log_event_table;
+    
     
     /*
      * Note: all the queues are enabled as part of the interface
