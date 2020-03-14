@@ -16,6 +16,8 @@
 
 #include <IOKit/network/IOEthernetInterface.h>
 #include <IOKit/network/IOOutputQueue.h>
+#include "IO80211Controller.h"
+#include "IO80211Interface.h"
 
 #define    ETHER_IS_MULTICAST(addr) (*(addr) & 0x01) /* is address mcast/bcast? */
 #define    ETHER_IS_BROADCAST(addr) \
@@ -112,7 +114,7 @@ struct ether_multi {
 };
 
 struct ifnet {                /* and the entries */
-    IOEthernetInterface *iface;
+    IO80211Interface *iface;
     IOOutputQueue* output_queue;
     void *if_softc;
 //    struct    refcnt if_refcnt;

@@ -5,12 +5,12 @@
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
 #include "IWLDebug.h"
+#include "IO80211Interface.h"
+#include "ioctl_dbg.h"
 
-#define super IOEthernetController
+OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
+#define super IO80211Controller
 
-OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IOEthernetController)
-OSDefineMetaClassAndStructors(HackIO80211Interface, IOEthernetInterface)
-OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject)
 
 enum
 {
@@ -70,12 +70,18 @@ static struct MediumTable
     {kIOMediumIEEE80211Auto, 0}
 };
 
+
 void AppleIntelWifiAdapterV2::releaseAll() {
     IWL_INFO(0, "Releasing everything");
     if(fInterrupt) {
         irqLoop->removeEventSource(fInterrupt);
         fInterrupt->disable();
         fInterrupt = NULL;
+    }
+    
+    if(gate) {
+        gate->release();
+        gate = NULL;
     }
     if(irqLoop) {
         irqLoop->release();
@@ -86,7 +92,9 @@ void AppleIntelWifiAdapterV2::releaseAll() {
         netif = NULL;
     }
     if (drv) {
+        this->drv->OSObject::release();
         drv->release();
+        //drv->free();
         drv = NULL;
     }
 }
@@ -100,16 +108,24 @@ void AppleIntelWifiAdapterV2::free() {
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
     IWL_INFO(0, "Driver init()");
-    drv = new IWLMvmDriver();
-    return super::init(properties);
+    if(!super::init(properties)) {
+        return false;
+    }
     
-    
+    return true;
+}
+
+IO80211Interface* AppleIntelWifiAdapterV2::getInterface() {
+    return netif;
 }
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
     IWL_INFO(0, "Driver Probe()");
-    super::probe(provider, score);
+    if(!super::probe(provider, score)) {
+        return NULL;
+    }
+    
     IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
         IWL_ERR(0, "Not pci device");
@@ -120,14 +136,89 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemVendorID = pciDevice->configRead16(kIOPCIConfigSubSystemVendorID);
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
-    IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
-    this->drv->controller = static_cast<IOEthernetController*>(this);
+    bool valid = false;
+    for (int i = 0; i < ARRAY_SIZE(iwl_hw_card_ids); i++) {
+        pci_device_id dev = iwl_hw_card_ids[i];
+        if (dev.device == deviceID) {
+            //struct iwl_cfg* ptr = (struct iwl_cfg*
+            //                       )&dev.driver_data;
+            //this->cfg = iwl_cfg(*ptr);
+            //IWL_INFO(0, "name? %s\n", ptr->name);
+            //memcpy(&this->cfg, ptr, sizeof(iwl_cfg));
+            valid = true;
+            //this->cfg = *ptr;
+            break;
+        }
+    }
     
-    if (!drv->init(pciDevice)) {
+    if(!valid) {
         return NULL;
     }
     
-    return drv->probe() ? this : NULL;
+        IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    
+    this->drv = new IWLMvmDriver();
+    this->drv->retain();
+    
+    
+    pciDevice->retain();
+    this->drv->controller = static_cast<IO80211Controller*>(this);
+    if (!this->drv->init(pciDevice)) {
+        return NULL;
+    }
+    
+    return this->drv->probe() ? this : NULL;
+}
+
+bool AppleIntelWifiAdapterV2::createWorkLoop() {
+    if(!irqLoop) {
+        irqLoop = IO80211WorkLoop::workLoop();
+    }
+    
+    return (irqLoop != NULL);
+}
+
+IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
+    return irqLoop;
+}
+
+
+SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
+                                            int request_number,
+                                            IO80211Interface* interface,
+                                            void* data) {
+    if (request_type != SIOCGA80211 && request_type != SIOCSA80211) {
+        IOLog("Black80211: Invalid IOCTL request type: %u", request_type);
+        IOLog("Expected either %lu or %lu", SIOCGA80211, SIOCSA80211);
+        return kIOReturnError;
+    }
+
+    IOReturn ret = 0;
+    
+    bool isGet = (request_type == SIOCGA80211);
+    
+#define IOCTL(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCGA80211) { \
+ret = get##REQ(interface, (struct DATA_TYPE* )data); \
+} else { \
+ret = set##REQ(interface, (struct DATA_TYPE* )data); \
+}
+    
+#define IOCTL_GET(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCGA80211) { \
+    ret = get##REQ(interface, (struct DATA_TYPE* )data); \
+}
+#define IOCTL_SET(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCSA80211) { \
+    ret = set##REQ(interface, (struct DATA_TYPE* )data); \
+}
+    
+    IWL_INFO(0, "IOCTL %s(%d) %s\n",
+          isGet ? "get" : "set",
+          request_number,
+          IOCTL_NAMES[request_number]);
+    
+    return ret;
 }
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
@@ -137,7 +228,6 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     initTimeout(getWorkLoop());
-    irqLoop = IOWorkLoop::workLoop();
     int msiIntrIndex = 0;
     
     
@@ -159,6 +249,12 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
+    gate = IOCommandGate::commandGate(this);
+    if(!gate) {
+        IWL_ERR(0, "Failed to create command gate\n");
+        releaseAll();
+        return false;
+    }
     
     for (int index = 0; ; index++)
     {
@@ -339,12 +435,7 @@ void AppleIntelWifiAdapterV2::intrOccured(OSObject *object, IOInterruptEventSour
 
 bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
 {
-    return true;
-    bool result = true;
-    result = super::configureInterface(interface);
-    HackIO80211Interface *inf = (HackIO80211Interface*)interface;
-    inf->configureInterface(this);
-    return result;
+    return super::configureInterface(interface);
 }
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
@@ -370,10 +461,28 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
     IOLog("Driver Enable()");
     if(drv) {
         setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
+        //netif->postMessage(1);
+        this->netif->postMessage(1);
         return super::enable(netif);
     } else {
         return kIOReturnError;
     }
+}
+
+const OSString* AppleIntelWifiAdapterV2::newModelString() const {
+    if(drv) {
+        return OSString::withCString(drv->m_pDevice->name);
+    }
+    
+    return OSString::withCString("Wireless Card");
+}
+
+const OSString* AppleIntelWifiAdapterV2::newVendorString() const {
+    return OSString::withCString("Intel");
+}
+
+const OSString* AppleIntelWifiAdapterV2::newRevisionString() const {
+    return OSString::withCString("1.0");
 }
 
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
@@ -392,12 +501,8 @@ IOReturn AppleIntelWifiAdapterV2::setMulticastMode(bool active)
     return kIOReturnSuccess;
 }
 
-IONetworkInterface *AppleIntelWifiAdapterV2::createInterface()
-{
-    return super::createInterface();
-    IONetworkInterface *inf = new HackIO80211Interface();
-    inf->init(this);
-    return inf;
+IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface() {
+    return this->netif;
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
@@ -423,6 +528,21 @@ IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
     return kIOReturnSuccess;
 }
 
+IOReturn AppleIntelWifiAdapterV2::getHardwareAddressForInterface(IO80211Interface* netif, IOEthernetAddress* addr) {
+    return getHardwareAddress(addr);
+}
+
+IOReturn AppleIntelWifiAdapterV2::setMulticastList(IOEthernetAddress* addr, UInt32 len) {
+    return kIOReturnSuccess;
+}
+
+SInt32 AppleIntelWifiAdapterV2::monitorModeSetEnabled(IO80211Interface* interface,
+                                                bool enabled,
+                                                UInt32 dlt) {
+    return kIOReturnSuccess;
+}
+
+/*
 IOOutputQueue *AppleIntelWifiAdapterV2::createOutputQueue()
 {
     if (fOutputQueue == 0) {
@@ -430,9 +550,15 @@ IOOutputQueue *AppleIntelWifiAdapterV2::createOutputQueue()
     }
     return fOutputQueue;
 }
+*/
 
 UInt32 AppleIntelWifiAdapterV2::outputPacket(mbuf_t m, void *param)
 {
     freePacket(m);
     return kIOReturnOutputDropped;
+}
+
+IOReturn AppleIntelWifiAdapterV2::getMaxPacketSize(UInt32* maxSize) const {
+    *maxSize = 1500;
+    return kIOReturnSuccess;
 }

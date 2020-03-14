@@ -10,7 +10,7 @@
 #include <libkern/version.h>
 
 #if VERSION_MAJOR > 8
-	#define _MODERN_BPF
+    #define _MODERN_BPF
 #endif
 
 #include <IOKit/network/IOEthernetInterface.h>
@@ -19,19 +19,19 @@
 
 enum IO80211LinkState
 {
-	kIO80211NetworkLinkUndefined,			// Starting link state when an interface is created
-	kIO80211NetworkLinkDown,				// Interface not capable of transmitting packets
-	kIO80211NetworkLinkUp,					// Interface capable of transmitting packets
+    kIO80211NetworkLinkUndefined,            // Starting link state when an interface is created
+    kIO80211NetworkLinkDown,                // Interface not capable of transmitting packets
+    kIO80211NetworkLinkUp,                    // Interface capable of transmitting packets
 };
 typedef enum IO80211LinkState IO80211LinkState;
 
-/*!	@defined kIO80211InterfaceClass
-	@abstract The name of the IO80211Interface class. 
-	*/
+/*!    @defined kIO80211InterfaceClass
+    @abstract The name of the IO80211Interface class.
+    */
 #define kIO80211InterfaceClass     "IO80211Interface"
 
 typedef UInt64 IO80211FlowQueueHash;
-class RSNSupplicant;
+class S;
 class IOTimerEventSource;
 class IOGatedOutputQueue;
 class IO80211Controller;
@@ -65,20 +65,28 @@ class IO80211Interface : public IOEthernetInterface
     OSDeclareDefaultStructors( IO80211Interface );
     
 public:
-    virtual bool terminate(unsigned int) APPLE_KEXT_OVERRIDE;
-    virtual bool attach(IOService*) APPLE_KEXT_OVERRIDE;
-    virtual void detach(IOService*) APPLE_KEXT_OVERRIDE;
-    virtual bool init(IONetworkController*) APPLE_KEXT_OVERRIDE;
+    virtual bool terminate(unsigned int) override;
+    virtual bool attach(IOService*) override;
+    virtual void detach(IOService*) override;
+    virtual bool init(IONetworkController*) override;
+    virtual void free() override;
+    virtual IOReturn updateReport(IOReportChannelList *,uint,void *,void *) override;
+    virtual IOReturn configureReport(IOReportChannelList *,uint,void *,void *) override;
     virtual UInt32 inputPacket(mbuf_t          packet,
                                UInt32          length  = 0,
                                IOOptionBits    options = 0,
-                               void *          param   = 0) APPLE_KEXT_OVERRIDE;
-    virtual bool inputEvent(unsigned int, void*) APPLE_KEXT_OVERRIDE;
-    virtual SInt32 performCommand(IONetworkController*, unsigned long, void*, void*) APPLE_KEXT_OVERRIDE;
-    virtual IOReturn attachToDataLinkLayer(IOOptionBits, void*) APPLE_KEXT_OVERRIDE;
-    virtual void detachFromDataLinkLayer(unsigned int, void*) APPLE_KEXT_OVERRIDE;
+                               void *          param   = 0) override;
+    virtual bool inputEvent(unsigned int, void*) override;
+    virtual IOReturn newUserClient(task_t, void*, UInt32 type, OSDictionary*, IOUserClient**) override;
+    virtual SInt32 performCommand(IONetworkController*, unsigned long, void*, void*) override;
+    virtual IOReturn attachToDataLinkLayer(IOOptionBits, void*) override;
+    virtual void detachFromDataLinkLayer(unsigned int, void*) override;
+    virtual int errnoFromReturn(int) override;
+    virtual const char* stringFromReturn(int) override;
+    
     virtual void setPoweredOnByUser(bool);
     virtual void setEnabledBySystem(bool);
+    
     virtual bool setLinkState(IO80211LinkState, unsigned int);
     virtual bool setLinkState(IO80211LinkState, int, unsigned int);
     virtual UInt32 outputPacket(mbuf_t, void*);
@@ -101,6 +109,22 @@ public:
     OSMetaClassDeclareReservedUnused( IO80211Interface, 13);
     OSMetaClassDeclareReservedUnused( IO80211Interface, 14);
     OSMetaClassDeclareReservedUnused( IO80211Interface, 15);
+public:
+    IO80211FlowQueue * findOrCreateFlowQueue(IO80211FlowQueueHash);
+    void dropTxPacket(mbuf_t);
+    void logDebug(unsigned long long, char const*, ...);
+    void vlogDebug(unsigned long long, char const*, va_list);
+    const char * getBSDName();
+    bool setLeakyAPStatsMode(unsigned int);
+    void stopOutputQueues();
+    void startOutputQueues();
+    bool updateLinkSpeed();
+    bool enabledBySystem();
+    bool reportDataTransferRatesStatic(void*);
+    void logDebug(char const*, ...);
+    void postMessage(unsigned int, void* data = NULL, unsigned long dataLen = 0);
+protected:
+    u_int8_t dat[0x500];
 };
 
 #endif /* defined(KERNEL) && defined(__cplusplus) */

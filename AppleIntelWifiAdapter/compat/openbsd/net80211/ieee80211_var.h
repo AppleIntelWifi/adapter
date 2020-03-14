@@ -253,6 +253,7 @@ struct ieee80211_channel {
     uint16_t hw_value;
     int max_power;
     int ic_band;
+    uint32_t nvm_flags;
 };
 
 /*

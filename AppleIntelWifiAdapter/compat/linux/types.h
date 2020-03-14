@@ -98,7 +98,7 @@
 
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
-#define XYLog(args...) IOLog("%s %s"AppleIntelWifiAdapter" args)
+#define XYLog(args...) IOLog("%s %s" AppleIntelWifiAdapter" args)
 
 typedef UInt8  u8;
 typedef UInt16 u16;

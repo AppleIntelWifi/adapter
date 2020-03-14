@@ -39,8 +39,8 @@ struct apple80211req
     void       *req_data;                // 4 bytes
 };
 
-#define SIOCSA80211 _IOW( 'i', 200, struct apple80211req )
-#define SIOCGA80211 _IOWR( 'i', 201, struct apple80211req )
+#define SIOCSA80211 2150656456
+#define SIOCGA80211 3224398281
 
 // req_type
 
@@ -341,6 +341,7 @@ struct apple80211req
 #define APPLE80211_IOC_OFFLOAD_TCPKA_ENABLE 265
 #define APPLE80211_IOC_RANGING_CAPS 266
 #define APPLE80211_IOC_PER_CORE_RSSI_REPORT 267
+#define APPLE80211_IOC_NSS
 
 #define APPLE80211_IOC_CARD_SPECIFIC            0xffffffff    // req_type
 
@@ -485,6 +486,13 @@ struct apple80211_sup_channel_data
     u_int32_t                    version;
     u_int32_t                    num_channels;
     struct apple80211_channel    supported_channels[APPLE80211_MAX_CHANNELS];
+};
+
+
+struct apple80211_roam_threshold_data
+{
+    u_int32_t threshold;
+    u_int32_t count;
 };
 
 struct apple80211_locale_data
@@ -737,6 +745,8 @@ struct apple80211_40mhz_intolerant_data
     u_int32_t    version;
     u_int32_t    enabled;    // bit enabled or not
 };
+
+
 
 #endif // _APPLE80211_IOCTL_H_
 

@@ -8,6 +8,8 @@
 
 #include "CTimeout.hpp"
 
+OSDefineMetaClassAndStructors(CTimeout, OSObject)
+
 void CTimeout::timeoutOccurred(OSObject* owner, IOTimerEventSource* timer)
 {
     CTimeout *tm = (CTimeout*)owner;

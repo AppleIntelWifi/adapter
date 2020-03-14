@@ -6,11 +6,12 @@
 //  Copyright © 2020 钟先耀. All rights reserved.
 //
 
-#include "HackIO80211Interface.h"
+//#include "HackIO80211Interface.h"
 #include <IOKit/IOReturn.h>
 #include <IOKit/IOLib.h>
 #include <IOKit/network/IOOutputQueue.h>
 #include <net/if_types.h>
+
 
 #define super IOEthernetInterface
 

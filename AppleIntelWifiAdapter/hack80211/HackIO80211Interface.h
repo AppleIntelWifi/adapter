@@ -10,12 +10,14 @@
 #define HackIO80211Interface_h
 
 //#include <IOKit/network/IOEthernetInterface.h>
+#include "apple80211_ioctl.h"
 #include "HackIOEthernetInterface.h"
 #include <net/if_var.h>
 #include <sys/queue.h>
 
 #define IFNAMSIZ 16
 
+/*
 enum IO80211LinkState
 {
     kIO80211NetworkLinkUndefined,            // Starting link state when an interface is created
@@ -27,6 +29,7 @@ typedef enum IO80211LinkState IO80211LinkState;
 /*!    @defined kIO80211InterfaceClass
     @abstract The name of the IO80211Interface class.
     */
+*/
 
 #define kHackIO80211InterfaceClass     "HackIO80211Interface"
 
@@ -63,6 +66,7 @@ typedef int apple80211_postMessage_tlv_types;
 #define IOCTL_GET 3224398281LL
 #define IOCTL_SET 2150656456LL
 
+/*
 struct apple80211req
 {
     char        req_if_name[IFNAMSIZ];    // 16 bytes
@@ -72,6 +76,9 @@ struct apple80211req
     void       *req_data;                // 4 bytes
 };
 
+*/
+
+/*
 class HackIO80211Interface : public IOEthernetInterface
 {
     OSDeclareDefaultStructors( HackIO80211Interface );
@@ -111,4 +118,5 @@ public:
     int apple80211_ioctl_get(HackIO80211Interface *netif, apple80211req *a6);
 };
 
+ */
 #endif /* HackIO80211Interface_h */
