@@ -8,6 +8,10 @@
 
 #include "AppleIntelWifiAdapterV2.hpp"
 
+const char *fake_hw_version = "Hardware 1.0";
+const char *fake_drv_version = "Driver 1.0";
+const char *country_code = "00";
+
 IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
                                     struct apple80211_ssid_data *sd) {
     
@@ -21,7 +25,6 @@ IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::setSSID(IO80211Interface *interface,
                                     struct apple80211_ssid_data *sd) {
-    
     //fInterface->postMessage(APPLE80211_M_SSID_CHANGED);
     return kIOReturnSuccess;
 }
@@ -42,15 +45,21 @@ IOReturn AppleIntelWifiAdapterV2::getAUTH_TYPE(IO80211Interface *interface,
 // MARK: 4 - CHANNEL
 //
 
+const apple80211_channel fake_channel = {
+    .version = APPLE80211_VERSION,
+    .channel = 1,
+    .flags = APPLE80211_C_FLAG_2GHZ | APPLE80211_C_FLAG_20MHZ | APPLE80211_C_FLAG_ACTIVE
+};
+
 IOReturn AppleIntelWifiAdapterV2::getCHANNEL(IO80211Interface *interface,
                                        struct apple80211_channel_data *cd) {
     //return kIOReturnError;
-    
+      return kIOReturnError;
     memset(cd, 0, sizeof(apple80211_channel_data));
     //bzero(cd, sizeof(apple80211_channel_data));
     
     cd->version = APPLE80211_VERSION;
-    //cd->channel = fake_channel;
+    cd->channel = fake_channel;
     return kIOReturnSuccess;
 }
 
@@ -85,8 +94,8 @@ IOReturn AppleIntelWifiAdapterV2::getRATE(IO80211Interface *interface, struct ap
 IOReturn AppleIntelWifiAdapterV2::getBSSID(IO80211Interface *interface,
                                      struct apple80211_bssid_data *bd) {
     
+    return kIOReturnError;
     bzero(bd, sizeof(*bd));
-    
     bd->version = APPLE80211_VERSION;
     //memcpy(bd->bssid.octet, fake_bssid, sizeof(fake_bssid));
     return kIOReturnSuccess;
@@ -97,8 +106,9 @@ static IOReturn scanAction(OSObject *target, void *arg0, void *arg1, void *arg2,
     IO80211Interface *iface = (IO80211Interface *)arg0;
     //FakeDevice *dev = (FakeDevice*)arg1;
     IWLMvmDriver* dev = (IWLMvmDriver*)arg1;
+    dev->m_pDevice->published = true;
     
-    //iface->postMessage(APPLE80211_M_SCAN_DONE);
+    iface->postMessage(APPLE80211_M_SCAN_DONE);
     return kIOReturnSuccess;
 }
 
@@ -207,7 +217,7 @@ IOReturn AppleIntelWifiAdapterV2::getSTATE(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::setSTATE(IO80211Interface *interface,
                                      struct apple80211_state_data *sd) {
-    kprintf("Black82011: Setting state: %u", sd->state);
+    IWL_INFO(0, "Setting state: %u\n", sd->state);
     drv->m_pDevice->state = sd->state;
     return kIOReturnSuccess;
 }
@@ -218,6 +228,7 @@ IOReturn AppleIntelWifiAdapterV2::setSTATE(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(IO80211Interface *interface,
                                         struct apple80211_phymode_data *pd) {
+    
     pd->version = APPLE80211_VERSION;
     pd->phy_mode = APPLE80211_MODE_11A
                  | APPLE80211_MODE_11B
@@ -244,13 +255,12 @@ IOReturn AppleIntelWifiAdapterV2::getOP_MODE(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::getRSSI(IO80211Interface *interface,
                                     struct apple80211_rssi_data *rd) {
-    
-    bzero(rd, sizeof(*rd));
-    //rd->version = APPLE80211_VERSION;
-    //rd->num_radios = 1;
-    //rd->rssi[0] = -42;
-    //rd->aggregate_rssi = -42;
-    //rd->rssi_unit = APPLE80211_UNIT_DBM;
+    //bzero(rd, sizeof(*rd));
+    rd->version = APPLE80211_VERSION;
+    rd->num_radios = 1;
+    rd->rssi[0] = -42;
+    rd->aggregate_rssi = -42;
+    rd->rssi_unit = APPLE80211_UNIT_DBM;
     return kIOReturnSuccess;
 }
 
@@ -260,15 +270,14 @@ IOReturn AppleIntelWifiAdapterV2::getRSSI(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::getNOISE(IO80211Interface *interface,
                                      struct apple80211_noise_data *nd) {
-    
     bzero(nd, sizeof(*nd));
-    /*
+    
     nd->version = APPLE80211_VERSION;
     nd->num_radios = 1;
     nd->noise[0] = -101;
     nd->aggregate_noise = -101;
     nd->noise_unit = APPLE80211_UNIT_DBM;
-     */
+
     return kIOReturnSuccess;
 }
 
@@ -300,6 +309,7 @@ IOReturn AppleIntelWifiAdapterV2::setPOWER(IO80211Interface *interface,
                                      struct apple80211_power_data *pd) {
     if (pd->num_radios > 0) {
         drv->m_pDevice->power_state = pd->power_state[0];
+        IWL_INFO(0, "Setting power to %u\n", pd->power_state[0]);
         //dev->setPowerState(pd->power_state[0]);
     }
     //fInterface->postMessage(APPLE80211_M_POWER_CHANGED, NULL, 0);
@@ -342,11 +352,12 @@ IOReturn AppleIntelWifiAdapterV2::getSUPPORTED_CHANNELS(IO80211Interface *interf
     ad->version = APPLE80211_VERSION;
     for(int i = 0; i < drv->m_pDevice->n_chans; i++) {
         ieee80211_channel* chan = &drv->m_pDevice->ie_ic.ic_channels[i];
-        ad->supported_channels[i].version = APPLE80211_VERSION;
 
         if(!(chan->nvm_flags & NVM_CHANNEL_VALID)) {
             continue;
         }
+        
+        ad->supported_channels[i].version = APPLE80211_VERSION;
         
         if(chan->ic_band == IEEE80211_CHAN_2GHZ) {
             ad->supported_channels[i].flags = APPLE80211_C_FLAG_2GHZ;
@@ -378,7 +389,7 @@ IOReturn AppleIntelWifiAdapterV2::getSUPPORTED_CHANNELS(IO80211Interface *interf
         ad->num_channels++;
         ad->supported_channels[i].channel = chan->hw_value;
     }
-    //ad->supported_channels[0] = fake_channel;
+    
     return kIOReturnSuccess;
 }
 
@@ -424,8 +435,8 @@ IOReturn AppleIntelWifiAdapterV2::getANTENNA_DIVERSITY(IO80211Interface *interfa
 IOReturn AppleIntelWifiAdapterV2::getDRIVER_VERSION(IO80211Interface *interface,
                                               struct apple80211_version_data *hv) {
     hv->version = APPLE80211_VERSION;
-    strncpy(hv->string, "1.0", sizeof(hv->string));
-    hv->string_len = strlen("1.0");
+    strncpy(hv->string, fake_drv_version, sizeof(hv->string));
+    hv->string_len = strlen(fake_drv_version);
     return kIOReturnSuccess;
 }
 
@@ -436,8 +447,8 @@ IOReturn AppleIntelWifiAdapterV2::getDRIVER_VERSION(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getHARDWARE_VERSION(IO80211Interface *interface,
                                                 struct apple80211_version_data *hv) {
     hv->version = APPLE80211_VERSION;
-    strncpy(hv->string, "1.0", sizeof(hv->string));
-    hv->string_len = strlen("1.0");
+    strncpy(hv->string, fake_hw_version, sizeof(hv->string));
+    hv->string_len = strlen(fake_hw_version);
     return kIOReturnSuccess;
 }
 
@@ -448,7 +459,7 @@ IOReturn AppleIntelWifiAdapterV2::getHARDWARE_VERSION(IO80211Interface *interfac
 IOReturn AppleIntelWifiAdapterV2::getCOUNTRY_CODE(IO80211Interface *interface,
                                             struct apple80211_country_code_data *cd) {
     cd->version = APPLE80211_VERSION;
-    strncpy((char*)cd->cc, "00", sizeof(cd->cc));
+    strncpy((char*)cd->cc, country_code, sizeof(cd->cc));
     return kIOReturnSuccess;
 }
 

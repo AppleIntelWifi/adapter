@@ -8,9 +8,9 @@
 
 #include "IWLDevice.hpp"
 
-bool IWLDevice::init(IOPCIDevice *pciDevice)
+bool IWLDevice::init()
 {
-    this->pciDevice = pciDevice;
+    //this->pciDevice = pciDevice;
     this->registerRWLock = IOSimpleLockAlloc();
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
     if (vendorID != PCI_VENDOR_ID_INTEL) {

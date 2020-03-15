@@ -15,6 +15,16 @@
 #include <IOKit/IOLib.h>
 #include "IWLMvmDriver.hpp"
 
+typedef enum {
+    MEDIUM_TYPE_NONE = 0,
+    MEDIUM_TYPE_AUTO,
+    MEDIUM_TYPE_1MBIT,
+    MEDIUM_TYPE_2MBIT,
+    MEDIUM_TYPE_5MBIT,
+    MEDIUM_TYPE_11MBIT,
+    MEDIUM_TYPE_54MBIT,
+    MEDIUM_TYPE_INVALID
+} mediumType_t;
 
 
 enum {
@@ -38,6 +48,7 @@ public:
     bool init(OSDictionary* parameters) override;
     void free() override;
     bool start(IOService* provider) override;
+    bool startGated(IOService* provider);
     void stop(IOService* provider) override;
     IOService* probe(IOService* provider, SInt32* score) override;
     
@@ -67,6 +78,9 @@ protected:
     IO80211Interface* getInterface();
     
 private:
+    
+    static IOReturn _doCommand(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
+    
     // 1 - SSID
     IOReturn getSSID(IO80211Interface* interface, struct apple80211_ssid_data* sd);
     IOReturn setSSID(IO80211Interface* interface, struct apple80211_ssid_data* sd);
@@ -126,13 +140,15 @@ private:
     void releaseAll();
     static void intrOccured(OSObject *object, IOInterruptEventSource *, int count);
     static bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
-    
+    bool addMediumType(UInt32 type, UInt32 speed, UInt32 code, char* name = 0);
     IWLMvmDriver *drv;
     IOGatedOutputQueue*    fOutputQueue;
     IOInterruptEventSource* fInterrupt;
     IO80211Interface *netif;
     IOCommandGate *gate;
     IO80211WorkLoop* irqLoop;
+    OSDictionary* mediumDict;
+    IONetworkMedium* mediumTable[MEDIUM_TYPE_INVALID];
     //IO80211WorkLoop* workLoop;
     
 

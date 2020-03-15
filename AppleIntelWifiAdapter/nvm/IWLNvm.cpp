@@ -553,6 +553,7 @@ struct iwl_mcc_update_resp *IWLMvmDriver::updateMcc(const char *alpha2, enum iwl
     IWL_INFO(0,
              "MCC response status: 0x%x. new MCC: 0x%x ('%c%c') n_chans: %d\n",
              status, mcc, mcc >> 8, mcc & 0xff, n_channels);
+    m_pDevice->n_chans = n_channels;
 exit:
     trans->freeResp(&cmd);
     return resp_cp;

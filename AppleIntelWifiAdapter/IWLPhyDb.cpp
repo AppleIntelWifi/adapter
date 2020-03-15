@@ -132,6 +132,7 @@ int iwl_phy_db_set_section(struct iwl_phy_db *phy_db,
     
     IOFree(entry->data, entry->size);
     entry->data = (u8 *)kmemdup(phy_db_notif->data, size);
+    
     if (!entry->data) {
         entry->size = 0;
         return -ENOMEM;

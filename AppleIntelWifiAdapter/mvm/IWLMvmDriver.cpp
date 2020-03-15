@@ -18,15 +18,24 @@
 #include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
 
+
 #define super OSObject
+OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject);
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
-    super::init();
+    if(!super::init()) {
+        return false;
+    }
     this->fwLoadLock = IOLockAlloc();
-    this->m_pDevice = new IWLDevice();
+    
+    if(pciDevice) {
+        this->m_pDevice = new IWLDevice();
+        this->m_pDevice->pciDevice = pciDevice;
+    }
     this->m_pDevice->controller = controller;
-    if (!this->m_pDevice->init(pciDevice)) {
+    
+    if (!this->m_pDevice->init()) {
         return false;
     }
     this->trans = new IWLTransport();
@@ -475,7 +484,13 @@ fail:
 bool IWLMvmDriver::enableDevice() {
     int err;
     
+    if(!m_pDevice->rfkill_safe_init_done) {
+        IWL_ERR(0, "enableDevice() called before device ready\n");
+        return false;
+    }
+    
     iwl_phy_db_init(trans, &this->phy_db);
+    iwl_notification_wait_init(&m_pDevice->notif_wait);
     err = trans_ops->startHW();
     m_pDevice->cur_fw_img = IWL_UCODE_INIT;
     err = runInitMvmUCode(false);

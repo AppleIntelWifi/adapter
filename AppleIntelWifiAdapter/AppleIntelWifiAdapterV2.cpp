@@ -12,67 +12,11 @@ OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
 #define super IO80211Controller
 
 
-enum
-{
-    MEDIUM_INDEX_AUTO = 0,
-    MEDIUM_INDEX_10HD,
-    MEDIUM_INDEX_10FD,
-    MEDIUM_INDEX_100HD,
-    MEDIUM_INDEX_100FD,
-    MEDIUM_INDEX_100FDFC,
-    MEDIUM_INDEX_1000FD,
-    MEDIUM_INDEX_1000FDFC,
-    MEDIUM_INDEX_1000FDEEE,
-    MEDIUM_INDEX_1000FDFCEEE,
-    MEDIUM_INDEX_100FDEEE,
-    MEDIUM_INDEX_100FDFCEEE,
-    MEDIUM_INDEX_COUNT
-};
-
 #define MBit 1000000
-
-static IOMediumType mediumTypeArray[MEDIUM_INDEX_COUNT] = {
-    kIOMediumEthernetAuto,
-    (kIOMediumEthernet10BaseT | kIOMediumOptionHalfDuplex),
-    (kIOMediumEthernet10BaseT | kIOMediumOptionFullDuplex),
-    (kIOMediumEthernet100BaseTX | kIOMediumOptionHalfDuplex),
-    (kIOMediumEthernet100BaseTX | kIOMediumOptionFullDuplex),
-    (kIOMediumEthernet100BaseTX | kIOMediumOptionFullDuplex | kIOMediumOptionFlowControl),
-    (kIOMediumEthernet1000BaseT | kIOMediumOptionFullDuplex),
-    (kIOMediumEthernet1000BaseT | kIOMediumOptionFullDuplex | kIOMediumOptionFlowControl),
-    (kIOMediumEthernet1000BaseT | kIOMediumOptionFullDuplex | kIOMediumOptionEEE),
-    (kIOMediumEthernet1000BaseT | kIOMediumOptionFullDuplex | kIOMediumOptionFlowControl | kIOMediumOptionEEE),
-    (kIOMediumEthernet100BaseTX | kIOMediumOptionFullDuplex | kIOMediumOptionEEE),
-    (kIOMediumEthernet100BaseTX | kIOMediumOptionFullDuplex | kIOMediumOptionFlowControl | kIOMediumOptionEEE)
-};
-
-static UInt32 mediumSpeedArray[MEDIUM_INDEX_COUNT] = {
-    0,
-    10 * MBit,
-    10 * MBit,
-    100 * MBit,
-    100 * MBit,
-    100 * MBit,
-    1000 * MBit,
-    1000 * MBit,
-    1000 * MBit,
-    1000 * MBit,
-    100 * MBit,
-    100 * MBit
-};
-
-static struct MediumTable
-{
-    IOMediumType type;
-    UInt32 speed;
-} mediumTable[] = {
-    {kIOMediumIEEE80211None, 0},
-    {kIOMediumIEEE80211Auto, 0}
-};
 
 
 void AppleIntelWifiAdapterV2::releaseAll() {
-    IWL_INFO(0, "Releasing everything");
+    IWL_INFO(0, "Releasing everything\n");
     if(fInterrupt) {
         irqLoop->removeEventSource(fInterrupt);
         fInterrupt->disable();
@@ -92,7 +36,7 @@ void AppleIntelWifiAdapterV2::releaseAll() {
         netif = NULL;
     }
     if (drv) {
-        this->drv->OSObject::release();
+        //this->drv->OSObject::release();
         drv->release();
         //drv->free();
         drv = NULL;
@@ -100,14 +44,14 @@ void AppleIntelWifiAdapterV2::releaseAll() {
 }
 
 void AppleIntelWifiAdapterV2::free() {
-    IWL_INFO(0, "Driver free()");
+    IWL_INFO(0, "Driver free()\n");
     releaseAll();
     super::free();
 }
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
-    IWL_INFO(0, "Driver init()");
+    IWL_INFO(0, "Driver init()\n");
     if(!super::init(properties)) {
         return false;
     }
@@ -121,7 +65,7 @@ IO80211Interface* AppleIntelWifiAdapterV2::getInterface() {
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
-    IWL_INFO(0, "Driver Probe()");
+    IWL_INFO(0, "Driver Probe()\n");
     if(!super::probe(provider, score)) {
         return NULL;
     }
@@ -155,19 +99,16 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
-        IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
-    
-    this->drv = new IWLMvmDriver();
-    this->drv->retain();
-    
+    IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
     
     pciDevice->retain();
-    this->drv->controller = static_cast<IO80211Controller*>(this);
-    if (!this->drv->init(pciDevice)) {
-        return NULL;
-    }
+    this->drv = new IWLMvmDriver();
+    this->drv->m_pDevice = new IWLDevice();
+    this->drv->m_pDevice->pciDevice = pciDevice;
+    this->drv->m_pDevice->state = APPLE80211_S_INIT;
     
-    return this->drv->probe() ? this : NULL;
+    //this->drv->m_pDevice->controller = (IO80211Controller*)this;
+    return this;
 }
 
 bool AppleIntelWifiAdapterV2::createWorkLoop() {
@@ -188,8 +129,8 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
                                             IO80211Interface* interface,
                                             void* data) {
     if (request_type != SIOCGA80211 && request_type != SIOCSA80211) {
-        IOLog("Black80211: Invalid IOCTL request type: %u", request_type);
-        IOLog("Expected either %lu or %lu", SIOCGA80211, SIOCSA80211);
+        IWL_ERR(0, "Invalid IOCTL request type: %u", request_type);
+        IWL_ERR(0, "Expected either %lu or %lu", SIOCGA80211, SIOCSA80211);
         return kIOReturnError;
     }
 
@@ -218,17 +159,113 @@ if (REQ_TYPE == SIOCSA80211) { \
           request_number,
           IOCTL_NAMES[request_number]);
     
+    switch(request_number) {
+        case APPLE80211_IOC_SSID: // 1
+            IOCTL(request_type, SSID, apple80211_ssid_data);
+            break;
+        case APPLE80211_IOC_AUTH_TYPE: // 2
+            IOCTL_GET(request_type, AUTH_TYPE, apple80211_authtype_data);
+            break;
+        case APPLE80211_IOC_CHANNEL: // 4
+            IOCTL_GET(request_type, CHANNEL, apple80211_channel_data);
+            break;
+        case APPLE80211_IOC_TXPOWER: // 7
+            IOCTL_GET(request_type, TXPOWER, apple80211_txpower_data);
+            break;
+        case APPLE80211_IOC_RATE: // 8
+            IOCTL_GET(request_type, RATE, apple80211_rate_data);
+            break;
+        case APPLE80211_IOC_BSSID: // 9
+            IOCTL_GET(request_type, BSSID, apple80211_bssid_data);
+            break;
+        case APPLE80211_IOC_SCAN_REQ: // 10
+            IOCTL_SET(request_type, SCAN_REQ, apple80211_scan_data);
+            break;
+        case APPLE80211_IOC_SCAN_RESULT: // 11
+            IOCTL_GET(request_type, SCAN_RESULT, apple80211_scan_result*);
+            break;
+        case APPLE80211_IOC_CARD_CAPABILITIES: // 12
+            IOCTL_GET(request_type, CARD_CAPABILITIES, apple80211_capability_data);
+            break;
+        case APPLE80211_IOC_STATE: // 13
+            IOCTL_GET(request_type, STATE, apple80211_state_data);
+            break;
+        case APPLE80211_IOC_PHY_MODE: // 14
+            IOCTL_GET(request_type, PHY_MODE, apple80211_phymode_data);
+            break;
+        case APPLE80211_IOC_OP_MODE: // 15
+            IOCTL_GET(request_type, OP_MODE, apple80211_opmode_data);
+            break;
+        case APPLE80211_IOC_RSSI: // 16
+            IOCTL_GET(request_type, RSSI, apple80211_rssi_data);
+            break;
+        case APPLE80211_IOC_NOISE: // 17
+            IOCTL_GET(request_type, NOISE, apple80211_noise_data);
+            break;
+        case APPLE80211_IOC_INT_MIT: // 18
+            IOCTL_GET(request_type, INT_MIT, apple80211_intmit_data);
+            break;
+        case APPLE80211_IOC_POWER: // 19
+            IOCTL(request_type, POWER, apple80211_power_data);
+            break;
+        case APPLE80211_IOC_ASSOCIATE: // 20
+            IOCTL_SET(request_type, ASSOCIATE, apple80211_assoc_data);
+            break;
+        case APPLE80211_IOC_SUPPORTED_CHANNELS: // 27
+            IOCTL_GET(request_type, SUPPORTED_CHANNELS, apple80211_sup_channel_data);
+            break;
+        case APPLE80211_IOC_LOCALE: // 28
+            IOCTL_GET(request_type, LOCALE, apple80211_locale_data);
+            break;
+        case APPLE80211_IOC_TX_ANTENNA: // 37
+            IOCTL_GET(request_type, TX_ANTENNA, apple80211_antenna_data);
+            break;
+        case APPLE80211_IOC_ANTENNA_DIVERSITY: // 39
+            IOCTL_GET(request_type, ANTENNA_DIVERSITY, apple80211_antenna_data);
+            break;
+        case APPLE80211_IOC_DRIVER_VERSION: // 43
+            IOCTL_GET(request_type, DRIVER_VERSION, apple80211_version_data);
+            break;
+        case APPLE80211_IOC_HARDWARE_VERSION: // 44
+            IOCTL_GET(request_type, HARDWARE_VERSION, apple80211_version_data);
+            break;
+        case APPLE80211_IOC_COUNTRY_CODE: // 51
+            IOCTL_GET(request_type, COUNTRY_CODE, apple80211_country_code_data);
+            break;
+        case APPLE80211_IOC_RADIO_INFO:
+            IOCTL_GET(request_type, RADIO_INFO, apple80211_radio_info_data);
+            break;
+        case APPLE80211_IOC_MCS: // 57
+            IOCTL_GET(request_type, MCS, apple80211_mcs_data);
+            break;
+        case APPLE80211_IOC_WOW_PARAMETERS: // 69
+            break;
+        case APPLE80211_IOC_ROAM_THRESH:
+            IOCTL_GET(request_type, ROAM_THRESH, apple80211_roam_threshold_data);
+            break;
+        case APPLE80211_IOC_TX_CHAIN_POWER: // 108
+            break;
+        case APPLE80211_IOC_THERMAL_THROTTLING: // 111
+            break;
+        case APPLE80211_IOC_POWERSAVE:
+            break;
+        case APPLE80211_IOC_IE:
+            break;
+        default:
+            IWL_ERR(0, "Unhandled IOCTL %s (%d)\n", IOCTL_NAMES[request_number], request_number);
+            ret = kIOReturnError;
+            break;
+    }
+    
     return ret;
 }
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
 {
-    IWL_INFO(0, "Driver Start()");
+    IWL_INFO(0, "Driver Start()\n");
     if (!super::start(provider)) {
         return false;
     }
-    initTimeout(getWorkLoop());
-    int msiIntrIndex = 0;
     
     
     if(!this->drv) {
@@ -237,11 +274,23 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
+    this->drv->controller = static_cast<IO80211Controller*>(this);
+    if (!this->drv->init()) {
+        return false;
+    }
+    
+    if(!this->drv->probe()) {
+        return false;
+    }
+    
+    initTimeout(getWorkLoop());
+    
     if(!this->drv->m_pDevice) {
         IWL_ERR(0, "Missing this->m_pDevice\n");
         releaseAll();
         return false;
     }
+    
     
     if(!this->drv->m_pDevice->pciDevice) {
         IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
@@ -256,6 +305,21 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
+    int status = 0;
+    
+    getCommandGate()->runAction(&_doCommand, (void*)16, &status);
+    
+    
+    
+    return true;
+}
+
+IOReturn AppleIntelWifiAdapterV2::_doCommand(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
+    return kIOReturnSuccess;
+}
+
+bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
+    int msiIntrIndex = 0;
     for (int index = 0; ; index++)
     {
         int interruptType;
@@ -284,49 +348,46 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     
     fInterrupt->enable();
     
+    PMinit();
+    provider->joinPMtree(this);
+    changePowerStateTo(kOffPowerState);
+    registerPowerDriver(this, gPowerStates, kNumPowerStates);
     
-    //    PMinit();
-    //    provider->joinPMtree(this);
-    //    changePowerStateTo(kOffPowerState);
-    //    registerPowerDriver(this, gPowerStates, kNumPowerStates);
     //setIdleTimerPeriod(iwl_mod_params.d0i3_timeout);
-    IONetworkMedium *medium;
-    IONetworkMedium *autoMedium;
-    OSDictionary *mediumDict = OSDictionary::withCapacity(MEDIUM_INDEX_COUNT + 1);
+
+    mediumDict = OSDictionary::withCapacity(MEDIUM_TYPE_INVALID + 1);
     if (!mediumDict) {
         IWL_ERR(0, "start fail, can not create mediumdict\n");
         releaseAll();
         return false;
     }
-    bool result;
-    for (int i = MEDIUM_INDEX_AUTO; i < MEDIUM_INDEX_COUNT; i++) {
-        medium = IONetworkMedium::medium(mediumTypeArray[i], mediumSpeedArray[i], 0, i);
-        if (!medium) {
-            IWL_ERR(0, "start fail, can not create mediumdict\n");
-            releaseAll();
-            return false;
-        }
-        result = IONetworkMedium::addMedium(mediumDict, medium);
-        medium->release();
-        if (!result) {
-            IWL_ERR(0, "start fail, can not addMedium\n");
-            releaseAll();
-            return false;
-        }
-        if (i == MEDIUM_INDEX_AUTO) {
-            autoMedium = medium;
-        }
-    }
+    addMediumType(kIOMediumIEEE80211None,  0,  MEDIUM_TYPE_NONE);
+    addMediumType(kIOMediumIEEE80211Auto,  0,  MEDIUM_TYPE_AUTO);
+    addMediumType(kIOMediumIEEE80211DS1,   1000000, MEDIUM_TYPE_1MBIT);
+    addMediumType(kIOMediumIEEE80211DS2,   2000000, MEDIUM_TYPE_2MBIT);
+    addMediumType(kIOMediumIEEE80211DS5,   5500000, MEDIUM_TYPE_5MBIT);
+    addMediumType(kIOMediumIEEE80211DS11, 11000000, MEDIUM_TYPE_11MBIT);
+    addMediumType(kIOMediumIEEE80211,     54000000, MEDIUM_TYPE_54MBIT, "OFDM54");
+    
     if (!publishMediumDictionary(mediumDict)) {
         IWL_ERR(0, "start fail, can not publish mediumdict\n");
         releaseAll();
         return false;
     }
-    if (!setSelectedMedium(autoMedium)){
+    
+    if (!setCurrentMedium(mediumTable[MEDIUM_TYPE_AUTO])) {
+        IWL_CRIT(0, "Failed to set current medium!\n");
+        releaseAll();
+        return false;
+    }
+    
+    if (!setSelectedMedium(mediumTable[MEDIUM_TYPE_AUTO])){
         IWL_ERR(0, "start fail, can not set current medium\n");
         releaseAll();
         return false;
     }
+    
+    
     
     //    UInt32 capacity = sizeof(mediumTable) / sizeof(struct MediumTable);
     //
@@ -350,7 +411,6 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     //    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
     //    setSelectedMedium(m);
     
-    this->registerService();
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IWL_ERR(0, "start failed, can not attach interface\n");
         releaseAll();
@@ -358,19 +418,6 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     }
     
     drv->m_pDevice->interface = netif;
-    
-    if (!drv->start()) {
-        IWL_ERR(0, "start failed\n");
-        releaseAll();
-        return false;
-    }
-    
-    //for test
-    if(!drv->drvStart()) {
-        IWL_ERR(0, "Driver failed to start\n");
-        releaseAll();
-        return false;
-    }
     
     //    if(!drv->m_pDevice->firmwareLoadToBuf) {
     //        IOLog("firmware not loaded to buf");
@@ -400,11 +447,17 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     //        //return true;
     //    }
     
+    if (!drv->start()) {
+        IWL_ERR(0, "start failed\n");
+        releaseAll();
+        return false;
+    }
+    
+    
     netif->registerService();
+    registerService();
     
-    drv->enableDevice();
-    
-    
+    netif->setEnabledBySystem(true);
     
     return true;
 }
@@ -440,7 +493,7 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
 {
-    IWL_INFO(0, "Driver Stop()");
+    IWL_INFO(0, "Driver Stop()\n");
     releaseTimeout();
     if (fInterrupt) {
         fInterrupt->disable();
@@ -458,12 +511,25 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
-    IOLog("Driver Enable()");
+    IWL_INFO(0, "Driver Enable()\n");
+    IOMediumType mediumType = kIOMediumIEEE80211Auto;
+    IONetworkMedium *medium = IONetworkMedium::getMediumWithType(mediumDict, mediumType);
+    setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid, medium);
     if(drv) {
-        setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid);
+        //for test
+        if(!drv->drvStart()) {
+            IWL_ERR(0, "Driver failed to start\n");
+            releaseAll();
+            return false;
+        }
+        
+        if(!drv->enableDevice()) {
+            return kIOReturnBusy;
+        }
+        
         //netif->postMessage(1);
         this->netif->postMessage(1);
-        return super::enable(netif);
+        return kIOReturnSuccess;
     } else {
         return kIOReturnError;
     }
@@ -506,7 +572,7 @@ IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface() {
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
-    if(!this->drv->trans->is_down) {
+    if(!this->drv->m_pDevice->rfkill_safe_init_done) {
         if(this->drv->m_pDevice->nvm_data) {
             memcpy(addrP->bytes, &this->drv->m_pDevice->nvm_data->hw_addr[0], ETHER_ADDR_LEN);
             IWL_INFO(0, "Got request for hw addr: returning %02x:%02x:%02x\n", drv->m_pDevice->nvm_data->hw_addr[0],
@@ -561,4 +627,17 @@ UInt32 AppleIntelWifiAdapterV2::outputPacket(mbuf_t m, void *param)
 IOReturn AppleIntelWifiAdapterV2::getMaxPacketSize(UInt32* maxSize) const {
     *maxSize = 1500;
     return kIOReturnSuccess;
+}
+
+bool AppleIntelWifiAdapterV2::addMediumType(UInt32 type, UInt32 speed, UInt32 code, char* name) {
+    bool ret = false;
+    
+    IONetworkMedium* medium = IONetworkMedium::medium(type, speed, 0, code, name);
+    if (medium) {
+        ret = IONetworkMedium::addMedium(mediumDict, medium);
+        if (ret)
+            mediumTable[code] = medium;
+        medium->release();
+    }
+    return ret;
 }

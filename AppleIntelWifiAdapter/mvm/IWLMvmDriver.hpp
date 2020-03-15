@@ -25,7 +25,7 @@ public:
     
     /* MARK: IOKit-related initialization code */
     
-    bool init(IOPCIDevice *pciDevice);
+    bool init(IOPCIDevice *pciDevice = 0);
     
     void release();
     
@@ -119,7 +119,7 @@ public:
     static int iwm_newstate(struct ieee80211com *, enum ieee80211_state, int);
     
 public:
-    IOEthernetController* controller;
+    IO80211Controller* controller;
     IWLDevice *m_pDevice;
     
     IWLTransport *trans;

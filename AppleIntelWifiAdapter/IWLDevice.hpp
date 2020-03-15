@@ -151,7 +151,7 @@ class IWLDevice
 {
 public:
     
-    bool init(IOPCIDevice *pciDevice);
+    bool init();
     
     void release();
     
@@ -183,8 +183,8 @@ public:
     ieee80211_state ie_state;
     ieee80211_amrr ie_amrr;
     ieee80211com ie_ic;
-    IOEthernetInterface* interface;
-    IOEthernetController* controller;
+    IO80211Interface* interface;
+    IO80211Controller* controller;
     
     // MARK: BT Coex
     int btForceAntMode;
@@ -217,6 +217,10 @@ public:
     iwl_phy_ctx phy_ctx[NUM_PHY_CTX];
     
     u8 scan_rx_ant;
+    u32 state;
+    bool published;
+    u32 n_chans;
+    u32 power_state;
 
     // MARK: queue info
     union {

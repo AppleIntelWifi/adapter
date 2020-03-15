@@ -221,7 +221,10 @@ out:
 void IWLMvmTransOpsGen1::stopDevice()
 {
     bool was_in_rfkill;
-    IOLockLock(trans->mutex);
+    if(!IOLockTryLock(trans->mutex)) {
+        IWL_ERR(0, "unable to lock mutex\n");
+        return;
+    }
     trans->opmode_down = true;
     was_in_rfkill = test_bit(STATUS_RFKILL_OPMODE, &trans->status);
     stopDeviceDirectly();

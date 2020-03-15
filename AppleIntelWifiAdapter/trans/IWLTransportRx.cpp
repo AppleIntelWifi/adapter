@@ -75,7 +75,7 @@ static int iwl_rxq_space(const struct iwl_rxq *rxq)
      */
     
     
-    IWL_INFO(0, "RQID %d (wrptr: %d, rdptr: %d, size: %d)", rxq->id, rxq->write, rxq->read, rxq->queue_size);
+    //IWL_INFO(0, "RQID %d (wrptr: %d, rdptr: %d, size: %d)", rxq->id, rxq->write, rxq->read, rxq->queue_size);
     return (rxq->read - rxq->write - 1) & (rxq->queue_size - 1);
 }
 

@@ -10,6 +10,8 @@
 
 bool IWLMvmDriver::ieee80211Init()
 {
+    
+    return true;
     struct ieee80211com *ic = &m_pDevice->ie_ic;
     struct ifnet *ifp = &ic->ic_if;
     ic->ic_phytype = IEEE80211_T_OFDM;    /* not only, but not used */
@@ -68,6 +70,8 @@ bool IWLMvmDriver::ieee80211Init()
 
 bool IWLMvmDriver::ieee80211Run()
 {
+    
+    return true;
     struct ieee80211com *ic = &m_pDevice->ie_ic;
     struct ifnet *ifp = &ic->ic_if;
     /* Update MAC in case the upper layers changed it. */
@@ -100,6 +104,8 @@ bool IWLMvmDriver::ieee80211Run()
 
 void IWLMvmDriver::ieee80211Release()
 {
+    return;
+    
     struct ieee80211com *ic = &m_pDevice->ie_ic;
     
     struct ifnet *ifp = &ic->ic_if;

@@ -172,6 +172,8 @@ int IWLTransOps::startHW()
     /* Set is_down to false here so that...*/
     trans->is_down = false;
     checkHWRFKill();
+    
+    
     return 0;
 }
 
