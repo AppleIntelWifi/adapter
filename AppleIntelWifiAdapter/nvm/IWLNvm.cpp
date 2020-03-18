@@ -7,6 +7,7 @@
 //
 
 #include "IWLMvmDriver.hpp"
+#include "IWLApple80211.hpp"
 
 /* Default NVM size to read */
 #define IWL_NVM_DEFAULT_CHUNK_SIZE (2 * 1024)
@@ -466,7 +467,7 @@ int IWLMvmDriver::nvmInit()
         hw_addr[1], hw_addr[2],
                  hw_addr[3], hw_addr[4], hw_addr[5] );
     }
-    memcpy(m_pDevice->ie_ic.ic_myaddr, hw_addr, 6);
+    memcpy(&m_pDevice->ie_dev->address, hw_addr, ETH_ALEN);
     
     return ret < 0 ? ret : 0;
 }

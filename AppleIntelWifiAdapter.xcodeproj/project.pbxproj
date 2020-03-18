@@ -153,6 +153,8 @@
 		686162A723FDE74E0023A4D2 /* IWLMvmScan.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686162A523FDE74E0023A4D2 /* IWLMvmScan.hpp */; };
 		686162AA23FDE7670023A4D2 /* IWLMvmSta.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 686162A823FDE7670023A4D2 /* IWLMvmSta.cpp */; };
 		686162AB23FDE7670023A4D2 /* IWLMvmSta.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */; };
+		6865B3B72421D65B0044C9FE /* IWLApple80211.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6865B3B52421D65B0044C9FE /* IWLApple80211.cpp */; };
+		6865B3B82421D65B0044C9FE /* IWLApple80211.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6865B3B62421D65B0044C9FE /* IWLApple80211.hpp */; };
 		6868731E23FA4AB4001C7DEA /* IWLSCD.h in Headers */ = {isa = PBXBuildFile; fileRef = 6868731D23FA4AB4001C7DEA /* IWLSCD.h */; };
 		686AD3E7241C20E8008080E6 /* AppleIntelWifi_iokit.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6853B6A3241B244A006B4D69 /* AppleIntelWifi_iokit.cpp */; };
 		686AD3E9241C24A6008080E6 /* ioctl_dbg.h in Headers */ = {isa = PBXBuildFile; fileRef = 686AD3E8241C24A6008080E6 /* ioctl_dbg.h */; };
@@ -387,6 +389,8 @@
 		686162A823FDE7670023A4D2 /* IWLMvmSta.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMvmSta.cpp; sourceTree = "<group>"; };
 		686162A923FDE7670023A4D2 /* IWLMvmSta.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLMvmSta.hpp; sourceTree = "<group>"; };
 		68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-34.ucode"; sourceTree = "<group>"; };
+		6865B3B52421D65B0044C9FE /* IWLApple80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLApple80211.cpp; sourceTree = "<group>"; };
+		6865B3B62421D65B0044C9FE /* IWLApple80211.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLApple80211.hpp; sourceTree = "<group>"; };
 		6868731923FA49ED001C7DEA /* HackIONetworkInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIONetworkInterface.h; path = AppleIntelWifiAdapter/HackIONetworkInterface.h; sourceTree = SOURCE_ROOT; };
 		6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIOEthernetInterface.h; path = AppleIntelWifiAdapter/HackIOEthernetInterface.h; sourceTree = SOURCE_ROOT; };
 		6868731D23FA4AB4001C7DEA /* IWLSCD.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = IWLSCD.h; sourceTree = "<group>"; };
@@ -728,6 +732,8 @@
 				685D5B8723FDF12B00C8C041 /* IWLMvmPhy.hpp */,
 				685D545C23FF98DB00C7499B /* IWLMvmMac.cpp */,
 				F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */,
+				6865B3B52421D65B0044C9FE /* IWLApple80211.cpp */,
+				6865B3B62421D65B0044C9FE /* IWLApple80211.hpp */,
 				F85B1D4C23FF6D87008105E4 /* IWMHdr.h */,
 				685D5460240043C100C7499B /* IWLMvmMac.hpp */,
 			);
@@ -879,6 +885,7 @@
 				685C1035241C32C5003C0910 /* IWLDevice8000.h in Headers */,
 				024DDD5523CCA79C002716C8 /* IWLMvmTransOpsGen2.hpp in Headers */,
 				02CEFD5F23D7DE8E00B620E6 /* rmd160.h in Headers */,
+				6865B3B82421D65B0044C9FE /* IWLApple80211.hpp in Headers */,
 				6868731E23FA4AB4001C7DEA /* IWLSCD.h in Headers */,
 				F8C2805C23C1FFD9000827EA /* IWLDevice.hpp in Headers */,
 				02CEFD6D23D7DE8E00B620E6 /* idgen.h in Headers */,
@@ -1041,6 +1048,7 @@
 				02CEFD8123D7DE8E00B620E6 /* cast.c in Sources */,
 				02CEFDB223D835B500B620E6 /* gmac.c in Sources */,
 				02CEFD8023D7DE8E00B620E6 /* blf.c in Sources */,
+				6865B3B72421D65B0044C9FE /* IWLApple80211.cpp in Sources */,
 				686162A623FDE74E0023A4D2 /* IWLMvmScan.cpp in Sources */,
 				0257B9A523E5A7E3005013A0 /* MvmTransOps.cpp in Sources */,
 				686162AA23FDE7670023A4D2 /* IWLMvmSta.cpp in Sources */,

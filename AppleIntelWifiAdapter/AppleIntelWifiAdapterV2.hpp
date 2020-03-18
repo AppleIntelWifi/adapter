@@ -142,10 +142,12 @@ private:
     static bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
     bool addMediumType(UInt32 type, UInt32 speed, UInt32 code, char* name = 0);
     IWLMvmDriver *drv;
+
     IOGatedOutputQueue*    fOutputQueue;
     IOInterruptEventSource* fInterrupt;
     IO80211Interface *netif;
     IOCommandGate *gate;
+    IO80211WorkLoop* workLoop;
     IO80211WorkLoop* irqLoop;
     OSDictionary* mediumDict;
     IONetworkMedium* mediumTable[MEDIUM_TYPE_INVALID];

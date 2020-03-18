@@ -7,10 +7,12 @@
 //
 
 #include "IWLDevice.hpp"
+#include "IWLApple80211.hpp"
 
 bool IWLDevice::init()
 {
     //this->pciDevice = pciDevice;
+    this->ie_dev = new IWL80211Device();
     this->registerRWLock = IOSimpleLockAlloc();
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
     if (vendorID != PCI_VENDOR_ID_INTEL) {

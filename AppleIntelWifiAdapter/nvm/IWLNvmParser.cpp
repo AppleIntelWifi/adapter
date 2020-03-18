@@ -279,6 +279,8 @@ static enum nl80211_band iwl_nl80211_band_from_channel_idx(int ch_idx)
     return NL80211_BAND_2GHZ;
 }
 
+#include "IWLApple80211.hpp"
+
 static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
                 struct iwl_nvm_data *data,
                 const void * const nvm_ch_flags,
@@ -302,8 +304,8 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     }
 
     for (; ch_idx < num_of_ch; ch_idx++) {
-        memset(&dev->ie_ic.ic_channels[ch_idx], 0, sizeof(ieee80211_channel));
-        struct ieee80211_channel channel;
+        memset(&dev->ie_dev->channels[ch_idx], 0, sizeof(apple80211_channel));
+        struct apple80211_channel channel;
         enum nl80211_band band =
             iwl_nl80211_band_from_channel_idx(ch_idx);
         
@@ -326,9 +328,7 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
         }
         
         
-        channel.hw_value = nvm_chan[ch_idx];
-        channel.max_power = IWL_DEFAULT_MAX_TX_POWER;
-        
+        channel.channel = nvm_chan[ch_idx];
 
         /* workaround to disable wide channels in 5GHz */
         if ((sbands_flags & IWL_NVM_SBANDS_FLAGS_NO_WIDE_IN_5GHZ) &&
@@ -354,25 +354,32 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
         u32 flags = IEEE80211_CHAN_2GHZ;
         
         if (band == NL80211_BAND_2GHZ) {
-            channel.ic_flags = IEEE80211_CHAN_CCK
-            | IEEE80211_CHAN_OFDM
-            | IEEE80211_CHAN_DYN
-            | IEEE80211_CHAN_2GHZ;
-            channel.ic_band = IEEE80211_CHAN_2GHZ;
+            channel.flags = APPLE80211_C_FLAG_2GHZ;
         } else {
-            channel.ic_band = IEEE80211_CHAN_5GHZ;
-            channel.ic_flags = IEEE80211_CHAN_A;
+            channel.flags = APPLE80211_C_FLAG_5GHZ;
         }
-        if (!(ch_flags & NVM_CHANNEL_ACTIVE)) {
-            channel.ic_flags |= IEEE80211_CHAN_PASSIVE;
-        }
-        if (data->sku_cap_11n_enable) {
-            channel.ic_flags |= IEEE80211_CHAN_HT;
+        if ((ch_flags & NVM_CHANNEL_ACTIVE)) {
+            channel.flags |= APPLE80211_C_FLAG_ACTIVE;
         }
         
-        channel.ic_freq =
-            ieee80211_ieee2mhz(
-                channel.hw_value, channel.ic_band);
+        if(ch_flags & NVM_CHANNEL_IBSS) {
+            channel.flags |= APPLE80211_C_FLAG_IBSS;
+        }
+        
+        if(ch_flags & NVM_CHANNEL_20MHZ) {
+            channel.flags |= APPLE80211_C_FLAG_20MHZ;
+        }
+        
+        if(ch_flags & NVM_CHANNEL_40MHZ) {
+            channel.flags |= APPLE80211_C_FLAG_40MHZ;
+        }
+        
+        if(ch_flags & NVM_CHANNEL_80MHZ) {
+            channel.flags |= APPLE80211_C_FLAG_EXT_ABV;
+        }
+        
+
+        channel.version = APPLE80211_VERSION;
         
         if (!(sbands_flags & IWL_NVM_SBANDS_FLAGS_LAR) &&
             !(ch_flags & NVM_CHANNEL_VALID)) {
@@ -381,21 +388,25 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
              * supported, hence we still want to add them to
              * the list of supported channels to cfg80211.
              */
-            IWL_INFO(0, "Ch. %d: INVALID (%d)\n", channel.hw_value, ch_idx);
-            iwl_nvm_print_channel_flags(channel.hw_value, ch_flags);
+            IWL_INFO(0, "Ch. %d: INVALID (%d)\n", channel.channel, ch_idx);
+            iwl_nvm_print_channel_flags(channel.channel, ch_flags);
             continue;
         }
         
         IWL_INFO(0, "Ch. %d: %ddBm (%d)\n",
-                 channel.hw_value, channel.max_power, ch_idx);
-        iwl_nvm_print_channel_flags(channel.hw_value, ch_flags);
+                 channel.channel, 16, ch_idx);
+        iwl_nvm_print_channel_flags(channel.channel, ch_flags);
         
-        memcpy(&dev->ie_ic.ic_channels[n_channels], &channel, sizeof(channel));
+        //memcpy(&dev->ie_ic.ic_channels[n_channels], &channel, sizeof(channel));
+        memcpy(&dev->ie_dev->channels[ch_idx], &channel, sizeof(channel));
+        
         
         n_channels++;
         
         //channel->ic_flags = flags;
     }
+    
+    dev->ie_dev->n_chans = n_channels;
 
     return n_channels;
 }
@@ -846,6 +857,8 @@ static void iwl_set_hw_address_family_8000(IWLTransport *trans,
          * No byte swapping is required in MAO section
          */
         memcpy(data->hw_addr, hw_addr, ETH_ALEN);
+        
+        //memcpy(trans->m_pDevice->ie_dev->address, hw_addr, ETH_ALEN);
 
         /*
          * Force the use of the OTP MAC address in case of reserved MAC
@@ -865,6 +878,7 @@ static void iwl_set_hw_address_family_8000(IWLTransport *trans,
         __le32 mac_addr1 = cpu_to_le32(trans->iwlReadPRPH(WFMP_MAC_ADDR_1));
 
         iwl_flip_hw_address(mac_addr0, mac_addr1, data->hw_addr);
+        //memcpy(trans->m_pDevice->ie_dev->address, data->hw_addr, ETH_ALEN);
 
         return;
     }

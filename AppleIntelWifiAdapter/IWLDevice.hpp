@@ -180,6 +180,7 @@ public:
     IOPCIDevice *pciDevice;
     
     // MARK: 80211 support
+    class IWL80211Device* ie_dev;
     ieee80211_state ie_state;
     ieee80211_amrr ie_amrr;
     ieee80211com ie_ic;

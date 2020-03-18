@@ -5,15 +5,13 @@
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
 #include "IWLDebug.h"
+#include "IWLApple80211.hpp"
 #include "IO80211Interface.h"
-#include "ioctl_dbg.h"
 
 OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
 #define super IO80211Controller
 
-
 #define MBit 1000000
-
 
 void AppleIntelWifiAdapterV2::releaseAll() {
     IWL_INFO(0, "Releasing everything\n");
@@ -31,14 +29,18 @@ void AppleIntelWifiAdapterV2::releaseAll() {
         irqLoop->release();
         irqLoop = NULL;
     }
+    
+    if(workLoop) {
+        workLoop->release();
+        workLoop = NULL;
+    }
     if(netif) {
         netif->release();
         netif = NULL;
     }
+    
     if (drv) {
-        //this->drv->OSObject::release();
         drv->release();
-        //drv->free();
         drv = NULL;
     }
 }
@@ -80,17 +82,12 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     UInt16 subSystemVendorID = pciDevice->configRead16(kIOPCIConfigSubSystemVendorID);
     UInt16 subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     UInt8 revision = pciDevice->configRead8(kIOPCIConfigRevisionID);
+    
     bool valid = false;
     for (int i = 0; i < ARRAY_SIZE(iwl_hw_card_ids); i++) {
         pci_device_id dev = iwl_hw_card_ids[i];
         if (dev.device == deviceID) {
-            //struct iwl_cfg* ptr = (struct iwl_cfg*
-            //                       )&dev.driver_data;
-            //this->cfg = iwl_cfg(*ptr);
-            //IWL_INFO(0, "name? %s\n", ptr->name);
-            //memcpy(&this->cfg, ptr, sizeof(iwl_cfg));
-            valid = true;
-            //this->cfg = *ptr;
+            valid = true; // try to find one card..
             break;
         }
     }
@@ -99,7 +96,7 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
-    IWL_INFO(0, "find pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    IWL_INFO(0, "found pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
     
     pciDevice->retain();
     this->drv = new IWLMvmDriver();
@@ -107,157 +104,19 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     this->drv->m_pDevice->pciDevice = pciDevice;
     this->drv->m_pDevice->state = APPLE80211_S_INIT;
     
-    //this->drv->m_pDevice->controller = (IO80211Controller*)this;
     return this;
 }
 
 bool AppleIntelWifiAdapterV2::createWorkLoop() {
-    if(!irqLoop) {
-        irqLoop = IO80211WorkLoop::workLoop();
+    if(!workLoop) {
+        workLoop = IO80211WorkLoop::workLoop();
     }
     
-    return (irqLoop != NULL);
+    return (workLoop != NULL);
 }
 
 IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
-    return irqLoop;
-}
-
-
-SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
-                                            int request_number,
-                                            IO80211Interface* interface,
-                                            void* data) {
-    if (request_type != SIOCGA80211 && request_type != SIOCSA80211) {
-        IWL_ERR(0, "Invalid IOCTL request type: %u", request_type);
-        IWL_ERR(0, "Expected either %lu or %lu", SIOCGA80211, SIOCSA80211);
-        return kIOReturnError;
-    }
-
-    IOReturn ret = 0;
-    
-    bool isGet = (request_type == SIOCGA80211);
-    
-#define IOCTL(REQ_TYPE, REQ, DATA_TYPE) \
-if (REQ_TYPE == SIOCGA80211) { \
-ret = get##REQ(interface, (struct DATA_TYPE* )data); \
-} else { \
-ret = set##REQ(interface, (struct DATA_TYPE* )data); \
-}
-    
-#define IOCTL_GET(REQ_TYPE, REQ, DATA_TYPE) \
-if (REQ_TYPE == SIOCGA80211) { \
-    ret = get##REQ(interface, (struct DATA_TYPE* )data); \
-}
-#define IOCTL_SET(REQ_TYPE, REQ, DATA_TYPE) \
-if (REQ_TYPE == SIOCSA80211) { \
-    ret = set##REQ(interface, (struct DATA_TYPE* )data); \
-}
-    
-    IWL_INFO(0, "IOCTL %s(%d) %s\n",
-          isGet ? "get" : "set",
-          request_number,
-          IOCTL_NAMES[request_number]);
-    
-    switch(request_number) {
-        case APPLE80211_IOC_SSID: // 1
-            IOCTL(request_type, SSID, apple80211_ssid_data);
-            break;
-        case APPLE80211_IOC_AUTH_TYPE: // 2
-            IOCTL_GET(request_type, AUTH_TYPE, apple80211_authtype_data);
-            break;
-        case APPLE80211_IOC_CHANNEL: // 4
-            IOCTL_GET(request_type, CHANNEL, apple80211_channel_data);
-            break;
-        case APPLE80211_IOC_TXPOWER: // 7
-            IOCTL_GET(request_type, TXPOWER, apple80211_txpower_data);
-            break;
-        case APPLE80211_IOC_RATE: // 8
-            IOCTL_GET(request_type, RATE, apple80211_rate_data);
-            break;
-        case APPLE80211_IOC_BSSID: // 9
-            IOCTL_GET(request_type, BSSID, apple80211_bssid_data);
-            break;
-        case APPLE80211_IOC_SCAN_REQ: // 10
-            IOCTL_SET(request_type, SCAN_REQ, apple80211_scan_data);
-            break;
-        case APPLE80211_IOC_SCAN_RESULT: // 11
-            IOCTL_GET(request_type, SCAN_RESULT, apple80211_scan_result*);
-            break;
-        case APPLE80211_IOC_CARD_CAPABILITIES: // 12
-            IOCTL_GET(request_type, CARD_CAPABILITIES, apple80211_capability_data);
-            break;
-        case APPLE80211_IOC_STATE: // 13
-            IOCTL_GET(request_type, STATE, apple80211_state_data);
-            break;
-        case APPLE80211_IOC_PHY_MODE: // 14
-            IOCTL_GET(request_type, PHY_MODE, apple80211_phymode_data);
-            break;
-        case APPLE80211_IOC_OP_MODE: // 15
-            IOCTL_GET(request_type, OP_MODE, apple80211_opmode_data);
-            break;
-        case APPLE80211_IOC_RSSI: // 16
-            IOCTL_GET(request_type, RSSI, apple80211_rssi_data);
-            break;
-        case APPLE80211_IOC_NOISE: // 17
-            IOCTL_GET(request_type, NOISE, apple80211_noise_data);
-            break;
-        case APPLE80211_IOC_INT_MIT: // 18
-            IOCTL_GET(request_type, INT_MIT, apple80211_intmit_data);
-            break;
-        case APPLE80211_IOC_POWER: // 19
-            IOCTL(request_type, POWER, apple80211_power_data);
-            break;
-        case APPLE80211_IOC_ASSOCIATE: // 20
-            IOCTL_SET(request_type, ASSOCIATE, apple80211_assoc_data);
-            break;
-        case APPLE80211_IOC_SUPPORTED_CHANNELS: // 27
-            IOCTL_GET(request_type, SUPPORTED_CHANNELS, apple80211_sup_channel_data);
-            break;
-        case APPLE80211_IOC_LOCALE: // 28
-            IOCTL_GET(request_type, LOCALE, apple80211_locale_data);
-            break;
-        case APPLE80211_IOC_TX_ANTENNA: // 37
-            IOCTL_GET(request_type, TX_ANTENNA, apple80211_antenna_data);
-            break;
-        case APPLE80211_IOC_ANTENNA_DIVERSITY: // 39
-            IOCTL_GET(request_type, ANTENNA_DIVERSITY, apple80211_antenna_data);
-            break;
-        case APPLE80211_IOC_DRIVER_VERSION: // 43
-            IOCTL_GET(request_type, DRIVER_VERSION, apple80211_version_data);
-            break;
-        case APPLE80211_IOC_HARDWARE_VERSION: // 44
-            IOCTL_GET(request_type, HARDWARE_VERSION, apple80211_version_data);
-            break;
-        case APPLE80211_IOC_COUNTRY_CODE: // 51
-            IOCTL_GET(request_type, COUNTRY_CODE, apple80211_country_code_data);
-            break;
-        case APPLE80211_IOC_RADIO_INFO:
-            IOCTL_GET(request_type, RADIO_INFO, apple80211_radio_info_data);
-            break;
-        case APPLE80211_IOC_MCS: // 57
-            IOCTL_GET(request_type, MCS, apple80211_mcs_data);
-            break;
-        case APPLE80211_IOC_WOW_PARAMETERS: // 69
-            break;
-        case APPLE80211_IOC_ROAM_THRESH:
-            IOCTL_GET(request_type, ROAM_THRESH, apple80211_roam_threshold_data);
-            break;
-        case APPLE80211_IOC_TX_CHAIN_POWER: // 108
-            break;
-        case APPLE80211_IOC_THERMAL_THROTTLING: // 111
-            break;
-        case APPLE80211_IOC_POWERSAVE:
-            break;
-        case APPLE80211_IOC_IE:
-            break;
-        default:
-            IWL_ERR(0, "Unhandled IOCTL %s (%d)\n", IOCTL_NAMES[request_number], request_number);
-            ret = kIOReturnError;
-            break;
-    }
-    
-    return ret;
+    return workLoop;
 }
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
@@ -267,7 +126,6 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
-    
     if(!this->drv) {
         IWL_ERR(0, "Missing this->drv\n");
         releaseAll();
@@ -275,6 +133,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     }
     
     this->drv->controller = static_cast<IO80211Controller*>(this);
+    
     if (!this->drv->init()) {
         return false;
     }
@@ -283,14 +142,15 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
         return false;
     }
     
-    initTimeout(getWorkLoop());
+    irqLoop = IO80211WorkLoop::workLoop();
+    
+    initTimeout(irqLoop);
     
     if(!this->drv->m_pDevice) {
         IWL_ERR(0, "Missing this->m_pDevice\n");
         releaseAll();
         return false;
     }
-    
     
     if(!this->drv->m_pDevice->pciDevice) {
         IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
@@ -307,14 +167,25 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     
     int status = 0;
     
-    getCommandGate()->runAction(&_doCommand, (void*)16, &status);
-    
-    
+    getCommandGate()->runAction(&_doCommand, (void*)16, &status, provider);
     
     return true;
 }
 
 IOReturn AppleIntelWifiAdapterV2::_doCommand(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
+    IWL_INFO(0, "gatedStart\n");
+    AppleIntelWifiAdapterV2* device = (AppleIntelWifiAdapterV2*)target;
+    int* status = (int*)arg1;
+    IOService* provider = (IOService*)arg2;
+    
+    if(arg0 == (void*)16) {
+        if(!device->startGated(provider)) {
+            OSIncrementAtomic(status);
+        }
+    }
+    else {
+        return kIOReturnError;
+    }
     return kIOReturnSuccess;
 }
 
@@ -361,6 +232,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         releaseAll();
         return false;
     }
+    
     addMediumType(kIOMediumIEEE80211None,  0,  MEDIUM_TYPE_NONE);
     addMediumType(kIOMediumIEEE80211Auto,  0,  MEDIUM_TYPE_AUTO);
     addMediumType(kIOMediumIEEE80211DS1,   1000000, MEDIUM_TYPE_1MBIT);
@@ -386,30 +258,26 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         releaseAll();
         return false;
     }
+
     
+    //for test
+    if (!drv->start()) {
+        IWL_ERR(0, "start failed\n");
+        releaseAll();
+        return false;
+    }
     
+    if(!drv->drvStart()) {
+        IWL_ERR(0, "Driver failed to start\n");
+        releaseAll();
+        return false;
+    }
     
-    //    UInt32 capacity = sizeof(mediumTable) / sizeof(struct MediumTable);
-    //
-    //    OSDictionary *mediumDict = OSDictionary::withCapacity(capacity);
-    //    if (mediumDict == 0) {
-    //        return false;
-    //    }
-    //
-    //    for (UInt32 i = 0; i < capacity; i++) {
-    //        IONetworkMedium* medium = IONetworkMedium::medium(mediumTable[i].type, mediumTable[i].speed);
-    //        if (medium) {
-    //            IONetworkMedium::addMedium(mediumDict, medium);
-    //            medium->release();
-    //        }
-    //    }
-    //
-    //    if (!publishMediumDictionary(mediumDict)) {
-    //        return false;
-    //    }
-    //
-    //    IONetworkMedium *m = IONetworkMedium::getMediumWithType(mediumDict, kIOMediumIEEE80211Auto);
-    //    setSelectedMedium(m);
+    //this->setHardwareAddress(&this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
+
+    /*
+    */
+    
     
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IWL_ERR(0, "start failed, can not attach interface\n");
@@ -418,42 +286,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     }
     
     drv->m_pDevice->interface = netif;
-    
-    //    if(!drv->m_pDevice->firmwareLoadToBuf) {
-    //        IOLog("firmware not loaded to buf");
-    //        fInterrupt->disable();
-    //        if(irqLoop) {
-    //            irqLoop->release();
-    //            irqLoop = NULL;
-    //        }
-    //
-    //        if(drv) {
-    //            drv->release();
-    //            delete drv;
-    //            drv = NULL;
-    //        }
-    //
-    //        if(netif) {
-    //            netif->release();
-    //        }
-    //
-    //        return false;
-    //    }
-    //    else {
-    //        if(!drv->drvStart()) {
-    //            IWL_ERR(0, "Driver failed to start\n");
-    //            IOSleep(5000);
-    //        }
-    //        //return true;
-    //    }
-    
-    if (!drv->start()) {
-        IWL_ERR(0, "start failed\n");
-        releaseAll();
-        return false;
-    }
-    
-    
+        
     netif->registerService();
     registerService();
     
@@ -516,17 +349,9 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
     IONetworkMedium *medium = IONetworkMedium::getMediumWithType(mediumDict, mediumType);
     setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid, medium);
     if(drv) {
-        //for test
-        if(!drv->drvStart()) {
-            IWL_ERR(0, "Driver failed to start\n");
-            releaseAll();
+        if(!drv->enableDevice()) {
             return false;
         }
-        
-        if(!drv->enableDevice()) {
-            return kIOReturnBusy;
-        }
-        
         //netif->postMessage(1);
         this->netif->postMessage(1);
         return kIOReturnSuccess;
@@ -572,24 +397,11 @@ IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface() {
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
-    if(!this->drv->m_pDevice->rfkill_safe_init_done) {
-        if(this->drv->m_pDevice->nvm_data) {
-            memcpy(addrP->bytes, &this->drv->m_pDevice->nvm_data->hw_addr[0], ETHER_ADDR_LEN);
-            IWL_INFO(0, "Got request for hw addr: returning %02x:%02x:%02x\n", drv->m_pDevice->nvm_data->hw_addr[0],
-                                                                            drv->m_pDevice->nvm_data->hw_addr[1],
-                                                                            drv->m_pDevice->nvm_data->hw_addr[2]);
-        }
-        else {
-            addrP->bytes[0] = 0x29;
-            addrP->bytes[1] = 0xC2;
-            addrP->bytes[2] = 0xdd;
-            addrP->bytes[3] = 0x8F;
-            addrP->bytes[4] = 0x93;
-            addrP->bytes[5] = 0x4D;
-        }
+    if(!this->drv->m_pDevice->ie_dev->address[0]) {
+        return kIOReturnError;
     }
     else {
-        return kIOReturnError;
+        memcpy(&addrP->bytes, &this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
     }
     return kIOReturnSuccess;
 }

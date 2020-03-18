@@ -7,14 +7,154 @@
 //
 
 #include "AppleIntelWifiAdapterV2.hpp"
+#include "ioctl_dbg.h"
+#include "IWLApple80211.hpp"
 
 const char *fake_hw_version = "Hardware 1.0";
 const char *fake_drv_version = "Driver 1.0";
 const char *country_code = "00";
 
+
+SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
+                                            int request_number,
+                                            IO80211Interface* interface,
+                                            void* data) {
+    if (request_type != SIOCGA80211 && request_type != SIOCSA80211) {
+        IWL_ERR(0, "Invalid IOCTL request type: %u", request_type);
+        IWL_ERR(0, "Expected either %lu or %lu", SIOCGA80211, SIOCSA80211);
+        return kIOReturnError;
+    }
+
+    IOReturn ret = 0;
+    
+    bool isGet = (request_type == SIOCGA80211);
+    
+#define IOCTL(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCGA80211) { \
+ret = get##REQ(interface, (struct DATA_TYPE* )data); \
+} else { \
+ret = set##REQ(interface, (struct DATA_TYPE* )data); \
+}
+    
+#define IOCTL_GET(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCGA80211) { \
+    ret = get##REQ(interface, (struct DATA_TYPE* )data); \
+}
+#define IOCTL_SET(REQ_TYPE, REQ, DATA_TYPE) \
+if (REQ_TYPE == SIOCSA80211) { \
+    ret = set##REQ(interface, (struct DATA_TYPE* )data); \
+}
+    
+    IWL_INFO(0, "IOCTL %s(%d) %s\n",
+          isGet ? "get" : "set",
+          request_number,
+          IOCTL_NAMES[request_number]);
+    
+    switch(request_number) {
+        case APPLE80211_IOC_SSID: // 1
+            IOCTL(request_type, SSID, apple80211_ssid_data);
+            break;
+        case APPLE80211_IOC_AUTH_TYPE: // 2
+            IOCTL_GET(request_type, AUTH_TYPE, apple80211_authtype_data);
+            break;
+        case APPLE80211_IOC_CHANNEL: // 4
+            IOCTL_GET(request_type, CHANNEL, apple80211_channel_data);
+            break;
+        case APPLE80211_IOC_TXPOWER: // 7
+            IOCTL_GET(request_type, TXPOWER, apple80211_txpower_data);
+            break;
+        case APPLE80211_IOC_RATE: // 8
+            IOCTL_GET(request_type, RATE, apple80211_rate_data);
+            break;
+        case APPLE80211_IOC_BSSID: // 9
+            IOCTL_GET(request_type, BSSID, apple80211_bssid_data);
+            break;
+        case APPLE80211_IOC_SCAN_REQ: // 10
+            IOCTL_SET(request_type, SCAN_REQ, apple80211_scan_data);
+            break;
+        case APPLE80211_IOC_SCAN_RESULT: // 11
+            IOCTL_GET(request_type, SCAN_RESULT, apple80211_scan_result*);
+            break;
+        case APPLE80211_IOC_CARD_CAPABILITIES: // 12
+            IOCTL_GET(request_type, CARD_CAPABILITIES, apple80211_capability_data);
+            break;
+        case APPLE80211_IOC_STATE: // 13
+            IOCTL_GET(request_type, STATE, apple80211_state_data);
+            break;
+        case APPLE80211_IOC_PHY_MODE: // 14
+            IOCTL_GET(request_type, PHY_MODE, apple80211_phymode_data);
+            break;
+        case APPLE80211_IOC_OP_MODE: // 15
+            IOCTL_GET(request_type, OP_MODE, apple80211_opmode_data);
+            break;
+        case APPLE80211_IOC_RSSI: // 16
+            IOCTL_GET(request_type, RSSI, apple80211_rssi_data);
+            break;
+        case APPLE80211_IOC_NOISE: // 17
+            IOCTL_GET(request_type, NOISE, apple80211_noise_data);
+            break;
+        case APPLE80211_IOC_INT_MIT: // 18
+            IOCTL_GET(request_type, INT_MIT, apple80211_intmit_data);
+            break;
+        case APPLE80211_IOC_POWER: // 19
+            IOCTL(request_type, POWER, apple80211_power_data);
+            break;
+        case APPLE80211_IOC_ASSOCIATE: // 20
+            IOCTL_SET(request_type, ASSOCIATE, apple80211_assoc_data);
+            break;
+        case APPLE80211_IOC_SUPPORTED_CHANNELS: // 27
+            IOCTL_GET(request_type, SUPPORTED_CHANNELS, apple80211_sup_channel_data);
+            break;
+        case APPLE80211_IOC_LOCALE: // 28
+            IOCTL_GET(request_type, LOCALE, apple80211_locale_data);
+            break;
+        case APPLE80211_IOC_TX_ANTENNA: // 37
+            IOCTL_GET(request_type, TX_ANTENNA, apple80211_antenna_data);
+            break;
+        case APPLE80211_IOC_ANTENNA_DIVERSITY: // 39
+            IOCTL_GET(request_type, ANTENNA_DIVERSITY, apple80211_antenna_data);
+            break;
+        case APPLE80211_IOC_DRIVER_VERSION: // 43
+            IOCTL_GET(request_type, DRIVER_VERSION, apple80211_version_data);
+            break;
+        case APPLE80211_IOC_HARDWARE_VERSION: // 44
+            IOCTL_GET(request_type, HARDWARE_VERSION, apple80211_version_data);
+            break;
+        case APPLE80211_IOC_COUNTRY_CODE: // 51
+            IOCTL_GET(request_type, COUNTRY_CODE, apple80211_country_code_data);
+            break;
+        case APPLE80211_IOC_RADIO_INFO:
+            IOCTL_GET(request_type, RADIO_INFO, apple80211_radio_info_data);
+            break;
+        case APPLE80211_IOC_MCS: // 57
+            IOCTL_GET(request_type, MCS, apple80211_mcs_data);
+            break;
+        case APPLE80211_IOC_WOW_PARAMETERS: // 69
+            break;
+        case APPLE80211_IOC_ROAM_THRESH:
+            IOCTL_GET(request_type, ROAM_THRESH, apple80211_roam_threshold_data);
+            break;
+        case APPLE80211_IOC_TX_CHAIN_POWER: // 108
+            break;
+        case APPLE80211_IOC_THERMAL_THROTTLING: // 111
+            break;
+        case APPLE80211_IOC_POWERSAVE:
+            break;
+        case APPLE80211_IOC_IE:
+            break;
+        default:
+            IWL_ERR(0, "Unhandled IOCTL %s (%d)\n", IOCTL_NAMES[request_number], request_number);
+            ret = kIOReturnError;
+            break;
+    }
+    
+    return ret;
+}
+
 IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
                                     struct apple80211_ssid_data *sd) {
     
+    return kIOReturnError;
     bzero(sd, sizeof(*sd));
     sd->version = APPLE80211_VERSION;
     //strncpy((char*)sd->ssid_bytes, fake_ssid, sizeof(sd->ssid_bytes));
@@ -45,21 +185,14 @@ IOReturn AppleIntelWifiAdapterV2::getAUTH_TYPE(IO80211Interface *interface,
 // MARK: 4 - CHANNEL
 //
 
-const apple80211_channel fake_channel = {
-    .version = APPLE80211_VERSION,
-    .channel = 1,
-    .flags = APPLE80211_C_FLAG_2GHZ | APPLE80211_C_FLAG_20MHZ | APPLE80211_C_FLAG_ACTIVE
-};
-
 IOReturn AppleIntelWifiAdapterV2::getCHANNEL(IO80211Interface *interface,
                                        struct apple80211_channel_data *cd) {
     //return kIOReturnError;
-      return kIOReturnError;
     memset(cd, 0, sizeof(apple80211_channel_data));
     //bzero(cd, sizeof(apple80211_channel_data));
     
     cd->version = APPLE80211_VERSION;
-    cd->channel = fake_channel;
+    memcpy(&cd->channel, &drv->m_pDevice->ie_dev->channels[0], sizeof(apple80211_channel));
     return kIOReturnSuccess;
 }
 
@@ -81,6 +214,8 @@ IOReturn AppleIntelWifiAdapterV2::getTXPOWER(IO80211Interface *interface,
 //
 
 IOReturn AppleIntelWifiAdapterV2::getRATE(IO80211Interface *interface, struct apple80211_rate_data *rd) {
+    
+    return kIOReturnError;
     rd->version = APPLE80211_VERSION;
     rd->num_radios = 1;
     rd->rate[0] = 54;
@@ -233,7 +368,9 @@ IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(IO80211Interface *interface,
     pd->phy_mode = APPLE80211_MODE_11A
                  | APPLE80211_MODE_11B
                  | APPLE80211_MODE_11G
-                 | APPLE80211_MODE_11N;
+                 | APPLE80211_MODE_11N
+                 | APPLE80211_MODE_11AC;
+    
     pd->active_phy_mode = APPLE80211_MODE_AUTO;
     return kIOReturnSuccess;
 }
@@ -245,7 +382,7 @@ IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getOP_MODE(IO80211Interface *interface,
                                        struct apple80211_opmode_data *od) {
     od->version = APPLE80211_VERSION;
-    od->op_mode = APPLE80211_M_STA;
+    od->op_mode = APPLE80211_M_NONE;
     return kIOReturnSuccess;
 }
 
@@ -350,45 +487,12 @@ enum iwl_nvm_channel_flags {
 IOReturn AppleIntelWifiAdapterV2::getSUPPORTED_CHANNELS(IO80211Interface *interface,
                                                   struct apple80211_sup_channel_data *ad) {
     ad->version = APPLE80211_VERSION;
-    for(int i = 0; i < drv->m_pDevice->n_chans; i++) {
-        ieee80211_channel* chan = &drv->m_pDevice->ie_ic.ic_channels[i];
-
-        if(!(chan->nvm_flags & NVM_CHANNEL_VALID)) {
-            continue;
-        }
-        
-        ad->supported_channels[i].version = APPLE80211_VERSION;
-        
-        if(chan->ic_band == IEEE80211_CHAN_2GHZ) {
-            ad->supported_channels[i].flags = APPLE80211_C_FLAG_2GHZ;
-        }
-        else if(chan->ic_band == IEEE80211_CHAN_5GHZ) {
-            ad->supported_channels[i].flags = APPLE80211_C_FLAG_5GHZ;
-        }
-        
-        if(chan->nvm_flags & NVM_CHANNEL_ACTIVE) {
-            ad->supported_channels[i].flags |= APPLE80211_C_FLAG_ACTIVE;
-        }
-        
-        if(chan->nvm_flags & NVM_CHANNEL_IBSS) {
-            ad->supported_channels[i].flags |= APPLE80211_C_FLAG_IBSS;
-        }
-        
-        if(chan->nvm_flags & NVM_CHANNEL_20MHZ) {
-            ad->supported_channels[i].flags |= APPLE80211_C_FLAG_20MHZ;
-        }
-        
-        if(chan->nvm_flags & NVM_CHANNEL_40MHZ) {
-            ad->supported_channels[i].flags |= APPLE80211_C_FLAG_40MHZ;
-        }
-        
-        if(chan->nvm_flags & NVM_CHANNEL_80MHZ) {
-            ad->supported_channels[i].flags |= APPLE80211_C_FLAG_EXT_ABV;
-        }
-        
-        ad->num_channels++;
-        ad->supported_channels[i].channel = chan->hw_value;
+    ad->num_channels = this->drv->m_pDevice->ie_dev->n_chans;
+    
+    if(ad->num_channels > 64) {
+        ad->num_channels = 64;
     }
+    memcpy(&ad->supported_channels, this->drv->m_pDevice->ie_dev->channels, sizeof(apple80211_channel) * ad->num_channels);
     
     return kIOReturnSuccess;
 }

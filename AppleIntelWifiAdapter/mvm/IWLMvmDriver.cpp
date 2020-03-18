@@ -484,11 +484,6 @@ fail:
 bool IWLMvmDriver::enableDevice() {
     int err;
     
-    if(!m_pDevice->rfkill_safe_init_done) {
-        IWL_ERR(0, "enableDevice() called before device ready\n");
-        return false;
-    }
-    
     iwl_phy_db_init(trans, &this->phy_db);
     iwl_notification_wait_init(&m_pDevice->notif_wait);
     err = trans_ops->startHW();
