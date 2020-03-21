@@ -17,6 +17,7 @@
 #include "IWLMvmSta.hpp"
 #include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
+#include "IWLApple80211.hpp"
 
 
 #define super OSObject
@@ -557,10 +558,10 @@ bool IWLMvmDriver::enableDevice() {
     
     for(int i = 0; i < NUM_PHY_CTX; i++)
     {
-        this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_ic.ic_channels[1];
-        IWL_INFO(0, "flags of channel: %d",m_pDevice->ie_ic.ic_channels[1].ic_flags);
+        this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_dev->channels[0];
+        IWL_INFO(0, "flags of channel: %d",m_pDevice->ie_dev->channels[0].flags);
         if ((err = iwl_phy_ctxt_add(this,
-            &this->m_pDevice->phy_ctx[i], &m_pDevice->ie_ic.ic_channels[1], 1, 1)) != 0)
+            &this->m_pDevice->phy_ctx[i], &m_pDevice->ie_dev->channels[0], 1, 1)) != 0)
             goto fail;
     }
     
@@ -570,6 +571,7 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
+    
     err = (this->updateMcc("ZZ", MCC_SOURCE_OLD_FW) == NULL);
     if(err < 0) {
         IWL_ERR(0, "Failed to update MCC: %d\n", err);
@@ -577,6 +579,8 @@ bool IWLMvmDriver::enableDevice() {
     }
     
     if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
+        IWL_INFO(0, "umac scanning enabled\n");
+        this->m_pDevice->umac_scanning = true;
         err = iwl_config_umac_scan(this);
         if(err < 0) {
             IWL_ERR(0, "Failed to init scan config: %d\n", err);
@@ -599,7 +603,7 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
-    return 0;
+    return true;
     
 fail:
     

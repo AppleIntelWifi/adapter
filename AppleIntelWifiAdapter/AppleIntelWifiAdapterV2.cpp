@@ -292,6 +292,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     
     netif->setEnabledBySystem(true);
     
+    
     return true;
 }
 
@@ -348,11 +349,12 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
     IOMediumType mediumType = kIOMediumIEEE80211Auto;
     IONetworkMedium *medium = IONetworkMedium::getMediumWithType(mediumDict, mediumType);
     setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid, medium);
-    if(drv) {
-        if(!drv->enableDevice()) {
-            return false;
+    if(this->drv) {
+        if(!this->drv->enableDevice()) {
+            IWL_CRIT(0, "Enabling device failed\n");
+            return kIOReturnError;
         }
-        //netif->postMessage(1);
+        
         this->netif->postMessage(1);
         return kIOReturnSuccess;
     } else {

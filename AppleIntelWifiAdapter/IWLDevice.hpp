@@ -218,8 +218,11 @@ public:
     iwl_phy_ctx phy_ctx[NUM_PHY_CTX];
     
     u8 scan_rx_ant;
+    u8 last_scan_ant;
     u32 state;
+    bool umac_scanning;
     bool published;
+    bool scanning;
     u32 n_chans;
     u32 power_state;
 

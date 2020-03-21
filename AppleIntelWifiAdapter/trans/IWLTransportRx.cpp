@@ -1448,12 +1448,13 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
     
     if(page_stolen) {
         IWL_ERR(0, "page stolen, free here\n");
+        mbuf_freem(rxb->page);
         //mbuf_freem(rxb->page);
         rxb->page = NULL;
     }
     
     if(rxb->page != NULL) {
-        IWL_ERR(0, "rx failed\n");
+        IWL_ERR(0, "rx passed, but page not freed\n");
         IOMbufNaturalMemoryCursor* cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
         int err = cursor->getPhysicalSegments(rxb->page, &rxb->vec, 1);
         

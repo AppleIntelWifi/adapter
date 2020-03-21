@@ -198,7 +198,7 @@ int IWLMvmDriver::iwm_binding_cmd(struct iwm_node *in, uint32_t action)
     if (fw_has_capa(&m_pDevice->fw.ucode_capa,
                     IWL_UCODE_TLV_CAPA_BINDING_CDB_SUPPORT)) {
         size = sizeof(cmd);
-        if (phyctxt->channel->ic_band == IEEE80211_CHAN_2GHZ ||
+        if (phyctxt->channel->flags & APPLE80211_C_FLAG_2GHZ ||
             !iwl_mvm_is_cdb_supported(m_pDevice))
             cmd.lmac_id = cpu_to_le32(IWL_LMAC_24G_INDEX);
         else

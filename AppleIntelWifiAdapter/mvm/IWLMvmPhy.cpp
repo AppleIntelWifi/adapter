@@ -56,7 +56,7 @@ static inline void iwl_mvm_set_chan_info(IWLMvmDriver* mvm,
 
 int
 iwl_phy_ctxt_add(IWLMvmDriver* drv, struct iwl_phy_ctx *ctxt,
-    struct ieee80211_channel *chan,
+    struct apple80211_channel *chan,
                  uint8_t chains_static, uint8_t chains_dynamic) {
     ctxt->channel = chan;
     
@@ -66,7 +66,7 @@ iwl_phy_ctxt_add(IWLMvmDriver* drv, struct iwl_phy_ctx *ctxt,
 
 int
 iwl_phy_ctxt_changed(IWLMvmDriver* drv,
-    struct iwl_phy_ctx *ctxt, struct ieee80211_channel *chan,
+    struct iwl_phy_ctx *ctxt, struct apple80211_channel *chan,
                      uint8_t chains_static, uint8_t chains_dynamic) {
     ctxt->channel = chan;
 
@@ -102,13 +102,13 @@ iwl_phy_ctxt_apply(IWLMvmDriver* drv,
 
 void
 iwl_phy_ctxt_cmd_data(IWLMvmDriver* drv,
-    struct iwl_phy_context_cmd *cmd, struct ieee80211_channel *chan,
+    struct iwl_phy_context_cmd *cmd, struct apple80211_channel *chan,
                       uint8_t chains_static, uint8_t chains_dynamic) {
     struct ieee80211com *ic = &drv->m_pDevice->ie_ic;
     uint8_t active_cnt, idle_cnt;
     
-    iwl_mvm_set_chan_info(drv, &cmd->ci, ieee80211_chan2ieee(ic, chan),
-                                            IEEE80211_IS_CHAN_2GHZ(chan) ?
+    iwl_mvm_set_chan_info(drv, &cmd->ci, chan->channel,
+                                            (chan->flags & APPLE80211_C_FLAG_2GHZ) ?
                                             PHY_BAND_24 : PHY_BAND_5,
                                             PHY_VHT_CHANNEL_MODE40,
                           PHY_VHT_CTRL_POS_1_BELOW);
@@ -121,8 +121,8 @@ iwl_phy_ctxt_cmd_data(IWLMvmDriver* drv,
         "%s: 2ghz=%d, channel=%d, chains static=0x%x, dynamic=0x%x, "
         "rx_ant=0x%x, tx_ant=0x%x\n",
         __func__,
-        !! IEEE80211_IS_CHAN_2GHZ(chan),
-        ieee80211_chan2ieee(ic, chan),
+        !! (chan->flags & APPLE80211_C_FLAG_2GHZ),
+        chan->channel,
         chains_static,
         chains_dynamic,
         iwl_mvm_get_valid_rx_ant(drv->m_pDevice),

@@ -81,6 +81,8 @@ private:
     
     static IOReturn _doCommand(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
     
+    static IOReturn scanAction(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
+    
     // 1 - SSID
     IOReturn getSSID(IO80211Interface* interface, struct apple80211_ssid_data* sd);
     IOReturn setSSID(IO80211Interface* interface, struct apple80211_ssid_data* sd);
@@ -88,6 +90,9 @@ private:
     IOReturn getAUTH_TYPE(IO80211Interface* interface, struct apple80211_authtype_data* ad);
     // 4 - CHANNEL
     IOReturn getCHANNEL(IO80211Interface* interface, struct apple80211_channel_data* cd);
+    // 6 - PROTMODE
+    IOReturn getPROTMODE(IO80211Interface* interface, struct apple80211_protmode_data* pd);
+    IOReturn setPROTMODE(IO80211Interface* interface, struct apple80211_protmode_data* pd);
     // 7 - TXPOWER
     IOReturn getTXPOWER(IO80211Interface* interface, struct apple80211_txpower_data* txd);
     // 8 - RATE
@@ -130,6 +135,8 @@ private:
     IOReturn getDRIVER_VERSION(IO80211Interface* interface, struct apple80211_version_data* hv);
     // 44 - HARDWARE_VERSION
     IOReturn getHARDWARE_VERSION(IO80211Interface* interface, struct apple80211_version_data* hv);
+    // 50 - ASSOCIATION_STATUS
+    IOReturn getASSOCIATION_STATUS(IO80211Interface* interface, struct apple80211_assoc_status_data* hv);
     // 51 - COUNTRY_CODE
     IOReturn getCOUNTRY_CODE(IO80211Interface* interface, struct apple80211_country_code_data* cd);
     // 57 - MCS

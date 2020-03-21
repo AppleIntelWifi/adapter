@@ -197,7 +197,7 @@ struct iwl_phy_ctx {
     uint16_t id;
     uint16_t color;
     uint32_t ref;
-    struct ieee80211_channel *channel;
+    struct apple80211_channel *channel;
 };
 
 #endif /* __iwl_fw_api_phy_ctxt_h__ */

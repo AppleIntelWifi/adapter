@@ -177,6 +177,7 @@ struct iwl_device_tx_cmd {
     u8 payload[];
 } __packed;
 
+#define MAX_CMD_PAYLOAD_SIZE ((4096 - 4) - sizeof(struct iwl_cmd_header))
 #define TFD_MAX_PAYLOAD_SIZE (sizeof(struct iwl_device_cmd))
 
 /*
