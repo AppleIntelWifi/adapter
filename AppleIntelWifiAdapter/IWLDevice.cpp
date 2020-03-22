@@ -28,6 +28,7 @@ bool IWLDevice::init()
     }
     subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     this->rx_sync_waitq = IOLockAlloc();
+    this->last_ebs_successful = true;
     if(this->cfg != NULL) {
         pciDevice->retain();
         return true;

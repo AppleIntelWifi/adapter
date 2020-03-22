@@ -225,6 +225,7 @@ public:
     bool scanning;
     u32 n_chans;
     u32 power_state;
+    bool last_ebs_successful;
 
     // MARK: queue info
     union {

@@ -98,12 +98,13 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
     
     IWL_INFO(0, "found pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
     
-    pciDevice->retain();
+    //pciDevice->retain();
     this->drv = new IWLMvmDriver();
     this->drv->m_pDevice = new IWLDevice();
     this->drv->m_pDevice->pciDevice = pciDevice;
     this->drv->m_pDevice->state = APPLE80211_S_INIT;
-    
+    IWL_INFO(0, "drv: %x, m_pDevice: %x\n", this->drv, this->drv->m_pDevice);
+
     return this;
 }
 
@@ -258,7 +259,6 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         releaseAll();
         return false;
     }
-
     
     //for test
     if (!drv->start()) {
@@ -272,13 +272,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         releaseAll();
         return false;
     }
-    
-    //this->setHardwareAddress(&this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
-
-    /*
-    */
-    
-    
+        
     if (!attachInterface((IONetworkInterface**)&netif)) {
         IWL_ERR(0, "start failed, can not attach interface\n");
         releaseAll();
@@ -286,7 +280,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     }
     
     drv->m_pDevice->interface = netif;
-        
+    
     netif->registerService();
     registerService();
     
@@ -328,6 +322,7 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
 {
     IWL_INFO(0, "Driver Stop()\n");
+    drv->stopDevice();
     releaseTimeout();
     if (fInterrupt) {
         fInterrupt->disable();
@@ -346,6 +341,11 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
     IWL_INFO(0, "Driver Enable()\n");
+    if(super::enable(netif) != kIOReturnSuccess) {
+        IWL_INFO(0, "super::enable() failed\n");
+        return kIOReturnError;
+    }
+    
     IOMediumType mediumType = kIOMediumIEEE80211Auto;
     IONetworkMedium *medium = IONetworkMedium::getMediumWithType(mediumDict, mediumType);
     setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid, medium);

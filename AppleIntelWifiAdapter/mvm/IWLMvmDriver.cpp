@@ -30,10 +30,13 @@ bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
     }
     this->fwLoadLock = IOLockAlloc();
     
+    /*
     if(pciDevice) {
         this->m_pDevice = new IWLDevice();
         this->m_pDevice->pciDevice = pciDevice;
     }
+    
+    */
     this->m_pDevice->controller = controller;
     
     if (!this->m_pDevice->init()) {
@@ -579,7 +582,7 @@ bool IWLMvmDriver::enableDevice() {
     }
     
     if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
-        IWL_INFO(0, "umac scanning enabled\n");
+        IWL_INFO(0, "umac scanning enabled (ptr: 0x%x)\n", this->m_pDevice);
         this->m_pDevice->umac_scanning = true;
         err = iwl_config_umac_scan(this);
         if(err < 0) {

@@ -282,57 +282,6 @@ IOReturn AppleIntelWifiAdapterV2::getBSSID(IO80211Interface *interface,
     return kIOReturnSuccess;
 }
 
-IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
-    IOReturn ret = kIOReturnSuccess;
-    /*
-    AppleIntelWifiAdapterV2* that = (AppleIntelWifiAdapterV2*)target;
-    IO80211Interface *iface = (IO80211Interface *)arg0;
-    IWLMvmDriver* dev = (IWLMvmDriver*)that->drv;
-    apple80211_scan_data* sd = (apple80211_scan_data*)arg2;
-    
-    dev->m_pDevice->scanning = true;
-    for(int i = 0; i < sd->num_channels; i++) {
-        IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
-    }
-
-    //IWL_INFO(0, "device: %s\n", dev->m_pDevice->cfg->name);
-    if(fw_has_capa(&dev->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
-        int err;
-        err = iwl_runtime(dev);
-        if(err < 0) {
-            IWL_ERR(0, "Failed to init scan config: %d\n", err);
-            ret = kIOReturnError;
-        }
-        else {
-            if(iwl_umac_scan(dev, sd) != 0) {
-                IWL_ERR(0, "umac scan failed\n");
-                ret = kIOReturnError;
-            }
-        }
-    } else {
-        //IWL_ERR(0, "lmac scanning not implemented yet (device: %s)\n", &dev->m_pDevice->name);
-        if(iwl_lmac_scan(dev, sd) != 0) {
-            IWL_ERR(0, "lmac scan failed\n");
-            ret = kIOReturnError;
-        }
-    }
-    IOSleep(8000);
-    
-    IOFree(sd, sizeof(apple80211_scan_data));
-    
-    if(ret == kIOReturnSuccess) {
-        dev->m_pDevice->published = true;
-        dev->m_pDevice->scanning = false;
-        iface->postMessage(APPLE80211_M_SCAN_DONE);
-    }
-     */
-    return ret;
-}
-
-//
-// MARK: 10 - SCAN_REQ
-//
-
 int iwl_config_runtime_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     struct iwl_scan_config_v1* cfg;
     int nchan, err;
@@ -385,6 +334,67 @@ int iwl_config_runtime_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     return err;
 }
 
+
+IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
+    IOReturn ret = kIOReturnSuccess;
+    
+    AppleIntelWifiAdapterV2* that = (AppleIntelWifiAdapterV2*)target;
+    IO80211Interface *iface = (IO80211Interface *)arg0;
+    IWLMvmDriver* dev = (IWLMvmDriver*)that->drv;
+    apple80211_scan_data* sd = (apple80211_scan_data*)arg1;
+    
+    dev->m_pDevice->scanning = true;
+    for(int i = 0; i < sd->num_channels; i++) {
+        IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
+    }
+
+    //IWL_INFO(0, "device: %s\n", dev->m_pDevice->cfg->name);
+    IWL_INFO(0, "scanning (ptr: %x, dev_ptr: %x, dev: %s, umac: %s)\n", dev, dev->m_pDevice, dev->m_pDevice->name, dev->m_pDevice->umac_scanning ? "yes" : "no");
+    
+    
+#ifdef notyet
+    if(fw_has_capa(&dev->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
+#else
+    if(1) {
+#endif
+        /*
+        int err;
+        
+        err = iwl_config_runtime_scan(dev, sd);
+        if(err < 0) {
+            IWL_ERR(0, "Failed to init scan config: %d\n", err);
+            ret = kIOReturnError;
+        }
+        else {
+         */
+            if(iwl_umac_scan(dev, sd) != 0) {
+                IWL_ERR(0, "umac scan failed\n");
+                ret = kIOReturnError;
+            }
+        //}
+    } else {
+        //IWL_ERR(0, "lmac scanning not implemented yet (device: %s)\n", &dev->m_pDevice->name);
+        if(iwl_lmac_scan(dev, sd) != 0) {
+            IWL_ERR(0, "lmac scan failed\n");
+            ret = kIOReturnError;
+        }
+    }
+    IOSleep(8000);
+    
+    IOFree(sd, sizeof(apple80211_scan_data));
+    
+    if(ret == kIOReturnSuccess) {
+        dev->m_pDevice->published = true;
+        dev->m_pDevice->scanning = false;
+        iface->postMessage(APPLE80211_M_SCAN_DONE);
+    }
+    return ret;
+}
+
+//
+// MARK: 10 - SCAN_REQ
+//
+
 IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
                                         struct apple80211_scan_data *sd) {
     if(drv->m_pDevice->scanning) {
@@ -415,48 +425,8 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     if(interface) {
         apple80211_scan_data* request = (apple80211_scan_data*)IOMalloc(sizeof(apple80211_scan_data));
         memcpy(request, sd, sizeof(apple80211_scan_data));
-        
-        
-        IOReturn ret = kIOReturnSuccess;
-        drv->m_pDevice->scanning = true;
-        for(int i = 0; i < sd->num_channels; i++) {
-            IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
-        }
-        
-        
 
-        //IWL_INFO(0, "device: %s\n", dev->m_pDevice->cfg->name);
-        if(drv->m_pDevice->umac_scanning) {
-            int err;
-            err = iwl_config_runtime_scan(drv, sd);
-            if(err < 0) {
-                IWL_ERR(0, "Failed to init scan config: %d\n", err);
-                ret = kIOReturnError;
-            }
-            else {
-                if(iwl_umac_scan(drv, sd) != 0) {
-                    IWL_ERR(0, "umac scan failed\n");
-                    ret = kIOReturnError;
-                }
-            }
-        } else {
-            //IWL_ERR(0, "lmac scanning not implemented yet (device: %s)\n", &dev->m_pDevice->name);
-            if(iwl_lmac_scan(drv, sd) != 0) {
-                IWL_ERR(0, "lmac scan failed\n");
-                ret = kIOReturnError;
-            }
-        }
-        IOSleep(8000);
-        
-        IOFree(request, sizeof(apple80211_scan_data));
-        
-        if(ret == kIOReturnSuccess) {
-            drv->m_pDevice->published = true;
-            drv->m_pDevice->scanning = false;
-            interface->postMessage(APPLE80211_M_SCAN_DONE);
-        }
-        //IOReturn ret = getCommandGate()->runAction(&scanAction, interface, this->drv, request);
-        //IOFree(request, sizeof(apple80211_scan_data));
+        IOReturn ret = getCommandGate()->runAction(&scanAction, interface, request);
         return ret;
     }
     

@@ -17,13 +17,13 @@ int iwl_legacy_config_umac_scan(IWLMvmDriver* drv) {
 int iwl_config_umac_scan(IWLMvmDriver* drv) {
     struct iwl_scan_config_v1* cfg;
     int nchan, err;
-    size_t len = sizeof(iwl_scan_config_v1) + drv->m_pDevice->fw.ucode_capa.n_scan_channels;
-    
+    size_t len = sizeof(iwl_scan_config_v1) + (drv->m_pDevice->fw.ucode_capa.n_scan_channels);
+
     cfg = (iwl_scan_config_v1*)kzalloc(len);
     
     iwl_host_cmd hcmd = {
         .id = iwl_cmd_id(SCAN_CFG_CMD, IWL_ALWAYS_LONG_GROUP, 0),
-        .dataflags = {IWL_HCMD_DFL_DUP},
+        .dataflags = {IWL_HCMD_DFL_NOCOPY},
         .flags = 0
     };
     
@@ -38,9 +38,9 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
         SCAN_CONFIG_RATE_36M | SCAN_CONFIG_RATE_48M |
         SCAN_CONFIG_RATE_54M);
 
-    cfg->bcast_sta_id = 1;
+    cfg->bcast_sta_id = IWM_AUX_STA_ID;
     cfg->tx_chains = cpu_to_le32(iwl_mvm_get_valid_tx_ant(drv->m_pDevice));
-    cfg->rx_chains = cpu_to_le32(iwl_mvm_scan_rx_ant(drv->m_pDevice));
+    cfg->rx_chains = cpu_to_le32(iwl_mvm_get_valid_rx_ant(drv->m_pDevice));
     cfg->legacy_rates = cpu_to_le32(rates | SCAN_CONFIG_SUPPORTED_RATE(rates));
     
     cfg->dwell.active = 10;
@@ -49,7 +49,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     cfg->dwell.extended = 90;
     cfg->out_of_channel_time = cpu_to_le32(0);
     cfg->suspend_time = cpu_to_le32(0);
-    
+
     memcpy(&cfg->mac_addr, &drv->m_pDevice->ie_dev->address, ETH_ALEN);
     IWL_INFO(0, "%02x:%02x:%02x:%02x:%02x:%02x\n",
     cfg->mac_addr[0], cfg->mac_addr[1], cfg->mac_addr[2], cfg->mac_addr[3], cfg->mac_addr[4], cfg->mac_addr[5]);
@@ -77,7 +77,10 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
         if(!c)
             continue;
         
-        IWL_INFO(0, "Adding channel %d to scan", c->channel);
+        if(c->flags == 0)
+            continue;
+        
+        IWL_INFO(0, "Adding channel %d to scan config\n", c->channel);
         cfg->channel_array[nchan] = c->channel;
     }
     
@@ -101,7 +104,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     return err;
 }
 
-int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_scan_probe_req_v1* preq) {
+int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_scan_probe_req* preq) {
     
     struct ieee80211_frame* wh = (ieee80211_frame*)preq->buf;
     ieee80211_rateset rs;
@@ -139,7 +142,7 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_sc
     
     
     /* 2Ghz IEs */
-
+    memset(&rs, 0, sizeof(ieee80211_rateset));
     memcpy(&rs, &ieee80211_std_rateset_11g, sizeof(ieee80211_std_rateset_11g));
     //rs = &ieee80211_std_rateset_11g;
     if (rs.rs_nrates > IEEE80211_RATE_SIZE) {
@@ -172,6 +175,7 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_sc
     }
     
     if(drv->m_pDevice->nvm_data->sku_cap_band_52ghz_enable) {
+        memset(&rs, 0, sizeof(ieee80211_rateset));
         memcpy(&rs, &ieee80211_std_rateset_11a, sizeof(ieee80211_std_rateset_11a
                                                       ));
         
@@ -193,6 +197,9 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_sc
         remain -= frm - pos;
     }
     
+    preq->common_data.offset = htole16(frm - (uint8_t *)wh);
+    pos = frm;
+    
     preq->common_data.len = htole16(frm - pos);
     
     return 0;
@@ -205,24 +212,44 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq, iwl_sc
 int iwl_umac_scan_fill_channels(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
                                 iwl_scan_channel_cfg_umac* chan, int n_ssids)
 {
+
+#ifdef notyet
+    int num_channels = appleReq->num_channels;
+#else
+    int num_channels = drv->m_pDevice->fw.ucode_capa.n_scan_channels;
+#endif
+    
     
     struct apple80211_channel* c;
     uint8_t nchan;
     
-    for (nchan = 0; nchan < appleReq->num_channels; nchan++) {
+    for (nchan = 0; nchan < num_channels; nchan++) {
+        
+#ifdef notyet
         c = &appleReq->channels[nchan];
+#else
+        c = &drv->m_pDevice->ie_dev->channels[nchan];
+#endif
+        if(c->flags == 0)
+            continue;
         
         IWL_INFO(0, "adding chan %d to scan\n", c->channel);
-        
         chan->v1.channel_num = htole16(c->channel);
+        
         chan->v1.iter_count = 1;
         chan->v1.iter_interval = htole16(0);
-        chan->flags = htole32(IWL_SCAN_CHANNEL_UMAC_NSSIDS(n_ssids));
+        chan->flags |= htole32(IWL_SCAN_CHANNEL_UMAC_NSSIDS(n_ssids));
+        
         chan++;
-        nchan++;
     }
     
     return nchan;
+}
+
+bool iwl_scan_use_ebs(IWLMvmDriver* drv) {
+    const struct iwl_ucode_capabilities* capa = &drv->m_pDevice->fw.ucode_capa;
+    return ((capa->flags & IWL_UCODE_TLV_FLAGS_EBS_SUPPORT) &&
+            drv->m_pDevice->last_ebs_successful);
 }
 
 int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
@@ -234,57 +261,111 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
         .dataflags = { IWL_HCMD_DFL_NOCOPY, },
     };
     
-    IWL_INFO(0, "requested scan for %d channels\n", appleReq->num_channels);
+    
+    bool adaptive_dwell = fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_ADAPTIVE_DWELL);
+    //bool adaptive_dwell = false;
+    
+#ifdef notyet
+    int num_channels = appleReq->num_channels;
+#else
+    int num_channels = drv->m_pDevice->fw.ucode_capa.n_scan_channels;
+#endif
+    
+    IWL_INFO(0, "requested scan for %d channels\n", num_channels);
     iwl_scan_req_umac* req;
-    iwl_scan_req_umac_tail_v1* tail;
+    iwl_scan_req_umac_tail_v2* tail;
     size_t req_len;
     int err;
-    req_len = IWL_SCAN_REQ_UMAC_SIZE_V1 +
-    (sizeof(iwl_scan_channel_cfg_umac) * appleReq->num_channels) +
-    sizeof(iwl_scan_req_umac_tail_v1);
+    
+    if(!fw_has_capa(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
+        IWL_ERR(0, "firmware does not support umac\n");
+    } else {
+        IWL_INFO(0, "firmware supports umac :)\n");
+    }
     
     
-    /*
+    if(!adaptive_dwell) {
+        IWL_INFO(0, "no adaptive dwell\n");
+        req_len = IWL_SCAN_REQ_UMAC_SIZE_V1 +
+        (sizeof(iwl_scan_channel_cfg_umac) * num_channels) +
+        sizeof(iwl_scan_req_umac_tail_v2);
+    } else {
+        IWL_INFO(0, "adaptive dwell\n");
+        req_len = IWL_SCAN_REQ_UMAC_SIZE_V7 +
+        (sizeof(iwl_scan_channel_cfg_umac) * num_channels) +
+        sizeof(iwl_scan_req_umac_tail_v2);
+    }
+
+    
     if(req_len > MAX_CMD_PAYLOAD_SIZE) {
         IWL_ERR(0, "request length is longer then payload size? (wanted: %lu, max: %lu)\n", req_len, MAX_CMD_PAYLOAD_SIZE);
         return ENOMEM;
     }
-     */
-    
     
     req = (iwl_scan_req_umac*)kzalloc(req_len);
     
     hcmd.len[0] = req_len;
     hcmd.data[0] = req;
     
-    req->v1.active_dwell = 10;
-    req->v1.passive_dwell = 110;
-    req->v1.fragmented_dwell = 44;
-    req->v1.extended_dwell = 90;
-    req->v1.max_out_time = cpu_to_le32(0);
-    req->v1.suspend_time = cpu_to_le32(0);
-    req->v1.scan_priority = cpu_to_le32(IWL_SCAN_PRIORITY_HIGH);
+    req->general_flags = cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PASS_ALL |
+                                     IWL_UMAC_SCAN_GEN_FLAGS_ITER_COMPLETE);
     req->ooc_priority = cpu_to_le32(IWL_SCAN_PRIORITY_HIGH);
-    req->v1.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v1.data, appleReq->ssid_len != 0);
-    req->general_flags = cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_PASS_ALL |
-                                     IWL_UMAC_SCAN_GEN_FLAGS_ITER_COMPLETE |
-                                     IWL_UMAC_SCAN_GEN_FLAGS_EXTENDED_DWELL);
-    tail = (struct iwl_scan_req_umac_tail_v1 *)(req->v1.data +
-        sizeof(struct iwl_scan_channel_cfg_umac) *
-                                             appleReq->num_channels);
     
-    if(appleReq->num_channels == 0 && appleReq->ssid_len != 0) {
-        tail->direct_scan[0].id = IEEE80211_ELEMID_SSID;
-        tail->direct_scan[0].len = appleReq->ssid_len;
-        memcpy(tail->direct_scan->ssid, appleReq->ssid, appleReq->ssid_len);
-        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_PRE_CONNECT);
+    if(!adaptive_dwell) {
+        IWL_INFO(0, "no adaptive dwell 2\n");
+        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_EXTENDED_DWELL);
+    }
+    
+    int channel_flags;
+    channel_flags = 0;
+    
+    if (iwl_scan_use_ebs(drv))
+        channel_flags = IWL_SCAN_CHANNEL_FLAG_EBS |
+            IWL_SCAN_CHANNEL_FLAG_EBS_ACCURATE |
+            IWL_SCAN_CHANNEL_FLAG_CACHE_ADD;
+    
+    
+    if(adaptive_dwell) {
+        IWL_INFO(0, "adaptive dwell targeted\n");
+         req->v7.active_dwell = 10;
+         req->v7.passive_dwell = 110;
+         req->v7.fragmented_dwell = 44;
+         req->v7.adwell_default_n_aps_social = 10;
+         req->v7.adwell_default_n_aps = 2;
+         req->v7.adwell_max_budget = htole16(300);
+         req->v7.scan_priority = htole32(IWL_SCAN_PRIORITY_HIGH);
+         req->v7.channel.flags = channel_flags;
+         req->v7.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v7.data, appleReq->ssid_len != 0);
+        
+        tail = (struct iwl_scan_req_umac_tail_v2 *)((char*)&req->v7.data +
+                sizeof(struct iwl_scan_channel_cfg_umac) * num_channels);
+        
     } else {
-        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_PASSIVE);
+        IWL_INFO(0, "no adaptive dwell\n");
+        req->v1.active_dwell = 10;
+        req->v1.passive_dwell = 110;
+        req->v1.fragmented_dwell = 44;
+        req->v1.extended_dwell = 90;
+        req->v1.scan_priority = cpu_to_le32(IWL_SCAN_PRIORITY_HIGH);
+        req->v1.channel.flags = channel_flags;
+        req->v1.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v1.data, appleReq->ssid_len != 0);
+        tail = (struct iwl_scan_req_umac_tail_v2 *)((char*)&req->v1.data +
+                sizeof(struct iwl_scan_channel_cfg_umac) * num_channels);
     }
-   
-    if(fw_has_capa(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_DS_PARAM_SET_IE_SUPPORT)) {
-        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_RRM_ENABLED);
-    }
+    
+     if(appleReq->ssid_len != 0) {
+         tail->direct_scan[0].id = IEEE80211_ELEMID_SSID;
+         tail->direct_scan[0].len = appleReq->ssid_len;
+         memcpy(tail->direct_scan->ssid, appleReq->ssid, appleReq->ssid_len);
+         req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PRE_CONNECT);
+     } else {
+         req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PASSIVE);
+     }
+    
+     if(fw_has_capa(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_DS_PARAM_SET_IE_SUPPORT)) {
+         req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_RRM_ENABLED);
+     }
+    
     
     err = iwl_fill_probe_req(drv, appleReq, &tail->preq);
     if(err) {
@@ -443,7 +524,7 @@ int iwl_lmac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     (struct iwl_scan_channel_cfg_lmac *)req->data,
     appleReq->ssid_len != 0);
     
-    err = iwl_fill_probe_req(drv, appleReq, (iwl_scan_probe_req_v1*)(req->data +
+    err = iwl_fill_probe_req(drv, appleReq, (iwl_scan_probe_req*)(req->data +
                                                                      sizeof(struct iwl_scan_channel_cfg_lmac) * appleReq->num_channels));
     
     if(err) {
