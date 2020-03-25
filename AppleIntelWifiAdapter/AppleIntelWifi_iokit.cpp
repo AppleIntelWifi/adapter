@@ -384,9 +384,9 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
     IOFree(sd, sizeof(apple80211_scan_data));
     
     if(ret == kIOReturnSuccess) {
-        dev->m_pDevice->published = true;
-        dev->m_pDevice->scanning = false;
-        iface->postMessage(APPLE80211_M_SCAN_DONE);
+        //dev->m_pDevice->published = true;
+        //dev->m_pDevice->scanning = false;
+        //iface->postMessage(APPLE80211_M_SCAN_DONE);
     }
     return ret;
 }

@@ -96,6 +96,8 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
     drv->trans->iwlWritePRPHNoGrab(SCD_EN_CTRL, drv->trans->iwlReadPRPHNoGrab(SCD_EN_CTRL) | qid);
     drv->trans->releaseNICAccess(&state);
     
+    IWL_INFO(0, "enabled txq %d FIFO %d\n", qid, fifo);
+    
     return err;
 }
 
@@ -105,7 +107,7 @@ int iwl_mvm_add_aux_sta(IWLMvmDriver* drv) {
     int err;
     uint32_t status;
     
-    err = iwl_enable_txq(drv, 1, 15, IWL_MVM_TX_FIFO_MCAST);
+    err = iwl_enable_txq(drv, 0, 15, IWL_MVM_TX_FIFO_MCAST);
     if(err)
         return err;
     

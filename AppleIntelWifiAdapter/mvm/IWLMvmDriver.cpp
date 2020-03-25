@@ -556,9 +556,6 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
-    ieee80211Run();
-    
-    
     for(int i = 0; i < NUM_PHY_CTX; i++)
     {
         this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_dev->channels[0];
@@ -730,6 +727,7 @@ int IWLMvmDriver::irqHandler(int irq, void *dev_id)
                      " Restarting 0x%X.\n", inta);
              isr_stats->sw++;
              trans->irqHandleError();
+             trans_ops->fwError();
              handled |= CSR_INT_BIT_SW_ERR;
          }
      

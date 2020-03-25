@@ -506,8 +506,9 @@ struct iwl_mcc_update_resp *IWLMvmDriver::updateMcc(const char *alpha2, enum iwl
     pkt = cmd.resp_pkt;
     
     /* Extract MCC response */
-    if (fw_has_capa(&m_pDevice->fw.ucode_capa,
-                    IWL_UCODE_TLV_CAPA_MCC_UPDATE_11AX_SUPPORT)) {
+    if (0) {
+        
+        IWL_INFO(0, "11ax supported\n");
         struct iwl_mcc_update_resp *mcc_resp = (struct iwl_mcc_update_resp *)pkt->data;
         
         n_channels =  __le32_to_cpu(mcc_resp->n_channels);
@@ -519,6 +520,7 @@ struct iwl_mcc_update_resp *IWLMvmDriver::updateMcc(const char *alpha2, enum iwl
             goto exit;
         }
     } else {
+        
         struct iwl_mcc_update_resp_v3 *mcc_resp_v3 = (struct iwl_mcc_update_resp_v3 *)pkt->data;
         
         n_channels =  __le32_to_cpu(mcc_resp_v3->n_channels);
