@@ -843,6 +843,9 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
     if (cmd->flags & CMD_WANT_SKB)
         out_meta->source = cmd;
     
+    
+    IOSimpleLockUnlock(txq->lock); // cannot lock because allocate_dma_buf will potentially block
+    
     /* set up the header */
     if (group_id != 0) {
         out_cmd->hdr_wide.cmd = iwl_cmd_opcode(cmd->id);
@@ -989,7 +992,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
     IOSimpleLockUnlockEnableInterrupt(trans->m_pDevice->registerRWLock, flags);
     
 out:
-    IOSimpleLockUnlock(txq->lock);
+    //IOSimpleLockUnlock(txq->lock);
     //    spin_unlock_bh(&txq->lock);
 free_dup_buf:
     //    if (idx < 0)

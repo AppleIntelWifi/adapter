@@ -384,7 +384,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     
     mbuf_setdata(in, (void*)(pak2->data + sizeof(*rx_res)), len);
     
-    trans->m_pDevice->controller->getNetworkInterface()->inputPacket(in);
+    trans->m_pDevice->controller->inputPacket(in);
     
     IWL_INFO(0, "unhandled\n");
 }
