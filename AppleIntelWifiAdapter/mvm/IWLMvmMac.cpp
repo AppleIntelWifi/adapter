@@ -17,7 +17,7 @@ int iwl_legacy_config_umac_scan(IWLMvmDriver* drv) {
 int iwl_config_umac_scan(IWLMvmDriver* drv) {
     struct iwl_scan_config_v1* cfg;
     int nchan, err;
-    size_t len = sizeof(iwl_scan_config_v1) + (drv->m_pDevice->n_chans);
+    size_t len = sizeof(iwl_scan_config_v1) + (drv->m_pDevice->fw.ucode_capa.n_scan_channels);
 
     cfg = (iwl_scan_config_v1*)kzalloc(len);
     
@@ -62,7 +62,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     
     nchan = 0;
     
-    int num_channels = drv->m_pDevice->n_chans;
+    int num_channels = drv->m_pDevice->fw.ucode_capa.n_scan_channels;
     
     if(num_channels > IEEE80211_CHAN_MAX) {
         IWL_ERR(0, "ucode asked for %d channels\n", num_channels);
@@ -98,6 +98,8 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     
         
     err = drv->sendCmd(&hcmd);
+    if(!err)
+        IWL_INFO(0, "sent umac config successfully\n");
     
     IOFree(cfg, len);
     //drv->trans->freeResp(&hcmd);
@@ -258,7 +260,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
         .id = iwl_cmd_id(SCAN_REQ_UMAC, IWL_ALWAYS_LONG_GROUP, 0),
         .len = { 0, },
         .data = { NULL, },
-        .flags = CMD_ASYNC,
+        .flags = 0,
         .dataflags = { IWL_HCMD_DFL_NOCOPY, },
     };
     
@@ -269,7 +271,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
 #ifdef notyet
     int num_channels = appleReq->num_channels;
 #else
-    int num_channels = drv->m_pDevice->n_chans;
+    int num_channels = drv->m_pDevice->fw.ucode_capa.n_scan_channels;
 #endif
     
     IWL_INFO(0, "requested scan for %d channels\n", num_channels);
@@ -388,7 +390,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     tail->schedule[0].iter_count = 1;
     
     err = drv->sendCmd(&hcmd);
-    //IOFree(req, req_len);
+    IOFree(req, req_len);
     
     return err;
 }

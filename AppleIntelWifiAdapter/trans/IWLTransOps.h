@@ -38,6 +38,10 @@ public:
     
     bool fwRunning();
     
+    void rxMpdu(iwl_rx_packet* packet);
+    
+    void rxPhy(iwl_rx_packet* packet);
+    
     virtual int nicInit() = 0;
 
     void fwError();

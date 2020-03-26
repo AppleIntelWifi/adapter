@@ -565,6 +565,14 @@ bool IWLMvmDriver::enableDevice() {
             goto fail;
     }
     
+    {
+        iwl_ltr_config_cmd cmd = {
+            .flags = htole32(LTR_CFG_FLAG_FEATURE_ENABLE),
+        };
+        
+        sendCmdPdu(LTR_CONFIG, 0, sizeof(cmd), &cmd);
+    }
+    
     err = this->sendPowerStatus();
     if(err < 0) {
         IWL_ERR(0, "Failed to send power status command: %d\n", err);

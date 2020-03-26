@@ -17,19 +17,24 @@
 #define DebugLog(args...)
 #endif
 
+#ifdef KERNEL_LOG
+#define TraceLog(args...) \
+do { IOLog(args); kprintf(args); } while (0)
+#else
 #define TraceLog(args...) IOLog(args)
+#endif
 
 #define __iwl_warn(args...) \
-do { TraceLog("AppleIntelWifiAdapter WARN: " args); kprintf("AppleIntelWifiAdapter WARN: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter WARN: " args);} while (0)
 
 #define __iwl_info(args...) \
-do { TraceLog("AppleIntelWifiAdapter INFO: " args); kprintf("AppleIntelWifiAdapter INFO: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter INFO: " args);} while (0)
 
 #define __iwl_crit(args...) \
-do { TraceLog("AppleIntelWifiAdapter CRIT: " args); kprintf("AppleIntelWifiAdapter CRIT: " args); } while (0)
+do { TraceLog("AppleIntelWifiAdapter CRIT: " args); } while (0)
 
 #define __iwl_err(rfkill_prefix, trace_only, args...) \
-do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); kprintf("AppleIntelWifiAdapter ERR: " args); } while (0)
+do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); } while (0)
 
 #define __iwl_dbg(level, limit, args...) \
 do { ((!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);

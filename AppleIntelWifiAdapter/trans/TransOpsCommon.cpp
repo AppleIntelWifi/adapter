@@ -263,6 +263,17 @@ void IWLTransOps::restartNIC(bool fw_error) {
     }
 }
 
+void IWLTransOps::rxPhy(iwl_rx_packet *packet) {
+    iwl_rx_phy_info* info = (iwl_rx_phy_info*)packet->data;
+    IWL_INFO(0, "received new phy info (timestamp: %lld, system: %ld)\n", info->timestamp, info->system_timestamp);
+    IWL_INFO(0, "channel: %d\n", info->channel);
+}
+
+void IWLTransOps::rxMpdu(iwl_rx_packet *packet) {
+    IWL_INFO(0, "unhandled\n");
+}
+
+
 static const struct {
     const char *name;
     uint8_t num;

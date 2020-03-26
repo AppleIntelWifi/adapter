@@ -9,6 +9,7 @@
 #include "IWLTransport.hpp"
 #include <IOKit/IOLocks.h>
 #include "TransHdr.h"
+#include "IWLApple80211.hpp"
 
 /* a device (PCI-E) page is 4096 bytes long */
 #define ICT_SHIFT    12
@@ -1303,10 +1304,12 @@ static void iwl_pcie_rx_reuse_rbd(IWLTransport *trans,
     
 }
 
+#include "IWLTransOps.h"
 
 static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, struct iwl_rx_mem_buffer *rxb,
                                       bool emergency)
 {
+    IWLTransOps* ops = (IWLTransOps*)trans->trans_ops;
     IWLTransport* trans_pcie = trans;
     struct iwl_txq* txq = trans->txq[trans->cmd_queue];
     bool page_stolen = false;
@@ -1405,6 +1408,40 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                     notif2 = (iwl_dts_measurement_notif_v2*)pkt->data;
                     IWL_INFO(0, "DTS temp=%d C\n", notif2->temp);
                     break;
+                }
+                break;
+            }
+                
+            case REPLY_RX_PHY_CMD:
+                ops->rxPhy(pkt);
+                break;
+            
+            case REPLY_RX_MPDU_CMD:
+                ops->rxMpdu(pkt);
+                break;
+                
+            case SCAN_COMPLETE_UMAC: {
+                iwl_umac_scan_complete* notif;
+                
+                if(iwl_rx_packet_payload_len(pkt) == sizeof(*notif)) {
+                    notif = (iwl_umac_scan_complete*)pkt->data;
+                    if(trans->m_pDevice->scanning) {
+                        trans->m_pDevice->scanning = false;
+                        trans->m_pDevice->published = true;
+                        trans->m_pDevice->interface->postMessage(APPLE80211_M_SCAN_DONE);
+                    }
+                }
+            }
+            case SCAN_ITERATION_COMPLETE_UMAC: {
+                iwl_umac_scan_iter_complete_notif* notif;
+                
+                if(iwl_rx_packet_payload_len(pkt) == sizeof(*notif)) {
+                    notif = (iwl_umac_scan_iter_complete_notif*)pkt->data;
+                    if(trans->m_pDevice->scanning) {
+                        trans->m_pDevice->scanning = false;
+                        trans->m_pDevice->published = true;
+                        trans->m_pDevice->interface->postMessage(APPLE80211_M_SCAN_DONE);
+                    }
                 }
                 break;
             }
