@@ -231,6 +231,8 @@ public:
     struct iwl_rb_allocator rba;
     struct isr_statistics isr_stats;
     
+    struct iwl_rx_phy_info last_phy_info;
+    
     void *base_rb_stts;//base virtual address of receive buffer status for all queues
     dma_addr_t base_rb_stts_dma;//base physical address of receive buffer status
     iwl_dma_ptr *base_rb_stts_ptr;//base physical dma object of receive buffer status

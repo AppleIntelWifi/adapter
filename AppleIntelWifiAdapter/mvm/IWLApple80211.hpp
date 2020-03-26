@@ -21,8 +21,13 @@ public:
     uint8_t address[ETH_ALEN];
     uint32_t flags;
     
+    bool scanning;
+    bool published;
+    
     uint32_t state;
     uint32_t n_chans;
+    
+    apple80211_channel current_channel;
     apple80211_channel channels[256];
     apple80211_channel channels_inactive[256];
     apple80211_channel channels_scan[256];

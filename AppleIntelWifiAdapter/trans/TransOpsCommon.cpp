@@ -267,9 +267,125 @@ void IWLTransOps::rxPhy(iwl_rx_packet *packet) {
     iwl_rx_phy_info* info = (iwl_rx_phy_info*)packet->data;
     IWL_INFO(0, "received new phy info (timestamp: %lld, system: %ld)\n", info->timestamp, info->system_timestamp);
     IWL_INFO(0, "channel: %d\n", info->channel);
+    
+    memcpy(&trans->last_phy_info, info, sizeof(*info));
 }
 
-void IWLTransOps::rxMpdu(iwl_rx_packet *packet) {
+int get_signal_strength(IWLTransport* trans) {
+    iwl_rx_phy_info* phy_info = &trans->last_phy_info;
+    int energy_a, energy_b, energy_c, max_energy;
+    uint32_t val;
+
+    val = le32toh(phy_info->non_cfg_phy[IWL_RX_INFO_ENERGY_ANT_ABC_IDX]);
+    energy_a = (val & IWL_RX_INFO_ENERGY_ANT_A_MSK) >>
+        IWL_RX_INFO_ENERGY_ANT_A_POS;
+    energy_a = energy_a ? -energy_a : -256;
+    energy_b = (val & IWL_RX_INFO_ENERGY_ANT_B_MSK) >>
+        IWL_RX_INFO_ENERGY_ANT_B_POS;
+    energy_b = energy_b ? -energy_b : -256;
+    energy_c = (val & IWL_RX_INFO_ENERGY_ANT_C_MSK) >>
+        IWL_RX_INFO_ENERGY_ANT_C_POS;
+    energy_c = energy_c ? -energy_c : -256;
+    max_energy = MAX(energy_a, energy_b);
+    max_energy = MAX(max_energy, energy_c);
+
+    IWL_INFO(0, "energy In A %d B %d C %d, and max %d\n",
+                  energy_a, energy_b, energy_c, max_energy);
+    
+    return max_energy;
+}
+
+#define IWL_RX_INFO_AGC_IDX 1
+#define IWL_RX_INFO_RSSI_AB_IDX 2
+#define IWL_OFDM_AGC_A_MSK 0x0000007f
+#define IWL_OFDM_AGC_A_POS 0
+#define IWL_OFDM_AGC_B_MSK 0x00003f80
+#define IWL_OFDM_AGC_B_POS 7
+#define IWL_OFDM_AGC_CODE_MSK 0x3fe00000
+#define IWL_OFDM_AGC_CODE_POS 20
+#define IWL_OFDM_RSSI_INBAND_A_MSK 0x00ff
+#define IWL_OFDM_RSSI_A_POS 0
+#define IWL_OFDM_RSSI_ALLBAND_A_MSK 0xff00
+#define IWL_OFDM_RSSI_ALLBAND_A_POS 8
+#define IWL_OFDM_RSSI_INBAND_B_MSK 0xff0000
+#define IWL_OFDM_RSSI_B_POS 16
+#define IWL_OFDM_RSSI_ALLBAND_B_MSK 0xff000000
+#define IWL_OFDM_RSSI_ALLBAND_B_POS 24
+#define IWL_RSSI_OFFSET 50
+
+int calc_rssi(IWLTransport* trans) {
+    iwl_rx_phy_info* phy_info = &trans->last_phy_info;
+    int rssi_a, rssi_b, rssi_a_dbm, rssi_b_dbm, max_rssi_dbm;
+    uint32_t agc_a, agc_b;
+    uint32_t val;
+
+    val = le32toh(phy_info->non_cfg_phy[IWL_RX_INFO_AGC_IDX]);
+    agc_a = (val & IWL_OFDM_AGC_A_MSK) >> IWL_OFDM_AGC_A_POS;
+    agc_b = (val & IWL_OFDM_AGC_B_MSK) >> IWL_OFDM_AGC_B_POS;
+
+    val = le32toh(phy_info->non_cfg_phy[IWL_RX_INFO_RSSI_AB_IDX]);
+    rssi_a = (val & IWL_OFDM_RSSI_INBAND_A_MSK) >> IWL_OFDM_RSSI_A_POS;
+    rssi_b = (val & IWL_OFDM_RSSI_INBAND_B_MSK) >> IWL_OFDM_RSSI_B_POS;
+
+    /*
+     * dBm = rssi dB - agc dB - constant.
+     * Higher AGC (higher radio gain) means lower signal.
+     */
+    rssi_a_dbm = rssi_a - IWL_RSSI_OFFSET - agc_a;
+    rssi_b_dbm = rssi_b - IWL_RSSI_OFFSET - agc_b;
+    max_rssi_dbm = MAX(rssi_a_dbm, rssi_b_dbm);
+
+    IWL_INFO(0, "Rssi In A %d B %d Max %d AGCA %d AGCB %d\n",
+        rssi_a_dbm, rssi_b_dbm, max_rssi_dbm, agc_a, agc_b);
+
+    return max_rssi_dbm;
+}
+
+void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
+    iwl_rx_packet* packet = (iwl_rx_packet*)rxb_addr(rxcb);
+    mbuf_t page = (mbuf_t)rxcb->_page;
+    iwl_rx_phy_info* last_phy_info = &trans->last_phy_info;
+    iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
+    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(*rx_res));
+    
+    
+    size_t len = le16toh(rx_res->byte_count);
+    uint32_t rx_packet_status = le32toh(*(uint32_t *)(packet->data + sizeof(*rx_res) + len));
+    
+    
+    if (unlikely(last_phy_info->cfg_phy_cnt > 20)) {
+        IWL_ERR(0, "dsp size out of range [0,20]: %d\n",
+            last_phy_info->cfg_phy_cnt);
+        return;
+    }
+
+    if (!(rx_packet_status & RX_MPDU_RES_STATUS_CRC_OK) ||
+        !(rx_packet_status & RX_MPDU_RES_STATUS_OVERRUN_OK)) {
+        IWL_ERR(0, "Bad CRC or FIFO: 0x%08X.\n", rx_packet_status);
+        return; /* drop */
+    }
+    
+    uint32_t device_timestamp = le32toh(last_phy_info->system_timestamp);
+    int rssi;
+    
+    if(fw_has_capa(&trans->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_RX_ENERGY_API)) {
+        rssi = get_signal_strength(trans);
+    } else {
+        rssi = calc_rssi(trans);
+    }
+    rssi = -rssi;
+    
+    rxcb->_page_stolen = true;
+    mbuf_t in;
+    
+    mbuf_dup(page, MBUF_DONTWAIT, &in);
+    
+    iwl_rx_packet* pak2 = (iwl_rx_packet*)((u8*)mbuf_data((mbuf_t)in) + (rxcb->_offset));
+    
+    mbuf_setdata(in, (void*)(pak2->data + sizeof(*rx_res)), len);
+    
+    trans->m_pDevice->controller->getNetworkInterface()->inputPacket(in);
+    
     IWL_INFO(0, "unhandled\n");
 }
 

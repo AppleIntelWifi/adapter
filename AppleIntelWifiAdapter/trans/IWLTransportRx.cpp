@@ -1417,7 +1417,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                 break;
             
             case REPLY_RX_MPDU_CMD:
-                ops->rxMpdu(pkt);
+                ops->rxMpdu(&rxcb);
                 break;
                 
             case SCAN_COMPLETE_UMAC: {
@@ -1425,21 +1425,23 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                 
                 if(iwl_rx_packet_payload_len(pkt) == sizeof(*notif)) {
                     notif = (iwl_umac_scan_complete*)pkt->data;
-                    if(trans->m_pDevice->scanning) {
-                        trans->m_pDevice->scanning = false;
-                        trans->m_pDevice->published = true;
+                    if(trans->m_pDevice->ie_dev->scanning) {
+                        trans->m_pDevice->ie_dev->scanning = false;
+                        trans->m_pDevice->ie_dev->published = true;
                         trans->m_pDevice->interface->postMessage(APPLE80211_M_SCAN_DONE);
                     }
                 }
+                break;
             }
+                
             case SCAN_ITERATION_COMPLETE_UMAC: {
                 iwl_umac_scan_iter_complete_notif* notif;
                 
                 if(iwl_rx_packet_payload_len(pkt) == sizeof(*notif)) {
                     notif = (iwl_umac_scan_iter_complete_notif*)pkt->data;
-                    if(trans->m_pDevice->scanning) {
-                        trans->m_pDevice->scanning = false;
-                        trans->m_pDevice->published = true;
+                    if(trans->m_pDevice->ie_dev->scanning) {
+                        trans->m_pDevice->ie_dev->scanning = false;
+                        trans->m_pDevice->ie_dev->published = true;
                         trans->m_pDevice->interface->postMessage(APPLE80211_M_SCAN_DONE);
                     }
                 }
@@ -1486,7 +1488,6 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
     if(page_stolen) {
         IWL_ERR(0, "page stolen, free here\n");
         mbuf_freem(rxb->page);
-        //mbuf_freem(rxb->page);
         rxb->page = NULL;
     }
     

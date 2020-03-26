@@ -38,7 +38,7 @@ public:
     
     bool fwRunning();
     
-    void rxMpdu(iwl_rx_packet* packet);
+    void rxMpdu(iwl_rx_cmd_buffer* rxcb);
     
     void rxPhy(iwl_rx_packet* packet);
     

@@ -357,21 +357,10 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
 #else
     if(1) {
 #endif
-        /*
-        int err;
-        
-        err = iwl_config_runtime_scan(dev, sd);
-        if(err < 0) {
-            IWL_ERR(0, "Failed to init scan config: %d\n", err);
+        if(iwl_umac_scan(dev, sd) != 0) {
+            IWL_ERR(0, "umac scan failed\n");
             ret = kIOReturnError;
         }
-        else {
-         */
-            if(iwl_umac_scan(dev, sd) != 0) {
-                IWL_ERR(0, "umac scan failed\n");
-                ret = kIOReturnError;
-            }
-        //}
     } else {
         //IWL_ERR(0, "lmac scanning not implemented yet (device: %s)\n", &dev->m_pDevice->name);
         if(iwl_lmac_scan(dev, sd) != 0) {
@@ -379,15 +368,9 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
             ret = kIOReturnError;
         }
     }
-    IOSleep(8000);
-    
+
     IOFree(sd, sizeof(apple80211_scan_data));
     
-    if(ret == kIOReturnSuccess) {
-        //dev->m_pDevice->published = true;
-        //dev->m_pDevice->scanning = false;
-        //iface->postMessage(APPLE80211_M_SCAN_DONE);
-    }
     return ret;
 }
 
@@ -397,12 +380,13 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
 
 IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
                                         struct apple80211_scan_data *sd) {
-    if(drv->m_pDevice->scanning) {
+    if(drv->m_pDevice->ie_dev->scanning) {
+        IWL_ERR(0, "Denying scan because device is already scanning\n");
         return kIOReturnBusy;
     }
     
     drv->m_pDevice->ie_dev->state = APPLE80211_S_SCAN;
-    kprintf("Apple80211. Scan requested. Type: %u\n"
+    IWL_INFO(0, "Apple80211. Scan requested. Type: %u\n"
           "BSS Type: %u\n"
           "PHY Mode: %u\n"
           "Dwell time: %u\n"
@@ -462,7 +446,7 @@ const char *fake_ssid = "UPC5424297";
 IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
                                            struct apple80211_scan_result **sr) {
     
-    if(!drv->m_pDevice->published) {
+    if(!drv->m_pDevice->ie_dev->published) {
         return kIOReturnError;
     }
     
