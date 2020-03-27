@@ -390,8 +390,8 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     if(drv->m_pDevice->ie_dev->scan_max != 0) {
         for(int k = 0; k < drv->m_pDevice->ie_dev->scan_max; k++) {
             IWL_INFO(0, "Freeing old scan IE data\n");
-            IOFree(drv->m_pDevice->ie_dev->scan_results[k].asr_ie_data,
-                drv->m_pDevice->ie_dev->scan_results[k].asr_ie_len);
+            //IOFree(drv->m_pDevice->ie_dev->scan_results[k].asr_ie_data,
+            //    drv->m_pDevice->ie_dev->scan_results[k].asr_ie_len);
             memset(&drv->m_pDevice->ie_dev->scan_results[k], 0, sizeof(apple80211_scan_result));
         }
     }
@@ -472,6 +472,10 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     
     int index = drv->m_pDevice->ie_dev->scan_index;
     int max = drv->m_pDevice->ie_dev->scan_max;
+    
+    if(index == max) {
+        return 0xe0820446;
+    }
     
     IWL_INFO(0, "scan index: %d out of %d\n", index, max);
 

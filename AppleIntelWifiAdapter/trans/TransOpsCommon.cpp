@@ -429,14 +429,14 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                 return;
             }
             
-            result->asr_cap = le32toh(*((uint16_t*)wh + 34));
+            result->asr_cap = (*((uint8_t*)wh + 35) << 8) | (*((uint8_t*)wh + 34));
+            IWL_INFO(0, "Capabilities: %d\n", result->asr_cap);
+            // we have to endian flip here..
+            //cpu_to_le32
+            //result->asr_cap = 0x1431;
             
             
             memcpy((void*)&result->asr_ssid, (const char*)&ie[2], result->asr_ssid_len);
-            //result->asr_ssid[result->asr_ssid_len] = \00;
-            IWL_INFO(0, "ssid: %s\n", (char*)&result->asr_ssid);
-            
-
             
             for(int i = 0; i < 52; i++) {
                 if(trans->m_pDevice->ie_dev->channels[i].channel == last_phy_info->channel)
@@ -449,8 +449,8 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             result->version = APPLE80211_VERSION;
             result->asr_rssi = -rssi;
             result->asr_noise = -101;
-            //result->asr_cap = 0x411;
             result->asr_age = 0;
+            //result->asr_u
             result->asr_beacon_int = 100;
             result->asr_rates[0] = 54;
             result->asr_nrates = 1;
