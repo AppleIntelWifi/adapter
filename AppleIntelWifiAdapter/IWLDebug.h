@@ -19,7 +19,7 @@
 
 #ifdef KERNEL_LOG
 #define TraceLog(args...) \
-do { IOLog(args); kprintf(args); } while (0)
+do { kprintf(args); } while (0)
 #else
 #define TraceLog(args...) IOLog(args)
 #endif

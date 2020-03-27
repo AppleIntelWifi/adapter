@@ -246,7 +246,7 @@ int iwl_umac_scan_fill_channels(IWLMvmDriver* drv, apple80211_scan_data* appleRe
         chan++;
     }
     
-    return nchan;
+    return num_channels;
 }
 
 bool iwl_scan_use_ebs(IWLMvmDriver* drv) {
@@ -260,8 +260,8 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
         .id = iwl_cmd_id(SCAN_REQ_UMAC, IWL_ALWAYS_LONG_GROUP, 0),
         .len = { 0, },
         .data = { NULL, },
-        .flags = 0,
-        .dataflags = { IWL_HCMD_DFL_NOCOPY, },
+        .flags = CMD_ASYNC,
+        .dataflags = { IWL_HCMD_DFL_DUP, },
     };
     
     
@@ -318,7 +318,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
         IWL_INFO(0, "no adaptive dwell 2\n");
         req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_EXTENDED_DWELL);
     } else {
-        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_ADAPTIVE_DWELL | IWL_UMAC_SCAN_GEN_FLAGS_FRAGMENTED);
+        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_ADAPTIVE_DWELL);
         
     }
     
@@ -344,8 +344,8 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
          req->v7.channel.flags = channel_flags;
          req->v7.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v7.data, appleReq->ssid_len != 0);
         
-        req->v7.max_out_time[0] = htole32(120);
-        req->v7.suspend_time[0] = htole32(120);
+        //req->v7.max_out_time[0] = htole32(120);
+        //req->v7.suspend_time[0] = htole32(120);
         
         tail = (struct iwl_scan_req_umac_tail_v1 *)((char*)&req->v7.data +
                 sizeof(struct iwl_scan_channel_cfg_umac) * num_channels);
@@ -366,6 +366,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     }
     
      if(appleReq->ssid_len != 0) {
+         IWL_INFO(0, "Directed scan towards: %s\n", appleReq->ssid);
          tail->direct_scan[0].id = IEEE80211_ELEMID_SSID;
          tail->direct_scan[0].len = appleReq->ssid_len;
          memcpy(tail->direct_scan[0].ssid, appleReq->ssid, appleReq->ssid_len);

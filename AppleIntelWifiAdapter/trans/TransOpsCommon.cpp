@@ -341,6 +341,8 @@ int calc_rssi(IWLTransport* trans) {
     return max_rssi_dbm;
 }
 
+#include "IWLApple80211.hpp"
+
 void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     iwl_rx_packet* packet = (iwl_rx_packet*)rxb_addr(rxcb);
     mbuf_t page = (mbuf_t)rxcb->_page;
@@ -382,11 +384,88 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     
     iwl_rx_packet* pak2 = (iwl_rx_packet*)((u8*)mbuf_data((mbuf_t)in) + (rxcb->_offset));
     
+    if(len <= sizeof(*wh)) {
+        IWL_INFO(0, "SKIPPING BEACON PACKET BECAUSE TOO SHORT\n");
+        return;
+    }
+    
     mbuf_setdata(in, (void*)(pak2->data + sizeof(*rx_res)), len);
     
-    trans->m_pDevice->controller->inputPacket(in);
+    if(trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
+        if(ieee80211_is_beacon(wh->i_fc[0])) {
+            apple80211_scan_result* result = &trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];
+            result->asr_ie_len = (len - sizeof(*wh) - 12);
+            uint8_t* ie = (uint8_t*)IOMalloc(result->asr_ie_len);
+            memset(ie, 0, result->asr_ie_len);
+            memcpy(ie, ((uint8_t*)wh + 36), result->asr_ie_len);
+            
+            result->asr_ie_data = (void*)ie;
+            
+            if(ie[0] != 0x00) {
+                IWL_ERR(0, "possibly unconformant frame?\n");
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[39], ie[5]);
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[38], ie[4]); // first byte
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[37], ie[3]); // len
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[36], ie[2]); // indicator
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[35], ie[1]);
+                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[34], ie[0]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[34]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[33]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[32]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[31]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[30]);
+                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[29]);
+
+                IOFree(ie, result->asr_ie_len);
+                return;
+            }
+            
+            result->asr_ssid_len = ie[1];
+            
+            IWL_INFO(0, "ssid len: %d\n", result->asr_ssid_len);
+            
+            if(result->asr_ssid_len >= 31) {
+                IWL_ERR(0, "SSID length too long\n");
+                return;
+            }
+            
+            result->asr_cap = le32toh(*((uint16_t*)wh + 34));
+            
+            
+            memcpy((void*)&result->asr_ssid, (const char*)&ie[2], result->asr_ssid_len);
+            //result->asr_ssid[result->asr_ssid_len] = \00;
+            IWL_INFO(0, "ssid: %s\n", (char*)&result->asr_ssid);
+            
+
+            
+            for(int i = 0; i < 52; i++) {
+                if(trans->m_pDevice->ie_dev->channels[i].channel == last_phy_info->channel)
+                {
+                    memcpy(&result->asr_channel, &trans->m_pDevice->ie_dev->channels[i], sizeof(apple80211_channel));
+                    break;
+                }
+            }
+            
+            result->version = APPLE80211_VERSION;
+            result->asr_rssi = -rssi;
+            result->asr_noise = -101;
+            //result->asr_cap = 0x411;
+            result->asr_age = 0;
+            result->asr_beacon_int = 100;
+            result->asr_rates[0] = 54;
+            result->asr_nrates = 1;
+            
+            memcpy(&result->asr_bssid, &wh->i_addr3, IEEE80211_ADDR_LEN);
+            
+            IWL_INFO(0, "got beacon packet\n");
+            
+            //memcpy(&trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];)
+            //trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max] = result;
+            trans->m_pDevice->ie_dev->scan_max++;
+        }
+    }
     
-    IWL_INFO(0, "unhandled\n");
+    trans->m_pDevice->controller->inputPacket(in);
 }
 
 

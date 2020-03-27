@@ -1220,6 +1220,7 @@
 					"__PRIVATE_SPI__=1",
 					"DEBUG=1",
 					"$(inherited)",
+					"KERNEL_LOG=1",
 				);
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
 				KEEP_PRIVATE_EXTERNS = NO;
