@@ -1423,6 +1423,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
             case SCAN_ITERATION_COMPLETE_UMAC:
             case SCAN_COMPLETE_UMAC: {
                 if(trans->m_pDevice->ie_dev->scanning) {
+                    trans->m_pDevice->last_ebs_successful = true;
                     trans->m_pDevice->ie_dev->scanning = false;
                     trans->m_pDevice->ie_dev->published = true;
                     trans->m_pDevice->controller->getNetworkInterface()->postMessage(APPLE80211_M_SCAN_DONE);
