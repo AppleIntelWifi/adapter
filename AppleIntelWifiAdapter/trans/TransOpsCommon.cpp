@@ -450,7 +450,8 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             result->asr_rssi = -rssi;
             result->asr_noise = -101;
             result->asr_age = 0;
-            //result->asr_u
+            result->asr_unk = 0x09ad;
+            result->asr_nr_unk = 1;
             result->asr_beacon_int = 100;
             result->asr_rates[0] = 54;
             result->asr_nrates = 1;
@@ -462,7 +463,11 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             //memcpy(&trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];)
             //trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max] = result;
             trans->m_pDevice->ie_dev->scan_max++;
+        } else {
+            IWL_ERR(0, "ignoring packet since it's not a beacon frame\n");
         }
+    } else {
+        IWL_ERR(0, "ignoring packet since we're not in scan\n");
     }
     
     trans->m_pDevice->controller->inputPacket(in);

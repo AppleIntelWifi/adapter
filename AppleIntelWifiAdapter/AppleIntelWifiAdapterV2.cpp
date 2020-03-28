@@ -14,7 +14,7 @@ OSDefineMetaClassAndStructors(AppleIntelWifiAdapterV2, IO80211Controller)
 #define MBit 1000000
 
 void AppleIntelWifiAdapterV2::releaseAll() {
-    IWL_INFO(0, "Releasing everything\n");
+    IWL_DEBUG(0, "Releasing everything\n");
     if(fInterrupt) {
         irqLoop->removeEventSource(fInterrupt);
         fInterrupt->disable();
@@ -46,14 +46,14 @@ void AppleIntelWifiAdapterV2::releaseAll() {
 }
 
 void AppleIntelWifiAdapterV2::free() {
-    IWL_INFO(0, "Driver free()\n");
+    IWL_DEBUG(0, "Driver free()\n");
     releaseAll();
     super::free();
 }
 
 bool AppleIntelWifiAdapterV2::init(OSDictionary *properties)
 {
-    IWL_INFO(0, "Driver init()\n");
+    IWL_DEBUG(0, "Driver init()\n");
     if(!super::init(properties)) {
         return false;
     }
@@ -67,14 +67,14 @@ IO80211Interface* AppleIntelWifiAdapterV2::getInterface() {
 
 IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
 {
-    IWL_INFO(0, "Driver Probe()\n");
+    IWL_DEBUG(0, "Driver Probe()\n");
     if(!super::probe(provider, score)) {
         return NULL;
     }
     
     IOPCIDevice *pciDevice = OSDynamicCast(IOPCIDevice, provider);
     if (!pciDevice) {
-        IWL_ERR(0, "Not pci device");
+        IWL_CRIT(0, "Not pci device");
         return NULL;
     }
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
@@ -96,14 +96,14 @@ IOService* AppleIntelWifiAdapterV2::probe(IOService *provider, SInt32 *score)
         return NULL;
     }
     
-    IWL_INFO(0, "found pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
+    IWL_DEBUG(0, "found pci device====>vendorID=0x%04x, deviceID=0x%04x, subSystemVendorID=0x%04x, subSystemDeviceID=0x%04x, revision=0x%02x\n", vendorID, deviceID, subSystemVendorID, subSystemDeviceID, revision);
     
     //pciDevice->retain();
     this->drv = new IWLMvmDriver();
     this->drv->m_pDevice = new IWLDevice();
     this->drv->m_pDevice->pciDevice = pciDevice;
     this->drv->m_pDevice->state = APPLE80211_S_INIT;
-    IWL_INFO(0, "drv: %x, m_pDevice: %x\n", this->drv, this->drv->m_pDevice);
+    IWL_DEBUG(0, "drv: %x, m_pDevice: %x\n", this->drv, this->drv->m_pDevice);
 
     return this;
 }
@@ -122,13 +122,13 @@ IOWorkLoop* AppleIntelWifiAdapterV2::getWorkLoop() const {
 
 bool AppleIntelWifiAdapterV2::start(IOService *provider)
 {
-    IWL_INFO(0, "Driver Start()\n");
+    IWL_DEBUG(0, "Driver Start()\n");
     if (!super::start(provider)) {
         return false;
     }
     
     if(!this->drv) {
-        IWL_ERR(0, "Missing this->drv\n");
+        IWL_CRIT(0, "Missing this->drv\n");
         releaseAll();
         return false;
     }
@@ -148,20 +148,20 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
     initTimeout(irqLoop);
     
     if(!this->drv->m_pDevice) {
-        IWL_ERR(0, "Missing this->m_pDevice\n");
+        IWL_CRIT(0, "Missing this->m_pDevice\n");
         releaseAll();
         return false;
     }
     
     if(!this->drv->m_pDevice->pciDevice) {
-        IWL_ERR(0, "Missing this->m_pDevice->pciDevice\n");
+        IWL_CRIT(0, "Missing this->m_pDevice->pciDevice\n");
         releaseAll();
         return false;
     }
     
     gate = IOCommandGate::commandGate(this);
     if(!gate) {
-        IWL_ERR(0, "Failed to create command gate\n");
+        IWL_CRIT(0, "Failed to create command gate\n");
         releaseAll();
         return false;
     }
@@ -174,7 +174,7 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider)
 }
 
 IOReturn AppleIntelWifiAdapterV2::_doCommand(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
-    IWL_INFO(0, "gatedStart\n");
+    IWL_DEBUG(0, "gatedStart\n");
     AppleIntelWifiAdapterV2* device = (AppleIntelWifiAdapterV2*)target;
     int* status = (int*)arg1;
     IOService* provider = (IOService*)arg2;
@@ -206,14 +206,14 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     }
     
     
-    IWL_INFO(0, "MSI interrupt index: %d\n", msiIntrIndex);
+    IWL_DEBUG(0, "MSI interrupt index: %d\n", msiIntrIndex);
     fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
                                                                           (IOInterruptEventAction) &AppleIntelWifiAdapterV2::intrOccured,
                                                                           (IOFilterInterruptAction)&AppleIntelWifiAdapterV2::intrFilter,
                                                                           provider,
                                                                           msiIntrIndex);
     if (irqLoop->addEventSource(fInterrupt) != kIOReturnSuccess) {
-        IWL_ERR(0, "add interrupt event soure fail\n");
+        IWL_CRIT(0, "add interrupt event soure fail\n");
         releaseAll();
         return false;
     }
@@ -229,7 +229,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
 
     mediumDict = OSDictionary::withCapacity(MEDIUM_TYPE_INVALID + 1);
     if (!mediumDict) {
-        IWL_ERR(0, "start fail, can not create mediumdict\n");
+        IWL_CRIT(0, "start fail, can not create mediumdict\n");
         releaseAll();
         return false;
     }
@@ -243,7 +243,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     addMediumType(kIOMediumIEEE80211,     54000000, MEDIUM_TYPE_54MBIT, "OFDM54");
     
     if (!publishMediumDictionary(mediumDict)) {
-        IWL_ERR(0, "start fail, can not publish mediumdict\n");
+        IWL_CRIT(0, "start fail, can not publish mediumdict\n");
         releaseAll();
         return false;
     }
@@ -255,26 +255,26 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     }
     
     if (!setSelectedMedium(mediumTable[MEDIUM_TYPE_AUTO])){
-        IWL_ERR(0, "start fail, can not set current medium\n");
+        IWL_CRIT(0, "start fail, can not set current medium\n");
         releaseAll();
         return false;
     }
     
     //for test
     if (!drv->start()) {
-        IWL_ERR(0, "start failed\n");
+        IWL_CRIT(0, "start failed\n");
         releaseAll();
         return false;
     }
     
     if(!drv->drvStart()) {
-        IWL_ERR(0, "Driver failed to start\n");
+        IWL_CRIT(0, "Driver failed to start\n");
         releaseAll();
         return false;
     }
         
     if (!attachInterface((IONetworkInterface**)&netif)) {
-        IWL_ERR(0, "start failed, can not attach interface\n");
+        IWL_CRIT(0, "start failed, can not attach interface\n");
         releaseAll();
         return false;
     }
@@ -298,7 +298,7 @@ bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object, IOFilterInterruptEven
         return false;
     }
     
-    kprintf("interrupt filter ran\n");
+    //kprintf("interrupt filter ran\n");
     me->drv->trans->iwlWrite32(CSR_INT_MASK, 0x00000000);
     return true;
 }
@@ -321,7 +321,7 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
 
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
 {
-    IWL_INFO(0, "Driver Stop()\n");
+    IWL_DEBUG(0, "Driver Stop()\n");
     drv->stopDevice();
     releaseTimeout();
     if (fInterrupt) {
@@ -340,9 +340,9 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
 
 IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 {
-    IWL_INFO(0, "Driver Enable()\n");
+    IWL_DEBUG(0, "Driver Enable()\n");
     if(super::enable(netif) != kIOReturnSuccess) {
-        IWL_INFO(0, "super::enable() failed\n");
+        IWL_CRIT(0, "super::enable() failed\n");
         return kIOReturnError;
     }
     
@@ -354,6 +354,7 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
             IWL_CRIT(0, "Enabling device failed\n");
             return kIOReturnError;
         }
+        
         this->netif->postMessage(1);
         return kIOReturnSuccess;
     } else {
@@ -379,7 +380,7 @@ const OSString* AppleIntelWifiAdapterV2::newRevisionString() const {
 
 IOReturn AppleIntelWifiAdapterV2::disable(IONetworkInterface *netif)
 {
-    IOLog("Driver Disable()");
+    IWL_DEBUG(0, "Driver Disable()");
     return super::disable(netif);
 }
 

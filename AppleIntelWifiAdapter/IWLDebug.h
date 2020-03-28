@@ -36,8 +36,8 @@ do { TraceLog("AppleIntelWifiAdapter CRIT: " args); } while (0)
 #define __iwl_err(rfkill_prefix, trace_only, args...) \
 do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); } while (0)
 
-#define __iwl_dbg(level, limit, args...) \
-do { ((!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);
+#define __iwl_dbg(args...) \
+do { DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0)
 
 /* No matter what is m (priv, bus, trans), this will work */
 #define IWL_ERR_DEV(m, f, a...)                        \
@@ -59,15 +59,11 @@ do { ((!limit)) DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0);
                 __iwl_crit(f, ## a);                \
         } while (0)
 
-#define __IWL_DEBUG_DEV(level, limit, fmt, args...)     \
+#define __IWL_DEBUG_DEV(m, f, args...)     \
         do {                                            \
-                __iwl_dbg(level, limit, fmt, ##args);   \
+                __iwl_dbg(f, ##args);   \
         } while (0)
-#define IWL_DEBUG(m, level, fmt, args...)               \
-        __IWL_DEBUG_DEV(level, false, fmt, ##args)
-#define IWL_DEBUG_DEV(m, level, fmt, args...)           \
-        __IWL_DEBUG_DEV(level, false, fmt, ##args)
-#define IWL_DEBUG_LIMIT(m, level, fmt, args...)         \
-        __IWL_DEBUG_DEV(level, true, fmt, ##args)
+#define IWL_DEBUG(m, f, args...)               \
+        __IWL_DEBUG_DEV(level, f, ##args)
 
 #endif /* IWLDebug_h */
