@@ -12,7 +12,7 @@
 #include <IOKit/IOLib.h>
 
 #ifdef DEBUG
-#define DebugLog(args...) IOLog(args)
+#define DebugLog(args...) TraceLog(args)
 #else
 #define DebugLog(args...)
 #endif

@@ -413,7 +413,12 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     
     memset(&drv->m_pDevice->ie_dev->channels_scan, 0, 256 * sizeof(apple80211_channel));
     
-    memcpy(&drv->m_pDevice->ie_dev->channels_scan, &sd->channels, sd->num_channels * sizeof(apple80211_channel));
+    if(sd->num_channels == 0 && sd->ssid_len == 0) {
+        memcpy(&drv->m_pDevice->ie_dev->channels_scan, &drv->m_pDevice->ie_dev->channels, drv->m_pDevice->fw.ucode_capa.n_scan_channels * sizeof(apple80211_channel));
+    } else {
+        memcpy(&drv->m_pDevice->ie_dev->channels_scan, &sd->channels, sd->num_channels * sizeof(apple80211_channel));
+    }
+    
     drv->m_pDevice->ie_dev->n_scan_chans = sd->num_channels;
     drv->m_pDevice->ie_dev->scan_max = 0;
     drv->m_pDevice->ie_dev->scan_index = 0;
