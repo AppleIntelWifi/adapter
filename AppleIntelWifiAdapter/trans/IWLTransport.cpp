@@ -164,7 +164,7 @@ bool IWLTransport::init(IWLDevice *device)
         //        IRQF_SHARED, DRV_NAME, trans);
         
         this->inta_mask = CSR_INI_SET_MASK;
-    
+//    iwlWrite32(CSR_INT_MASK, this->inta_mask);
     IWL_ERR(0, "init succeed\n");
     return true;
 }

@@ -394,7 +394,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     if(trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
         if(ieee80211_is_beacon(wh->i_fc[0])) {
             apple80211_scan_result* result = &trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];
-            result->asr_ie_len = (len - sizeof(*wh) - 12);
+            result->asr_ie_len = (len - 36); // header: 24, fixed: 12
             uint8_t* ie = (uint8_t*)IOMalloc(result->asr_ie_len);
             memset(ie, 0, result->asr_ie_len);
             memcpy(ie, ((uint8_t*)wh + 36), result->asr_ie_len);
@@ -422,7 +422,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             
             result->asr_ssid_len = ie[1];
             
-            IWL_INFO(0, "ssid len: %d\n", result->asr_ssid_len);
+            //IWL_INFO(0, "ssid len: %d\n", result->asr_ssid_len);
             
             if(result->asr_ssid_len >= 31) {
                 IWL_ERR(0, "SSID length too long\n");
@@ -430,7 +430,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             }
             
             result->asr_cap = (*((uint8_t*)wh + 35) << 8) | (*((uint8_t*)wh + 34));
-            IWL_INFO(0, "Capabilities: %d\n", result->asr_cap);
+            //IWL_INFO(0, "Capabilities: %d\n", result->asr_cap);
             // we have to endian flip here..
             //cpu_to_le32
             //result->asr_cap = 0x1431;
@@ -449,9 +449,6 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             result->version = APPLE80211_VERSION;
             result->asr_rssi = -rssi;
             result->asr_noise = -101;
-            result->asr_age = 0;
-            result->asr_unk = 0x09ad;
-            result->asr_nr_unk = 1;
             result->asr_beacon_int = 100;
             result->asr_rates[0] = 54;
             result->asr_nrates = 1;

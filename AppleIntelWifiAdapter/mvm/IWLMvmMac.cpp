@@ -64,7 +64,8 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     cfg->rx_chains = cpu_to_le32(iwl_mvm_get_valid_rx_ant(drv->m_pDevice));
     cfg->legacy_rates = cpu_to_le32(rates | SCAN_CONFIG_SUPPORTED_RATE(rates));
     
-    if(iwl_mvm_is_cdb_supported(drv->m_pDevice)) {
+    if(iwl_mvm_cdb_scan_api(drv->m_pDevice) && iwl_mvm_is_cdb_supported(drv->m_pDevice)) {
+        IWL_INFO(0, "cfg_v2 scan config being used\n");
         iwl_scan_config_v2* cfg_v2 = (iwl_scan_config_v2*)cfg;
         cfg_v2->dwell.active = 10;
         cfg_v2->dwell.passive = 110;
@@ -320,7 +321,7 @@ int iwl_umac_scan_fill_channels(IWLMvmDriver* drv, apple80211_scan_data* appleRe
         IWL_DEBUG(0, "adding chan %d to scan\n", c->channel);
         chan->v1.channel_num = htole16(c->channel);
 
-#ifdef notyet
+#ifndef notyet
         if(fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_SCAN_EXT_CHAN_VER)) {
 #else
         if(0) {
@@ -359,8 +360,8 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     
     
     bool adaptive_dwell = fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_ADAPTIVE_DWELL);
-    //bool ext_chan = fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_SCAN_EXT_CHAN_VER);
-    bool ext_chan = false;
+    bool ext_chan = fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_SCAN_EXT_CHAN_VER);
+    //bool ext_chan = false;
     //bool adaptive_dwell = false;
     
 #ifdef notyet
@@ -420,16 +421,21 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
         req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_EXTENDED_DWELL);
     } else {
         req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_PROB_REQ_HIGH_TX_RATE);
-        
+        req->general_flags |= cpu_to_le32(IWL_UMAC_SCAN_GEN_FLAGS_ADAPTIVE_DWELL);
     }
     
     int channel_flags;
     channel_flags = 0;
     
-    if (iwl_scan_use_ebs(drv))
+    if (iwl_scan_use_ebs(drv)) {
         channel_flags = IWL_SCAN_CHANNEL_FLAG_EBS |
             IWL_SCAN_CHANNEL_FLAG_EBS_ACCURATE |
             IWL_SCAN_CHANNEL_FLAG_CACHE_ADD;
+        
+        if(fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_FRAG_EBS)) {
+            channel_flags |= IWL_SCAN_CHANNEL_FLAG_EBS_FRAG;
+        }
+    }
     
     req->scan_start_mac_id = 4;
     
@@ -438,12 +444,34 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
          req->v7.active_dwell = 10;
          req->v7.passive_dwell = 110;
          req->v7.fragmented_dwell = 44;
-         req->v7.adwell_default_n_aps_social = 10;
-         req->v7.adwell_default_n_aps = 2;
+         req->v7.adwell_default_n_aps_social = 10; // IWL_SCAN_ADWELL_DEFAULT_N_APS_SOCIAL
+         req->v7.adwell_default_n_aps = 2; // IWL_SCAN_ADWELL_DEFAULT_LB_N_APS
          req->v7.adwell_max_budget = htole16(300);
          req->v7.scan_priority = htole32(IWL_SCAN_PRIORITY_HIGH);
-         req->v7.channel.flags = channel_flags;
-         req->v7.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v7.data, appleReq->ssid_len != 0);
+         req->v8.channel.flags = channel_flags;
+         req->v8.channel.count = iwl_umac_scan_fill_channels(drv, appleReq, (struct iwl_scan_channel_cfg_umac *)req->v8 .data, appleReq->ssid_len != 0);
+        
+        if (fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_ADWELL_HB_DEF_N_AP)) {
+            req->v9.adwell_default_hb_n_aps = 8; // IWL_SCAN_ADWELL_DEFAULT_HB_N_APS
+        }
+        
+        if (!fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_ADAPTIVE_DWELL_V2)) {
+            req->v7.fragmented_dwell = 44; // IWL_SCAN_DWELL_FRAGMENTED
+            req->v7.active_dwell = 10;
+            req->v7.passive_dwell = 110;
+            
+            req->v8.num_of_fragments[0] = 3;
+        } else {
+            req->v8.active_dwell[0] = 10;
+            req->v8.passive_dwell[0] = 110;
+            if(fw_has_capa(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_CDB_SUPPORT)) {
+                req->v8.active_dwell[1] = 10;
+                req->v8.passive_dwell[1] = 110;
+            }
+            
+            req->v8.general_flags2 = IWL_UMAC_SCAN_GEN_FLAGS2_ALLOW_CHNL_REORDER;
+            IWL_INFO(0, "adaptive v2\n");
+        }
         
         //req->v7.max_out_time[0] = htole32(120);
         //req->v7.suspend_time[0] = htole32(120);

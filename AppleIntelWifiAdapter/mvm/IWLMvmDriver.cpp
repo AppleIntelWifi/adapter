@@ -18,6 +18,7 @@
 #include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
 #include "IWLApple80211.hpp"
+#include "../compat/linux/random.h"
 
 
 #define super OSObject
@@ -550,6 +551,21 @@ bool IWLMvmDriver::enableDevice() {
     }
     
     
+    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_DQA_SUPPORT))
+    {
+        iwl_dqa_enable_cmd cmd = {
+            .cmd_queue = cpu_to_le32(IWL_MVM_DQA_CMD_QUEUE),
+        };
+        
+        u32 cmd_id = iwl_cmd_id(DQA_ENABLE_CMD, DATA_PATH_GROUP, 0);
+        
+        int ret = sendCmdPdu(cmd_id, 0, sizeof(cmd), &cmd);
+        if(ret)
+            IWL_ERR(0, "Failed to send DQA enabling commands: %d\n", ret);
+        else
+            IWL_INFO(0, "Working in DQA mode\n");
+    }
+    
     err = iwl_mvm_add_aux_sta(this);
     if(err < 0) {
         IWL_ERR(0, "Failed to add aux station: %d\n", err);
@@ -565,6 +581,7 @@ bool IWLMvmDriver::enableDevice() {
             goto fail;
     }
     
+    if(!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_SET_LTR_GEN2))
     {
         iwl_ltr_config_cmd cmd = {
             .flags = htole32(LTR_CFG_FLAG_FEATURE_ENABLE),
@@ -580,10 +597,13 @@ bool IWLMvmDriver::enableDevice() {
     }
     
     
-    err = (this->updateMcc("ZZ", MCC_SOURCE_OLD_FW) == NULL);
-    if(err < 0) {
-        IWL_ERR(0, "Failed to update MCC: %d\n", err);
-        goto fail;
+    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_LAR_SUPPORT)) {
+        err = (this->updateMcc("ZZ", MCC_SOURCE_OLD_FW) == NULL);
+        if(err < 0) {
+            IWL_ERR(0, "Failed to update MCC: %d\n", err);
+            goto fail;
+        }
+        IWL_INFO(0, "LAR Support\n");
     }
     
     if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
@@ -847,10 +867,13 @@ int IWLMvmDriver::sendPowerStatus() {
     };
     
     if(!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_DEVICE_PS_CMD)) {
+        IWL_INFO(0, "No PS Support\n");
         return 0;
     }
     
     cmd.flags |= htole16(DEVICE_POWER_FLAGS_CAM_MSK);
+//    cmd.flags |= htole16(DEVICE_POWER_FLAGS_32K_CLK_VALID_MSK);
+//    cmd.flags |= htole16(DEVICE_POWER_FLAGS_POWER_SAVE_ENA_MSK);
     
     IWL_INFO(0, "Sending power command with flags (0x%0x)\n", cmd.flags);
     

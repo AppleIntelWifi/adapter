@@ -192,8 +192,13 @@ IOReturn AppleIntelWifiAdapterV2::setSSID(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getAUTH_TYPE(IO80211Interface *interface,
                                          struct apple80211_authtype_data *ad) {
     ad->version = APPLE80211_VERSION;
-    ad->authtype_lower = APPLE80211_AUTHTYPE_OPEN;
-    ad->authtype_upper = APPLE80211_AUTHTYPE_NONE;
+    if(drv->m_pDevice->ie_dev->state == APPLE80211_S_INIT || drv->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
+        //return APPLE80211_REASON_NOT_AUTHED;
+    }
+    else {
+        ad->authtype_lower = APPLE80211_AUTHTYPE_OPEN;
+        ad->authtype_upper = APPLE80211_AUTHTYPE_NONE;
+    }
     return kIOReturnSuccess;
 }
 
@@ -368,10 +373,9 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
             ret = kIOReturnError;
         }
     }
-
+    IOSleep(4000);
     IOFree(sd, sizeof(apple80211_scan_data));
         
-    //IOSleep(4000);
     
     return ret;
 }
@@ -384,7 +388,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
                                         struct apple80211_scan_data *sd) {
     if(drv->m_pDevice->ie_dev->scanning) {
         IWL_ERR(0, "Denying scan because device is already scanning\n");
-        return kIOReturnBusy;
+        return 0x16;
     }
     
     if(drv->m_pDevice->ie_dev->scan_max != 0) {
@@ -472,7 +476,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
                                            struct apple80211_scan_result **sr) {
     
     if(drv->m_pDevice->ie_dev->state != APPLE80211_S_SCAN) {
-        return 0xe0820446;
+        return 0x16;
     }
     
     int index = drv->m_pDevice->ie_dev->scan_index;
@@ -482,7 +486,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
         return 0xe0820446;
     }
     
-    IWL_INFO(0, "scan index: %d out of %d\n", index, max);
+    IWL_INFO(0, "scan index: %d out of %d\n", index + 1, max);
 
     bool found = false;
     /*
@@ -527,7 +531,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(IO80211Interface *interface,
                                                  struct apple80211_capability_data *cd) {
     cd->version = APPLE80211_VERSION;
-    cd->capabilities[0] = 0xab;
+    cd->capabilities[0] = 0xeb;
     cd->capabilities[1] = 0x7e;
     return kIOReturnSuccess;
 }

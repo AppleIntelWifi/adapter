@@ -448,7 +448,9 @@ struct apple80211_scan_result
     uint8_t unk2;
     u_int32_t                    asr_age;    // (ms) non-zero for cached scan result // 0x84
     
-    u_int16_t                    asr_ie_len;
+    u_int16_t  unk3;
+    uint16_t                    asr_ie_len;
+    uint32_t                   asr_unk3;
     void                       *asr_ie_data;
 };
 
