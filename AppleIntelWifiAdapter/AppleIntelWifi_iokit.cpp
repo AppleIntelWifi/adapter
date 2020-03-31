@@ -373,7 +373,7 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
             ret = kIOReturnError;
         }
     }
-    IOSleep(4000);
+    //IOSleep(4000);
     IOFree(sd, sizeof(apple80211_scan_data));
         
     
@@ -388,7 +388,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
                                         struct apple80211_scan_data *sd) {
     if(drv->m_pDevice->ie_dev->scanning) {
         IWL_ERR(0, "Denying scan because device is already scanning\n");
-        return 0x16;
+        return 0xe0820446;
     }
     
     if(drv->m_pDevice->ie_dev->scan_max != 0) {
@@ -476,14 +476,14 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
                                            struct apple80211_scan_result **sr) {
     
     if(drv->m_pDevice->ie_dev->state != APPLE80211_S_SCAN) {
-        return 0x16;
+        return 0xe0820446;
     }
     
     int index = drv->m_pDevice->ie_dev->scan_index;
     int max = drv->m_pDevice->ie_dev->scan_max;
     
     if(index == max) {
-        return 0xe0820446;
+        return -1;
     }
     
     IWL_INFO(0, "scan index: %d out of %d\n", index + 1, max);
@@ -531,8 +531,47 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(IO80211Interface *interface,
                                                  struct apple80211_capability_data *cd) {
     cd->version = APPLE80211_VERSION;
+    
+
+    /// ic->ic_caps =
+    /// IEEE80211_C_WEP |        /* WEP */
+    /// IEEE80211_C_RSN |        /* WPA/RSN */
+    /// IEEE80211_C_SCANALL |    /* device scans all channels at once */
+    /// IEEE80211_C_SCANALLBAND |    /* device scans all bands at once */
+    /// IEEE80211_C_SHSLOT |    /* short slot time supported */
+    /// IEEE80211_C_SHPREAMBLE;    /* short preamble supported */
+    
+    uint32_t caps = 0;
+    
+    
+    caps |= APPLE80211_CAP_WEP;
+    caps |=  APPLE80211_CAP_WPA2 | APPLE80211_CAP_AES_CCM;
+    caps |= APPLE80211_CAP_IBSS;
+    caps |= APPLE80211_CAP_MONITOR;
+    caps |= APPLE80211_CAP_PMGT;
+    caps |= APPLE80211_CAP_SHSLOT;
+    caps |= APPLE80211_CAP_TXPMGT;
+    caps |= APPLE80211_CAP_SHPREAMBLE;
+    caps |= APPLE80211_CAP_WME;
+    
+    /*
     cd->capabilities[0] = 0xeb;
     cd->capabilities[1] = 0x7e;
+    cd->capabilities[2] = 3;
+    cd->capabilities[2] |= 0x13;
+    cd->capabilities[2] |= 0x20;
+    cd->capabilities[2] |= 0x28;
+    cd->capabilities[2] |= 4;
+    cd->capabilities[3] = 2;
+    cd->capabilities[3] |= 0x23;
+    cd->capabilities[2] |= 0x80;
+     */
+    
+    cd->capabilities[0] = (caps & 0xff);
+    cd->capabilities[1] = (caps & 0xff00) >> 8;
+    cd->capabilities[2] = (caps & 0xff0000) >> 16;
+    
+    
     return kIOReturnSuccess;
 }
 

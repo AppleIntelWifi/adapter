@@ -18,7 +18,6 @@
 #include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
 #include "IWLApple80211.hpp"
-#include "../compat/linux/random.h"
 
 
 #define super OSObject

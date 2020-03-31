@@ -435,8 +435,18 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             //cpu_to_le32
             //result->asr_cap = 0x1431;
             
-            
-            memcpy((void*)&result->asr_ssid, (const char*)&ie[2], result->asr_ssid_len);
+#ifdef notyet // DEPENDS ON SCAN CACHE
+            uint64_t abs_time = mach_absolute_time();
+            uint64_t nanosecs;
+            absolutetime_to_nanoseconds(abs_time, &nanosecs);
+            result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
+#else
+            result->asr_age = 0;
+#endif
+            //user_long_t
+            if(result->asr_ssid_len != 0) {
+                memcpy((void*)&result->asr_ssid, (const char*)&ie[2], result->asr_ssid_len);
+            }
             
             for(int i = 0; i < 52; i++) {
                 if(trans->m_pDevice->ie_dev->channels[i].channel == last_phy_info->channel)
