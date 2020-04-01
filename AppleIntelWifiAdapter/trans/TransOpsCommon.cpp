@@ -8,7 +8,7 @@
 
 #include "IWLTransOps.h"
 #include "../fw/NotificationWait.hpp"
-
+#include "IWLCachedScan.hpp"
 
 bool IWLTransOps::setHWRFKillState(bool state)
 {
@@ -378,98 +378,114 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     rssi = -rssi;
     
     rxcb->_page_stolen = true;
-    mbuf_t in;
-    
-    mbuf_dup(page, MBUF_DONTWAIT, &in);
-    
-    iwl_rx_packet* pak2 = (iwl_rx_packet*)((u8*)mbuf_data((mbuf_t)in) + (rxcb->_offset));
     
     if(len <= sizeof(*wh)) {
         IWL_INFO(0, "SKIPPING BEACON PACKET BECAUSE TOO SHORT\n");
         return;
     }
     
-    mbuf_setdata(in, (void*)(pak2->data + sizeof(*rx_res)), len);
-    
     if(trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
         if(ieee80211_is_beacon(wh->i_fc[0])) {
-            apple80211_scan_result* result = &trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];
-            result->asr_ie_len = (len - 36); // header: 24, fixed: 12
-            uint8_t* ie = (uint8_t*)IOMalloc(result->asr_ie_len);
-            memset(ie, 0, result->asr_ie_len);
-            memcpy(ie, ((uint8_t*)wh + 36), result->asr_ie_len);
-            
-            result->asr_ie_data = (void*)ie;
-            
-            if(ie[0] != 0x00) {
-                IWL_ERR(0, "possibly unconformant frame?\n");
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[39], ie[5]);
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[38], ie[4]); // first byte
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[37], ie[3]); // len
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[36], ie[2]); // indicator
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[35], ie[1]);
-                IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[34], ie[0]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[34]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[33]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[32]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[31]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[30]);
-                IWL_INFO(0, "wh: %x\n", ((uint8_t*)wh)[29]);
-
-                IOFree(ie, result->asr_ie_len);
-                return;
-            }
-            
-            result->asr_ssid_len = ie[1];
-            
-            //IWL_INFO(0, "ssid len: %d\n", result->asr_ssid_len);
-            
-            if(result->asr_ssid_len >= 31) {
-                IWL_ERR(0, "SSID length too long\n");
-                return;
-            }
-            
-            result->asr_cap = (*((uint8_t*)wh + 35) << 8) | (*((uint8_t*)wh + 34));
-            //IWL_INFO(0, "Capabilities: %d\n", result->asr_cap);
-            // we have to endian flip here..
-            //cpu_to_le32
-            //result->asr_cap = 0x1431;
-            
-#ifdef notyet // DEPENDS ON SCAN CACHE
-            uint64_t abs_time = mach_absolute_time();
-            uint64_t nanosecs;
-            absolutetime_to_nanoseconds(abs_time, &nanosecs);
-            result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
-#else
-            result->asr_age = 0;
-#endif
-            //user_long_t
-            if(result->asr_ssid_len != 0) {
-                memcpy((void*)&result->asr_ssid, (const char*)&ie[2], result->asr_ssid_len);
-            }
-            
-            for(int i = 0; i < 52; i++) {
-                if(trans->m_pDevice->ie_dev->channels[i].channel == last_phy_info->channel)
-                {
-                    memcpy(&result->asr_channel, &trans->m_pDevice->ie_dev->channels[i], sizeof(apple80211_channel));
-                    break;
+            if(last_phy_info->channel != 0) {
+                apple80211_channel* channel = NULL;
+                for(int i = 0; i < trans->m_pDevice->ie_dev->n_chans; i++) {
+                    apple80211_channel* chan = &trans->m_pDevice->ie_dev->channels[i];
+                    if(chan->channel == last_phy_info->channel) {
+                        channel = chan;
+                        break;
+                    }
+                }
+                
+                if(trans->m_pDevice->ie_dev->scanCache == NULL) {
+                    IWL_ERR(0, "Scan cache was null, not allocating a new one\n");
+                    return;
+                }
+                
+                if(channel != NULL) {
+                    if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+                        IWL_INFO(0, "Skipped beacon packet because scan cache is already locked\n");
+                        // we CANNOT block.
+                        return;
+                    }
+                    
+                    IWLCachedScan* scan = new IWLCachedScan();
+                    if(!scan->init(page, rxcb->_offset, &trans->last_phy_info, channel, rssi, -101)) {
+                        scan->free();
+                        IWL_ERR(0, "failed to init new cached scan object\n");
+                        IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                        return;
+                    }
+                    
+                    
+                    int indx = trans->m_pDevice->ie_dev->scanCache->getCount();
+                    
+                    uint64_t oldest = UINT64_MAX;
+                    OSObject* oldest_obj = NULL;
+                    bool update_old_scan = false;
+                    
+                    OSCollectionIterator* it = trans->m_pDevice->ie_dev->scanCacheIterator;
+                    
+                    if(!it->isValid()) {
+                        IWL_ERR(0, "Iterator not valid, recreating\n");
+                        it->free();
+                        it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
+                        trans->m_pDevice->ie_dev->scanCacheIterator = it;
+                    } else {
+                        it->reset();
+                    }
+                    
+                    OSObject* obj = NULL;
+                    while((obj = it->getNextObject()) != NULL) {
+                        
+                        if(obj == NULL)
+                            break;
+                        
+                        IWLCachedScan* cachedScan = OSDynamicCast(IWLCachedScan, obj);
+                        
+                        if(!cachedScan) {
+                            continue;
+                        }
+                        
+                        if(cachedScan->getTimestamp() <= oldest) { // the smaller the timestamp, the older
+                                                                  // absolute time only increments
+                            oldest = cachedScan->getTimestamp();
+                            oldest_obj = obj;
+                        }
+                        
+                        
+                        if(memcmp(cachedScan->getBSSID(), scan->getBSSID(), 6) == 0)
+                        {
+                            if(cachedScan->getChannel().channel == scan->getChannel().channel) {
+                                // existing entry, remove the old one and add in the new one
+                                update_old_scan = true;
+                                IWL_INFO(0, "Updating old entry\n");
+                                
+                                //trans->m_pDevice->ie_dev->scanCache->removeObject(cachedScan);
+                                //trans->m_pDevice->ie_dev->scanCache->setObject(scan);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx && !update_old_scan) {
+                        // purge the scan cache of the oldest object
+                        IWL_INFO(0, "Purging oldest object because we are at capacity\n");
+                        if(oldest_obj != NULL) {
+                             trans->m_pDevice->ie_dev->scanCache->removeObject(oldest_obj);
+                        }
+                    }
+                    
+                    if(!update_old_scan) {
+                        IWL_INFO(0, "Adding new object to scan cache\n");
+                        
+                        trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
+                        trans->m_pDevice->ie_dev->scanCacheIterator->free();
+                        trans->m_pDevice->ie_dev->scanCacheIterator = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
+                    }
+                    
+                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                 }
             }
-            
-            result->version = APPLE80211_VERSION;
-            result->asr_rssi = -rssi;
-            result->asr_noise = -101;
-            result->asr_beacon_int = 100;
-            result->asr_rates[0] = 54;
-            result->asr_nrates = 1;
-            
-            memcpy(&result->asr_bssid, &wh->i_addr3, IEEE80211_ADDR_LEN);
-            
-            IWL_INFO(0, "got beacon packet\n");
-            
-            //memcpy(&trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max];)
-            //trans->m_pDevice->ie_dev->scan_results[trans->m_pDevice->ie_dev->scan_max] = result;
-            trans->m_pDevice->ie_dev->scan_max++;
         } else {
             IWL_ERR(0, "ignoring packet since it's not a beacon frame\n");
         }
@@ -477,7 +493,6 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
         IWL_ERR(0, "ignoring packet since we're not in scan\n");
     }
     
-    trans->m_pDevice->controller->inputPacket(in);
 }
 
 

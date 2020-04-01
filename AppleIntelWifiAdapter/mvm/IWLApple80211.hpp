@@ -13,10 +13,10 @@
 
 class IWL80211Device {
 public:
-    bool init();
+    bool init(IWLMvmDriver* drv);
     bool release();
     
-    bool startScan();
+    bool scanDone();
     
     uint8_t address[ETH_ALEN];
     uint32_t flags;
@@ -35,9 +35,13 @@ public:
     uint32_t n_scan_chans;
     uint32_t scan_max;
     uint32_t scan_index;
-    
+
+    OSSet* scanCache;
+    IOLock* scanCacheLock;
+    OSCollectionIterator* scanCacheIterator;
 
 private:
+    IO80211Interface* iface;
     IWLMvmDriver* fDrv;
     
 };

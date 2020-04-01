@@ -41,6 +41,7 @@ static IOPMPowerState gPowerStates[kNumPowerStates] = {
 };
 
 
+
 class AppleIntelWifiAdapterV2 : public IO80211Controller
 {
     OSDeclareDefaultStructors( AppleIntelWifiAdapterV2 )

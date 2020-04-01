@@ -630,6 +630,8 @@ bool IWLMvmDriver::enableDevice() {
         goto fail;
     }
     
+    trans->m_pDevice->ie_dev->init(this);
+    
     return true;
     
 fail:

@@ -1426,7 +1426,14 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                     trans->m_pDevice->last_ebs_successful = true;
                     trans->m_pDevice->ie_dev->scanning = false;
                     trans->m_pDevice->ie_dev->published = true;
-                    trans->m_pDevice->controller->getNetworkInterface()->postMessage(APPLE80211_M_SCAN_DONE);
+                    if(trans->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
+                        trans->m_pDevice->ie_dev->scanCacheIterator->reset();
+                    }
+                    if(trans->m_pDevice->ie_dev->scanDone()) {
+                        IWL_INFO(0, "posted results\n");
+                    } else {
+                        IWL_ERR(0, "Interface was null?\n");
+                    }
                 }
                 break;
             }

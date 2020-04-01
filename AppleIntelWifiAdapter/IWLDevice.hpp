@@ -175,6 +175,7 @@ public:
         return true;
     }
     
+    
 public:
     
     IOPCIDevice *pciDevice;

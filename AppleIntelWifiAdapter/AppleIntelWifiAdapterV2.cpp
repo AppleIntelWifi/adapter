@@ -207,6 +207,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
     
     
     IWL_DEBUG(0, "MSI interrupt index: %d\n", msiIntrIndex);
+    
     fInterrupt = IOFilterInterruptEventSource::filterInterruptEventSource(this,
                                                                           (IOInterruptEventAction) &AppleIntelWifiAdapterV2::intrOccured,
                                                                           (IOFilterInterruptAction)&AppleIntelWifiAdapterV2::intrFilter,
@@ -278,15 +279,14 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         releaseAll();
         return false;
     }
-    
-    drv->m_pDevice->interface = netif;
+
     
     netif->registerService();
     registerService();
     
     netif->setEnabledBySystem(true);
     
-    
+    drv->trans->m_pDevice->interface = netif;
     return true;
 }
 
@@ -322,6 +322,7 @@ bool AppleIntelWifiAdapterV2::configureInterface(IONetworkInterface *interface)
 void AppleIntelWifiAdapterV2::stop(IOService *provider)
 {
     IWL_DEBUG(0, "Driver Stop()\n");
+    drv->m_pDevice->ie_dev->release();
     drv->stopDevice();
     releaseTimeout();
     if (fInterrupt) {

@@ -10,6 +10,7 @@
 #include "ioctl_dbg.h"
 #include "IWLApple80211.hpp"
 #include "IWLMvmMac.hpp"
+#include "IWLCachedScan.hpp"
 
 const char *fake_hw_version = "Hardware 1.0";
 const char *fake_drv_version = "Driver 1.0";
@@ -352,10 +353,14 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0, void 
     for(int i = 0; i < sd->num_channels; i++) {
         IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
     }
-
+    
     //IWL_INFO(0, "device: %s\n", dev->m_pDevice->cfg->name);
     IWL_INFO(0, "scanning (ptr: %x, dev_ptr: %x, dev: %s, umac: %s)\n", dev, dev->m_pDevice, dev->m_pDevice->name, dev->m_pDevice->umac_scanning ? "yes" : "no");
     
+    
+    if(dev->m_pDevice->ie_dev->scanCache == NULL) {
+        IWL_ERR(0, "scan cache was null?\n");
+    }
     
 #ifdef notyet
     if(fw_has_capa(&dev->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
@@ -391,6 +396,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
         return 0xe0820446;
     }
     
+    /*
     if(drv->m_pDevice->ie_dev->scan_max != 0) {
         for(int k = 0; k < drv->m_pDevice->ie_dev->scan_max; k++) {
             IWL_INFO(0, "Freeing old scan IE data\n");
@@ -399,7 +405,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
             memset(&drv->m_pDevice->ie_dev->scan_results[k], 0, sizeof(apple80211_scan_result));
         }
     }
-    
+    */
     
     drv->m_pDevice->ie_dev->state = APPLE80211_S_SCAN;
     IWL_INFO(0, "Apple80211. Scan requested. Type: %u\n"
@@ -427,6 +433,9 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     drv->m_pDevice->ie_dev->scan_max = 0;
     drv->m_pDevice->ie_dev->scan_index = 0;
     
+    if(drv->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
+        drv->m_pDevice->ie_dev->scanCacheIterator->reset();
+    }
     
     if(interface) {
         apple80211_scan_data* request = (apple80211_scan_data*)IOMalloc(sizeof(apple80211_scan_data));
@@ -479,47 +488,48 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
         return 0xe0820446;
     }
     
-    int index = drv->m_pDevice->ie_dev->scan_index;
-    int max = drv->m_pDevice->ie_dev->scan_max;
     
-    if(index == max) {
+    IWL_DEBUG(0, "Locking mutex\n");
+    
+    if(!IOLockTryLock(drv->m_pDevice->ie_dev->scanCacheLock)) {
+        IWL_INFO(0, "Could not lock mutex\n");
         return -1;
     }
     
-    IWL_INFO(0, "scan index: %d out of %d\n", index + 1, max);
-
-    bool found = false;
-    /*
-    for(int i = index; i < max; i++) {
-        apple80211_scan_result* result = drv->m_pDevice->ie_dev->scan_results[i];
-        if(result == NULL) {
-            continue;
-        }
-        
-        for(int k = 0; k < drv->m_pDevice->ie_dev->n_scan_chans; k++) {
-            //IWL_INFO(0, "wanted channel %d\n", drv->m_pDevice->ie_dev->channels_scan[k].channel);
-            IWL_INFO(0, "scan result on chan %d\n", result->asr_channel.channel);
-            //if(result->asr_channel.channel == drv->m_pDevice->ie_dev->channels_scan[k].channel) {
-                found = true;
-            //}
-        }
-        
-        if(found) {
-            *sr = result;
-            break;
-        }
+    if(!drv->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
+        IWL_INFO(0, "Iterator was not valid, recreating it\n");
+        IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
+        return -1;
     }
-     */
-    apple80211_scan_result* result = &drv->m_pDevice->ie_dev->scan_results[index];
-    *sr = result;
     
-    IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n", result->asr_ssid, result->asr_channel.channel, result->asr_rssi);
-     
-    drv->m_pDevice->ie_dev->scan_index++;
-    if(index + 1 >= drv->m_pDevice->ie_dev->scan_max) {
-        drv->m_pDevice->published = false;
+    OSObject* obj = drv->m_pDevice->ie_dev->scanCacheIterator->getNextObject();
+    
+    if(obj == NULL) {
+        IWL_INFO(0, "Reached end of scan\n");
+        IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
         drv->m_pDevice->ie_dev->state = APPLE80211_S_INIT;
+        return -1;
     }
+    
+    //IWL_INFO(0, "scan index: %d out of %d\n", index + 1, drv->m_pDevice->scanCache->getCount());
+    
+    
+    IWLCachedScan* scan = OSDynamicCast(IWLCachedScan, obj);
+    if(!scan) {
+        IWL_INFO(0, "Could not cast OSObject to cached scan...\n");
+        IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
+        return -1;
+    }
+    
+    apple80211_scan_result* result = scan->getNativeType();
+    if(result != NULL) {
+        *sr = result; // valid until the next scan request, cannot guarantee whether IE will remain
+        IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n", result->asr_ssid, result->asr_channel.channel, result->asr_rssi);
+    } else {
+        IWL_ERR(0, "Scan result was bad\n");
+    }
+    
+    IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
     
     return kIOReturnSuccess;
 }

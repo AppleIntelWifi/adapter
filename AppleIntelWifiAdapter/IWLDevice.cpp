@@ -8,6 +8,7 @@
 
 #include "IWLDevice.hpp"
 #include "IWLApple80211.hpp"
+#include "IWLCachedScan.hpp"
 
 bool IWLDevice::init()
 {
