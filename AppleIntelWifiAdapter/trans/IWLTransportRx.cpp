@@ -1426,9 +1426,21 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                     trans->m_pDevice->last_ebs_successful = true;
                     trans->m_pDevice->ie_dev->scanning = false;
                     trans->m_pDevice->ie_dev->published = true;
-                    if(trans->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
+                    if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+                        IWL_ERR(0, "Failed to lock mutex\n");
+                        break;
+                    }
+                    
+                    if(!trans->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
+                        IWL_INFO(0, "Iterator was not valid, recreating it\n");
+                        trans->m_pDevice->ie_dev->scanCacheIterator->free();
+                        trans->m_pDevice->ie_dev->scanCacheIterator = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
+                    } else {
                         trans->m_pDevice->ie_dev->scanCacheIterator->reset();
                     }
+                    
+                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                    
                     if(trans->m_pDevice->ie_dev->scanDone()) {
                         IWL_INFO(0, "posted results\n");
                     } else {

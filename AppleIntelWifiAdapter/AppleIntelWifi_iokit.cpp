@@ -433,10 +433,6 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     drv->m_pDevice->ie_dev->scan_max = 0;
     drv->m_pDevice->ie_dev->scan_index = 0;
     
-    if(drv->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
-        drv->m_pDevice->ie_dev->scanCacheIterator->reset();
-    }
-    
     if(interface) {
         apple80211_scan_data* request = (apple80211_scan_data*)IOMalloc(sizeof(apple80211_scan_data));
         memcpy(request, sd, sizeof(apple80211_scan_data));
@@ -493,12 +489,6 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     
     if(!IOLockTryLock(drv->m_pDevice->ie_dev->scanCacheLock)) {
         IWL_INFO(0, "Could not lock mutex\n");
-        return -1;
-    }
-    
-    if(!drv->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
-        IWL_INFO(0, "Iterator was not valid, recreating it\n");
-        IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
         return -1;
     }
     

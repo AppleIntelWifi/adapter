@@ -42,7 +42,7 @@ bool IWL80211Device::release() {
 
 bool IWL80211Device::scanDone() {
     if(iface != NULL) {
-        iface->postMessage(APPLE80211_M_SCAN_DONE);
+        fDrv->controller->getNetworkInterface()->postMessage(APPLE80211_M_SCAN_DONE);
         return true;
     } else {
         return false;

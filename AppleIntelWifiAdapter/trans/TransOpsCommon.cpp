@@ -423,15 +423,11 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                     OSObject* oldest_obj = NULL;
                     bool update_old_scan = false;
                     
-                    OSCollectionIterator* it = trans->m_pDevice->ie_dev->scanCacheIterator;
+                    OSCollectionIterator* it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
                     
                     if(!it->isValid()) {
-                        IWL_ERR(0, "Iterator not valid, recreating\n");
-                        it->free();
-                        it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
-                        trans->m_pDevice->ie_dev->scanCacheIterator = it;
-                    } else {
-                        it->reset();
+                        IWL_ERR(0, "Iterator not valid, not recreating\n");
+                        return;
                     }
                     
                     OSObject* obj = NULL;
@@ -479,9 +475,9 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                         IWL_INFO(0, "Adding new object to scan cache\n");
                         
                         trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
-                        trans->m_pDevice->ie_dev->scanCacheIterator->free();
-                        trans->m_pDevice->ie_dev->scanCacheIterator = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
                     }
+                    
+                    it->free();
                     
                     IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                 }

@@ -123,7 +123,7 @@ public:
     bool reportDataTransferRatesStatic(void*);
     void logDebug(char const*, ...);
     void postMessage(unsigned int, void* data = NULL, unsigned long dataLen = 0);
-protected:
+private:
     u_int8_t dat[0x500];
 };
 
