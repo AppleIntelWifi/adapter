@@ -36,9 +36,8 @@ public:
     uint32_t scan_max;
     uint32_t scan_index;
 
-    OSSet* scanCache;
+    OSOrderedSet* scanCache;
     IOLock* scanCacheLock;
-    OSCollectionIterator* scanCacheIterator;
 
 private:
     IO80211Interface* iface;

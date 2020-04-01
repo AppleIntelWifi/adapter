@@ -19,7 +19,7 @@ SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * ob
 class IWLCachedScan : public OSObject {
     OSDeclareDefaultStructors(IWLCachedScan)
 public:
-    bool init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, apple80211_channel* chan, int rssi, int noise);
+    bool init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int rssi, int noise);
     void free() override;
     
     apple80211_channel getChannel();

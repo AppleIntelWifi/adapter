@@ -13,6 +13,7 @@
 #include <sys/mbuf.h>
 #include <sys/kpi_mbuf.h>
 #include "endian.h"
+#include "rs.h"
 
 #define super OSObject
 OSDefineMetaClassAndStructors(IWLCachedScan, OSObject);
@@ -48,7 +49,7 @@ SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * ob
 }
 
 
-bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, apple80211_channel* chan, int rssi, int noise) {
+bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int rssi, int noise) {
     
     if(!super::init()) {
         return false;
@@ -91,7 +92,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, app
     memcpy(&this->phy_info, phy_info, sizeof(iwl_rx_phy_info)); //necessary
     this->absolute_time = mach_absolute_time();
     
-    memcpy(&this->channel, chan, sizeof(apple80211_channel)); //necessary
+    //memcpy(&this->channel, chan, sizeof(apple80211_channel)); //necessary
     
     if(this->ie[0] != 0x00) {
         IWL_ERR(0, "potentially uncompliant frame\n");
@@ -113,18 +114,54 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, app
     
     result = (apple80211_scan_result*)kzalloc(sizeof(apple80211_scan_result));
     
+    if(result == NULL) {
+        return NULL;
+    }
+    
+    channel.version = APPLE80211_VERSION;
+    channel.channel = le16toh(this->phy_info.channel);
+    
+
+    if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
+        channel.flags |= APPLE80211_C_FLAG_2GHZ;
+    } else {
+        channel.flags |= APPLE80211_C_FLAG_5GHZ;
+    }
+ 
+    switch(phy_info->rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
+        case RATE_MCS_CHAN_WIDTH_20:
+            IWL_INFO(0, "Chan width 20mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_20MHZ;
+            break;
+        
+        case RATE_MCS_CHAN_WIDTH_40:
+            IWL_INFO(0, "Chan width 40mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_40MHZ;
+            break;
+            
+        case RATE_MCS_CHAN_WIDTH_80:
+            IWL_INFO(0, "Chan width 80mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_EXT_ABV | APPLE80211_C_FLAG_40MHZ;
+            break;
+        
+        case RATE_MCS_CHAN_WIDTH_160:
+            IWL_INFO(0, "Chan width 160mhz\n");
+            channel.flags |= 0x400;
+            break;
+    }
+    
     result->version = APPLE80211_VERSION;
     
-    uint64_t nanosecs;
-    absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
-    result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
+    //uint64_t nanosecs;
+    //absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
+    //result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
                                                                                 // I don't get this
     
     result->asr_ie_len = this->getIELen();
     
     if(result->asr_ie_len != 0) {
-        result->asr_ie_data = kzalloc(this->getIELen());
-        memcpy(result->asr_ie_data, this->getIE(), this->getIELen());
+        result->asr_ie_data = this->getIE();
+        //memcpy(result->asr_ie_data, this->getIE(), this->getIELen());
     }
     
     result->asr_beacon_int = 100;
@@ -286,7 +323,7 @@ uint32_t IWLCachedScan::getIELen() {
 
 apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this too
     check_packet()
-    
+
 
     return result;
 }
