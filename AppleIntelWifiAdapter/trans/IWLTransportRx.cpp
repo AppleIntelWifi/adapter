@@ -1431,13 +1431,9 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                         break;
                     }
                     
-                    if(!trans->m_pDevice->ie_dev->scanCacheIterator->isValid()) {
-                        IWL_INFO(0, "Iterator was not valid, recreating it\n");
-                        trans->m_pDevice->ie_dev->scanCacheIterator->free();
-                        trans->m_pDevice->ie_dev->scanCacheIterator = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
-                    } else {
-                        trans->m_pDevice->ie_dev->scanCacheIterator->reset();
-                    }
+                    trans->m_pDevice->ie_dev->scan_index = 0;
+                    
+                    IOSleep(100);
                     
                     IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                     
@@ -1446,6 +1442,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                     } else {
                         IWL_ERR(0, "Interface was null?\n");
                     }
+                    
                 }
                 break;
             }

@@ -489,16 +489,17 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     
     if(!IOLockTryLock(drv->m_pDevice->ie_dev->scanCacheLock)) {
         IWL_INFO(0, "Could not lock mutex\n");
-        return -1;
+        return 1;
     }
     
-    OSObject* obj = drv->m_pDevice->ie_dev->scanCacheIterator->getNextObject();
+    
+    OSObject* obj = drv->m_pDevice->ie_dev->scanCache->getObject(drv->m_pDevice->ie_dev->scan_index++);
     
     if(obj == NULL) {
         IWL_INFO(0, "Reached end of scan\n");
         IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
         drv->m_pDevice->ie_dev->state = APPLE80211_S_INIT;
-        return -1;
+        return 1;
     }
     
     //IWL_INFO(0, "scan index: %d out of %d\n", index + 1, drv->m_pDevice->scanCache->getCount());
@@ -508,7 +509,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     if(!scan) {
         IWL_INFO(0, "Could not cast OSObject to cached scan...\n");
         IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
-        return -1;
+        return 1;
     }
     
     apple80211_scan_result* result = scan->getNativeType();
@@ -518,7 +519,13 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     } else {
         IWL_ERR(0, "Scan result was bad\n");
     }
+    /*
     
+    if(drv->m_pDevice->ie_dev->scan_index + 1 == drv->m_pDevice->ie_dev->scanCache->getCount()) {
+        drv->m_pDevice->ie_dev->state = APPLE80211_S_INIT;
+    }
+    
+    */
     IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
     
     return kIOReturnSuccess;

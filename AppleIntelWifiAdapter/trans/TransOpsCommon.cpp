@@ -346,36 +346,83 @@ int calc_rssi(IWLTransport* trans) {
 void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     iwl_rx_packet* packet = (iwl_rx_packet*)rxb_addr(rxcb);
     mbuf_t page = (mbuf_t)rxcb->_page;
-    iwl_rx_phy_info* last_phy_info = &trans->last_phy_info;
-    iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(*rx_res));
     
+    iwl_rx_phy_info* last_phy_info;
     
-    size_t len = le16toh(rx_res->byte_count);
-    uint32_t rx_packet_status = le32toh(*(uint32_t *)(packet->data + sizeof(*rx_res) + len));
-    
-    
-    if (unlikely(last_phy_info->cfg_phy_cnt > 20)) {
-        IWL_ERR(0, "dsp size out of range [0,20]: %d\n",
-            last_phy_info->cfg_phy_cnt);
-        return;
-    }
-
-    if (!(rx_packet_status & RX_MPDU_RES_STATUS_CRC_OK) ||
-        !(rx_packet_status & RX_MPDU_RES_STATUS_OVERRUN_OK)) {
-        IWL_ERR(0, "Bad CRC or FIFO: 0x%08X.\n", rx_packet_status);
-        return; /* drop */
-    }
-    
-    uint32_t device_timestamp = le32toh(last_phy_info->system_timestamp);
+    uint32_t whOffset, packetStatus;
+    size_t len;
     int rssi;
     
-    if(fw_has_capa(&trans->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_RX_ENERGY_API)) {
-        rssi = get_signal_strength(trans);
+    if (trans->m_pDevice->cfg->trans.mq_rx_supported) {
+        iwl_rx_mpdu_desc* desc = (iwl_rx_mpdu_desc *) packet->data;
+        packetStatus = desc->status;
+        __le32 rate_n_flags, time;
+        u8 channel, energy_a, energy_b;
+        len = le16toh(desc->mpdu_len);
+        
+        if(trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
+            rate_n_flags = desc->v3.rate_n_flags;
+            time = desc->v3.gp2_on_air_rise;
+            channel = desc->v3.channel;
+            energy_a = desc->v3.energy_a;
+            energy_b = desc->v3.energy_b;
+            
+            whOffset = sizeof(*desc);
+        } else {
+            rate_n_flags = desc->v1.rate_n_flags;
+            time = desc->v1.gp2_on_air_rise;
+            channel = desc->v1.channel;
+            energy_a = desc->v1.energy_a;
+            energy_b = desc->v1.energy_b;
+            
+            whOffset = sizeof(*desc) - sizeof(desc->v3) + sizeof(desc->v1);
+        }
+        
+        // 9xxx cards don't have a Phy response, create our own phy info
+        iwl_rx_phy_info phy_info = {
+            .channel = channel,
+            .rate_n_flags = rate_n_flags,
+            .system_timestamp = time
+        };
+        
+        last_phy_info = &phy_info;
+        
+#define U8_MAX  ((u8)~0U)
+#define S8_MAX  ((s8)(U8_MAX>>1))
+#define S8_MIN  ((s8)(-S8_MAX - 1))
+
+        rssi = ((int) max (
+            energy_a ? -energy_a : S8_MIN,
+            energy_b ? -energy_b : S8_MIN));
+        
     } else {
-        rssi = calc_rssi(trans);
+        last_phy_info = &trans->last_phy_info;
+        iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
+        whOffset = sizeof(*rx_res);
+        len = le16toh(rx_res->byte_count);
+        packetStatus = le32toh(*(uint32_t *)(packet->data + sizeof(*rx_res) + len));
+        
+        if (unlikely(last_phy_info->cfg_phy_cnt > 20)) {
+            IWL_ERR(0, "dsp size out of range [0,20]: %d\n",
+                last_phy_info->cfg_phy_cnt);
+            return;
+        }
+        
+        if(fw_has_capa(&trans->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_RX_ENERGY_API)) {
+            rssi = get_signal_strength(trans);
+        } else {
+            rssi = calc_rssi(trans);
+        }
+        rssi = -rssi;
     }
-    rssi = -rssi;
+    
+    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + whOffset);
+
+    if (!(packetStatus & RX_MPDU_RES_STATUS_CRC_OK) ||
+        !(packetStatus & RX_MPDU_RES_STATUS_OVERRUN_OK)) {
+        IWL_ERR(0, "Bad CRC or FIFO: 0x%08X.\n", packetStatus);
+        return; /* drop */
+    }
     
     rxcb->_page_stolen = true;
     
@@ -384,103 +431,95 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
         return;
     }
     
+    uint32_t device_timestamp = le32toh(last_phy_info->system_timestamp);
+    
     if(trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
         if(ieee80211_is_beacon(wh->i_fc[0])) {
             if(last_phy_info->channel != 0) {
-                apple80211_channel* channel = NULL;
-                for(int i = 0; i < trans->m_pDevice->ie_dev->n_chans; i++) {
-                    apple80211_channel* chan = &trans->m_pDevice->ie_dev->channels[i];
-                    if(chan->channel == last_phy_info->channel) {
-                        channel = chan;
-                        break;
-                    }
-                }
-                
                 if(trans->m_pDevice->ie_dev->scanCache == NULL) {
                     IWL_ERR(0, "Scan cache was null, not allocating a new one\n");
                     return;
                 }
                 
-                if(channel != NULL) {
-                    if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
-                        IWL_INFO(0, "Skipped beacon packet because scan cache is already locked\n");
-                        // we CANNOT block.
-                        return;
-                    }
-                    
-                    IWLCachedScan* scan = new IWLCachedScan();
-                    if(!scan->init(page, rxcb->_offset, &trans->last_phy_info, channel, rssi, -101)) {
-                        scan->free();
-                        IWL_ERR(0, "failed to init new cached scan object\n");
-                        IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
-                        return;
-                    }
-                    
-                    
-                    int indx = trans->m_pDevice->ie_dev->scanCache->getCount();
-                    
-                    uint64_t oldest = UINT64_MAX;
-                    OSObject* oldest_obj = NULL;
-                    bool update_old_scan = false;
-                    
-                    OSCollectionIterator* it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
-                    
-                    if(!it->isValid()) {
-                        IWL_ERR(0, "Iterator not valid, not recreating\n");
-                        return;
-                    }
-                    
-                    OSObject* obj = NULL;
-                    while((obj = it->getNextObject()) != NULL) {
-                        
-                        if(obj == NULL)
-                            break;
-                        
-                        IWLCachedScan* cachedScan = OSDynamicCast(IWLCachedScan, obj);
-                        
-                        if(!cachedScan) {
-                            continue;
-                        }
-                        
-                        if(cachedScan->getTimestamp() <= oldest) { // the smaller the timestamp, the older
-                                                                  // absolute time only increments
-                            oldest = cachedScan->getTimestamp();
-                            oldest_obj = obj;
-                        }
-                        
-                        
-                        if(memcmp(cachedScan->getBSSID(), scan->getBSSID(), 6) == 0)
-                        {
-                            if(cachedScan->getChannel().channel == scan->getChannel().channel) {
-                                // existing entry, remove the old one and add in the new one
-                                update_old_scan = true;
-                                IWL_INFO(0, "Updating old entry\n");
-                                
-                                //trans->m_pDevice->ie_dev->scanCache->removeObject(cachedScan);
-                                //trans->m_pDevice->ie_dev->scanCache->setObject(scan);
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if(trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx && !update_old_scan) {
-                        // purge the scan cache of the oldest object
-                        IWL_INFO(0, "Purging oldest object because we are at capacity\n");
-                        if(oldest_obj != NULL) {
-                             trans->m_pDevice->ie_dev->scanCache->removeObject(oldest_obj);
-                        }
-                    }
-                    
-                    if(!update_old_scan) {
-                        IWL_INFO(0, "Adding new object to scan cache\n");
-                        
-                        trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
-                    }
-                    
-                    it->free();
-                    
-                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                
+                if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+                    IWL_INFO(0, "Skipped beacon packet because scan cache is already locked\n");
+                    // we CANNOT block.
+                    return;
                 }
+                    
+                IWLCachedScan* scan = new IWLCachedScan();
+                if(!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi, -101)) {
+//                    scan->free();
+                    IWL_ERR(0, "failed to init new cached scan object\n");
+                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                    return;
+                }
+                    
+                    
+                int indx = trans->m_pDevice->ie_dev->scanCache->getCount();
+                
+                uint64_t oldest = UINT64_MAX;
+                OSObject* oldest_obj = NULL;
+                bool update_old_scan = false;
+                    
+                OSCollectionIterator* it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
+                    
+                if(!it->isValid()) {
+                    IWL_ERR(0, "Iterator not valid, not recreating\n");
+                    return;
+                }
+                    
+                OSObject* obj = NULL;
+                while((obj = it->getNextObject()) != NULL) {
+                        
+                    if(obj == NULL)
+                        break;
+                        
+                    IWLCachedScan* cachedScan = OSDynamicCast(IWLCachedScan, obj);
+                        
+                    if(!cachedScan) {
+                        continue;
+                    }
+                        
+                    if(cachedScan->getTimestamp() <= oldest) { // the smaller the timestamp, the older
+                                                                // absolute time only increments
+                        oldest = cachedScan->getTimestamp();
+                        oldest_obj = obj;
+                    }
+                    
+                    
+                    if(memcmp(cachedScan->getBSSID(), scan->getBSSID(), 6) == 0)
+                    {
+                        if(cachedScan->getChannel().channel == scan->getChannel().channel) {
+                            // existing entry, remove the old one and add in the new one
+                            update_old_scan = true;
+                            IWL_INFO(0, "Updating old entry\n");
+                            
+                            //trans->m_pDevice->ie_dev->scanCache->removeObject(cachedScan);
+                            //trans->m_pDevice->ie_dev->scanCache->setObject(scan);
+                            break;
+                        }
+                    }
+                }
+                    
+                if(trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx && !update_old_scan) {
+                    // purge the scan cache of the oldest object
+                    IWL_INFO(0, "Purging oldest object because we are at capacity\n");
+                    if(oldest_obj != NULL) {
+                        trans->m_pDevice->ie_dev->scanCache->removeObject(oldest_obj);
+                    }
+                }
+                
+                if(!update_old_scan) {
+                    IWL_INFO(0, "Adding new object to scan cache\n");
+                    
+                    trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
+                }
+                
+                it->release();
+                
+                IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
             }
         } else {
             IWL_ERR(0, "ignoring packet since it's not a beacon frame\n");

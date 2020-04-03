@@ -461,6 +461,11 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
             req->v9.adwell_default_hb_n_aps = 8; // IWL_SCAN_ADWELL_DEFAULT_HB_N_APS
         }
         
+        if(fw_has_capa(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_CDB_SUPPORT)) {
+            req->v7.max_out_time[0] = htole32(120);
+            req->v7.suspend_time[0] = htole32(120);
+        }
+        
         if (!fw_has_api(&drv->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_API_ADAPTIVE_DWELL_V2) ||
                     drv->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_8000) {
             
@@ -489,9 +494,6 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
             
             IWL_INFO(0, "adaptive v2\n");
         }
-        
-        //req->v7.max_out_time[0] = htole32(120);
-        //req->v7.suspend_time[0] = htole32(120);
         
         if(ext_chan) {
             tail_v2 = (struct iwl_scan_req_umac_tail_v2 *)((char*)&req->v7.data +

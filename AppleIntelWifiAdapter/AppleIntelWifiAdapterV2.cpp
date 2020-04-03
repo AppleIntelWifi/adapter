@@ -280,7 +280,7 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
         return false;
     }
 
-    
+    netif->retain();
     netif->registerService();
     registerService();
     
@@ -333,6 +333,7 @@ void AppleIntelWifiAdapterV2::stop(IOService *provider)
     }
     
     if (netif) {
+        netif->release();
         detachInterface(netif);
         netif = NULL;
     }

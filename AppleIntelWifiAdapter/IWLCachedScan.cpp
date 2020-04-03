@@ -8,11 +8,11 @@
 
 #include "IWLCachedScan.hpp"
 #include "IWLDebug.h"
-#include "ieee80211.h"
 #include "apple80211_ioctl.h"
 #include <sys/mbuf.h>
 #include <sys/kpi_mbuf.h>
 #include "endian.h"
+#include "rs.h"
 
 #define super OSObject
 OSDefineMetaClassAndStructors(IWLCachedScan, OSObject);
@@ -48,7 +48,7 @@ SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * ob
 }
 
 
-bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, apple80211_channel* chan, int rssi, int noise) {
+bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info, int rssi, int noise) {
     
     if(!super::init()) {
         return false;
@@ -71,7 +71,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, app
         return false;
     }
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
+    wh = (ieee80211_frame*)(packet->data + whOffset);
     iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
     
     this->ie_len = le16toh(rx_res->byte_count) - 36;
@@ -91,7 +91,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, app
     memcpy(&this->phy_info, phy_info, sizeof(iwl_rx_phy_info)); //necessary
     this->absolute_time = mach_absolute_time();
     
-    memcpy(&this->channel, chan, sizeof(apple80211_channel)); //necessary
+    //memcpy(&this->channel, chan, sizeof(apple80211_channel)); //necessary
     
     if(this->ie[0] != 0x00) {
         IWL_ERR(0, "potentially uncompliant frame\n");
@@ -113,18 +113,57 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, app
     
     result = (apple80211_scan_result*)kzalloc(sizeof(apple80211_scan_result));
     
+    if(result == NULL) {
+        return NULL;
+    }
+    
+    channel.version = APPLE80211_VERSION;
+    channel.channel = le16toh(this->phy_info.channel);
+    
+    channel.flags = 0;
+
+//    if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
+    if (channel.channel < 15) {
+        channel.flags |= APPLE80211_C_FLAG_2GHZ;
+    } else {
+        channel.flags |= APPLE80211_C_FLAG_5GHZ;
+    }
+ 
+    IWL_INFO(0, "Rate n flags %x\n", phy_info->rate_n_flags);
+    switch(phy_info->rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
+        case RATE_MCS_CHAN_WIDTH_20:
+            IWL_INFO(0, "Chan width 20mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_20MHZ;
+            break;
+        
+        case RATE_MCS_CHAN_WIDTH_40:
+            IWL_INFO(0, "Chan width 40mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_40MHZ;
+            break;
+            
+        case RATE_MCS_CHAN_WIDTH_80:
+            IWL_INFO(0, "Chan width 80mhz\n");
+            channel.flags |= APPLE80211_C_FLAG_EXT_ABV | APPLE80211_C_FLAG_40MHZ;
+            break;
+        
+        case RATE_MCS_CHAN_WIDTH_160:
+            IWL_INFO(0, "Chan width 160mhz\n");
+            channel.flags |= 0x400;
+            break;
+    }
+    
     result->version = APPLE80211_VERSION;
     
-    uint64_t nanosecs;
-    absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
-    result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
+    //uint64_t nanosecs;
+    //absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
+    //result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
                                                                                 // I don't get this
     
     result->asr_ie_len = this->getIELen();
     
     if(result->asr_ie_len != 0) {
-        result->asr_ie_data = kzalloc(this->getIELen());
-        memcpy(result->asr_ie_data, this->getIE(), this->getIELen());
+        result->asr_ie_data = this->getIE();
+        //memcpy(result->asr_ie_data, this->getIE(), this->getIELen());
     }
     
     result->asr_beacon_int = 100;
@@ -225,7 +264,6 @@ uint32_t IWLCachedScan::getNoise() {
 uint16_t IWLCachedScan::getCapabilities() {
     check_packet()
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
     return (*((uint8_t*)wh + 35) << 8) | (*((uint8_t*)wh + 34));
     // these are stored in the fixed parameters, offsets are fine here
 }
@@ -233,7 +271,6 @@ uint16_t IWLCachedScan::getCapabilities() {
 uint8_t* IWLCachedScan::getBSSID() {
     check_packet()
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
     return &wh->i_addr3[0];
 }
 
@@ -286,7 +323,7 @@ uint32_t IWLCachedScan::getIELen() {
 
 apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this too
     check_packet()
-    
+
 
     return result;
 }
