@@ -8,7 +8,6 @@
 
 #include "IWLCachedScan.hpp"
 #include "IWLDebug.h"
-#include "ieee80211.h"
 #include "apple80211_ioctl.h"
 #include <sys/mbuf.h>
 #include <sys/kpi_mbuf.h>
@@ -49,7 +48,7 @@ SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * ob
 }
 
 
-bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int rssi, int noise) {
+bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info, int rssi, int noise) {
     
     if(!super::init()) {
         return false;
@@ -72,7 +71,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int
         return false;
     }
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
+    wh = (ieee80211_frame*)(packet->data + whOffset);
     iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
     
     this->ie_len = le16toh(rx_res->byte_count) - 36;
@@ -121,13 +120,16 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int
     channel.version = APPLE80211_VERSION;
     channel.channel = le16toh(this->phy_info.channel);
     
+    channel.flags = 0;
 
-    if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
+//    if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
+    if (channel.channel < 15) {
         channel.flags |= APPLE80211_C_FLAG_2GHZ;
     } else {
         channel.flags |= APPLE80211_C_FLAG_5GHZ;
     }
  
+    IWL_INFO(0, "Rate n flags %x\n", phy_info->rate_n_flags);
     switch(phy_info->rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
         case RATE_MCS_CHAN_WIDTH_20:
             IWL_INFO(0, "Chan width 20mhz\n");
@@ -262,7 +264,6 @@ uint32_t IWLCachedScan::getNoise() {
 uint16_t IWLCachedScan::getCapabilities() {
     check_packet()
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
     return (*((uint8_t*)wh + 35) << 8) | (*((uint8_t*)wh + 34));
     // these are stored in the fixed parameters, offsets are fine here
 }
@@ -270,7 +271,6 @@ uint16_t IWLCachedScan::getCapabilities() {
 uint8_t* IWLCachedScan::getBSSID() {
     check_packet()
     
-    ieee80211_frame* wh = (ieee80211_frame*)(packet->data + sizeof(iwl_rx_mpdu_res_start));
     return &wh->i_addr3[0];
 }
 

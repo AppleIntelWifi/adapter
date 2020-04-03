@@ -12,6 +12,7 @@
 #include <apple80211_var.h>
 #include <libkern/c++/OSObject.h>
 #include <TransHdr.h>
+#include "ieee80211.h"
 #include "rx.h"
 
 SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * obj2, void * context);
@@ -19,7 +20,7 @@ SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * ob
 class IWLCachedScan : public OSObject {
     OSDeclareDefaultStructors(IWLCachedScan)
 public:
-    bool init(mbuf_t mbuf, int offset, iwl_rx_phy_info* phy_info, int rssi, int noise);
+    bool init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info, int rssi, int noise);
     void free() override;
     
     apple80211_channel getChannel();
@@ -55,6 +56,7 @@ private:
     uint64_t absolute_time;
     
     apple80211_scan_result* result; // probably will get upset if we don't store this
+    ieee80211_frame* wh;
     
     struct iwl_rx_phy_info phy_info;
     struct iwl_rx_packet* packet; // as long buf is valid, this is also valid
