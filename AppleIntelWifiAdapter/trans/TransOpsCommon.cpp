@@ -448,17 +448,6 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                     return;
                 }
                     
-<<<<<<< refs/remotes/organization/master
-                IWLCachedScan* scan = new IWLCachedScan();
-                if(!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi, -101)) {
-//                    scan->free();
-                    IWL_ERR(0, "failed to init new cached scan object\n");
-                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
-                    return;
-                }
-                    
-=======
->>>>>>> 802.11: add more fixes for scan cache
                     
                 int indx = trans->m_pDevice->ie_dev->scanCache->getCount();
                 
@@ -517,14 +506,13 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                     IWL_INFO(0, "Adding new object to scan cache\n");
                     
                     IWLCachedScan* scan = new IWLCachedScan();
-                    if(!scan->init(page, rxcb->_offset, &trans->last_phy_info, rssi, -101)) {
+                    if(!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi, -101)) {
                         scan->free();
                         IWL_ERR(0, "failed to init new cached scan object\n");
-                        IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                         return;
                     }
-                    
-                    trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
+                trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
                 }
                 
                 it->release();
