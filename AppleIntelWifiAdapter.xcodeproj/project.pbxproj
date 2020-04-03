@@ -397,6 +397,7 @@
 		6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIOEthernetInterface.h; path = AppleIntelWifiAdapter/HackIOEthernetInterface.h; sourceTree = SOURCE_ROOT; };
 		6868731D23FA4AB4001C7DEA /* IWLSCD.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = IWLSCD.h; sourceTree = "<group>"; };
 		686AD3E8241C24A6008080E6 /* ioctl_dbg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioctl_dbg.h; sourceTree = "<group>"; };
+		686EA48324377F3A00C88E9B /* OVERVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = OVERVIEW.md; sourceTree = "<group>"; };
 		6892C2F324342AE800ACAD84 /* IWLCachedScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLCachedScan.cpp; sourceTree = "<group>"; };
 		6892C2F424342AE800ACAD84 /* IWLCachedScan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLCachedScan.hpp; sourceTree = "<group>"; };
 		F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMac80211.cpp; sourceTree = "<group>"; };
@@ -518,6 +519,7 @@
 				026E8CE32356FD4D000BFD46 /* firmware */,
 				F8C2807223C213F5000827EA /* fw */,
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
+				686EA48324377F3A00C88E9B /* OVERVIEW.md */,
 				02577D7F23EEBC57003FF602 /* IWLCoex.cpp */,
 				02577D8723EF98B6003FF602 /* IWLCtxtInfo.cpp */,
 				02577D8823EF98B6003FF602 /* IWLCtxtInfo.hpp */,
