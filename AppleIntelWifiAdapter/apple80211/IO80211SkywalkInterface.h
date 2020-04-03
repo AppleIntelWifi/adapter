@@ -3,7 +3,7 @@
 //  AppleIntelWifiAdapter
 //
 //  Created by 钟先耀 on 2019/10/18.
-//  Copyright © 2019 钟先耀. All rights reserved.
+//  Copyright © 2019 IntelWifi for MacOS authors. All rights reserved.
 //
 
 #ifndef IO80211SkywalkInterface_h

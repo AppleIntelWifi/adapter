@@ -3,7 +3,7 @@
 //  AppleIntelWifiAdapter
 //
 //  Created by 钟先耀 on 2020/2/8.
-//  Copyright © 2020 钟先耀. All rights reserved.
+//  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
 #ifndef IWLPhyDb_hpp

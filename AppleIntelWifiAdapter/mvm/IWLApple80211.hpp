@@ -3,7 +3,7 @@
 //  AppleIntelWifiAdapter
 //
 //  Created by Harrison Ford on 3/18/20.
-//  Copyright © 2020 钟先耀. All rights reserved.
+//  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
 #ifndef IWLApple80211_hpp

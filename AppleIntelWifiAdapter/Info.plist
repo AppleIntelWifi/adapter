@@ -33,7 +33,7 @@
 		</dict>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>No copyright intended.</string>
+	<string>Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.</string>
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>com.apple.iokit.IO80211Family</key>

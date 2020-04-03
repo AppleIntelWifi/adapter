@@ -964,7 +964,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 1100;
-				ORGANIZATIONNAME = "钟先耀";
+				ORGANIZATIONNAME = "IntelWifi for MacOS authors";
 				TargetAttributes = {
 					026E8CC82356F0ED000BFD46 = {
 						CreatedOnToolsVersion = 11.0;
