@@ -18,6 +18,7 @@ with ieee80211, the idea is that we will use Apple80211 instead.
 
 ## mvm
 This folder contains the necessary code to interface and set up a MVM device. 
+
 **NOTE: As such, this driver does NOT support DVM devices (i.e if your device does not support 802.11 AC)**
 
 ## nvm
