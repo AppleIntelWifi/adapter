@@ -149,7 +149,7 @@ if (REQ_TYPE == SIOCSA80211) { \
         case APPLE80211_IOC_POWERSAVE:
             break;
         case APPLE80211_IOC_IE:
-            ret = 6;
+            ret = 0;
             break;
         case 353:
             ret = 6;
