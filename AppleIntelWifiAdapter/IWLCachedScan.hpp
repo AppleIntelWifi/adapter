@@ -21,6 +21,7 @@ class IWLCachedScan : public OSObject {
     OSDeclareDefaultStructors(IWLCachedScan)
 public:
     bool init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info, int rssi, int noise);
+    bool update(iwl_rx_phy_info* phy_info, int rssi, int noise);
     void free() override;
     
     apple80211_channel getChannel();

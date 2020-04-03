@@ -427,7 +427,7 @@ struct apple80211_rate
 struct apple80211_scan_result
 {
     u_int32_t                    version; // 0x00 - 0x03
-    struct apple80211_channel    asr_channel; // 0x04 - 0x0f
+    apple80211_channel    asr_channel; // 0x04 - 0x0f
 
     int16_t asr_unk; // 0x10 - 0x11
     
@@ -451,7 +451,7 @@ struct apple80211_scan_result
     u_int16_t  unk3;
     uint16_t                    asr_ie_len;
     uint32_t                   asr_unk3;
-    void                       *asr_ie_data;
+    void*                       asr_ie_data;
 };
 
 struct apple80211_network_data
