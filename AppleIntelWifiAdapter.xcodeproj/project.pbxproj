@@ -399,8 +399,6 @@
 		686AD3E8241C24A6008080E6 /* ioctl_dbg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioctl_dbg.h; sourceTree = "<group>"; };
 		6892C2F324342AE800ACAD84 /* IWLCachedScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLCachedScan.cpp; sourceTree = "<group>"; };
 		6892C2F424342AE800ACAD84 /* IWLCachedScan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLCachedScan.hpp; sourceTree = "<group>"; };
-		68FC255223F5C060004958FC /* HackIO80211Interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HackIO80211Interface.h; sourceTree = "<group>"; };
-		68FC255323F5C060004958FC /* HackIO80211Interface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HackIO80211Interface.cpp; sourceTree = "<group>"; };
 		F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMac80211.cpp; sourceTree = "<group>"; };
 		F85B1D4C23FF6D87008105E4 /* IWMHdr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IWMHdr.h; sourceTree = "<group>"; };
 		F8C2805923C1FFD9000827EA /* IWLDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLDevice.cpp; sourceTree = "<group>"; };
@@ -519,7 +517,6 @@
 				F8C2806E23C210CB000827EA /* device */,
 				026E8CE32356FD4D000BFD46 /* firmware */,
 				F8C2807223C213F5000827EA /* fw */,
-				6868731823FA497F001C7DEA /* hack80211 */,
 				026E8CD02356F0ED000BFD46 /* Info.plist */,
 				02577D7F23EEBC57003FF602 /* IWLCoex.cpp */,
 				02577D8723EF98B6003FF602 /* IWLCtxtInfo.cpp */,
@@ -761,15 +758,6 @@
 				6868731D23FA4AB4001C7DEA /* IWLSCD.h */,
 			);
 			path = trans;
-			sourceTree = "<group>";
-		};
-		6868731823FA497F001C7DEA /* hack80211 */ = {
-			isa = PBXGroup;
-			children = (
-				68FC255323F5C060004958FC /* HackIO80211Interface.cpp */,
-				68FC255223F5C060004958FC /* HackIO80211Interface.h */,
-			);
-			path = hack80211;
 			sourceTree = "<group>";
 		};
 		68FC255123F5C040004958FC /* Recovered References */ = {
