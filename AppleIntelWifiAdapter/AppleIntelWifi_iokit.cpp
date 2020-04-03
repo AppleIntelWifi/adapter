@@ -193,13 +193,10 @@ IOReturn AppleIntelWifiAdapterV2::setSSID(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getAUTH_TYPE(IO80211Interface *interface,
                                          struct apple80211_authtype_data *ad) {
     ad->version = APPLE80211_VERSION;
-    if(drv->m_pDevice->ie_dev->state == APPLE80211_S_INIT || drv->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
-        //return APPLE80211_REASON_NOT_AUTHED;
-    }
-    else {
-        ad->authtype_lower = APPLE80211_AUTHTYPE_OPEN;
-        ad->authtype_upper = APPLE80211_AUTHTYPE_NONE;
-    }
+
+    ad->authtype_lower = APPLE80211_AUTHTYPE_OPEN;
+    ad->authtype_upper = APPLE80211_AUTHTYPE_NONE;
+
     return kIOReturnSuccess;
 }
 
@@ -478,29 +475,26 @@ const uint8_t fake_bssid[] = { 0x64, 0x7C, 0x34, 0x5C, 0x1C, 0x40 };
 const char *fake_ssid = "UPC5424297";
 
 IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
-                                           struct apple80211_scan_result **sr) {
-    
-    if(drv->m_pDevice->ie_dev->state != APPLE80211_S_SCAN) {
-        return 0xe0820446;
-    }
-    
-    
+                                                 struct apple80211_scan_result **sr) {
     IWL_DEBUG(0, "Locking mutex\n");
     
     if(!IOLockTryLock(drv->m_pDevice->ie_dev->scanCacheLock)) {
         IWL_INFO(0, "Could not lock mutex\n");
-        return 1;
+        return -1;
     }
     
     
     OSObject* obj = drv->m_pDevice->ie_dev->scanCache->getObject(drv->m_pDevice->ie_dev->scan_index++);
     
+    
+    
     if(obj == NULL) {
         IWL_INFO(0, "Reached end of scan\n");
         IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
-        drv->m_pDevice->ie_dev->state = APPLE80211_S_INIT;
-        return 1;
+        return 5;
     }
+
+    
     
     //IWL_INFO(0, "scan index: %d out of %d\n", index + 1, drv->m_pDevice->scanCache->getCount());
     
@@ -509,7 +503,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(IO80211Interface *interface,
     if(!scan) {
         IWL_INFO(0, "Could not cast OSObject to cached scan...\n");
         IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
-        return 1;
+        return -1;
     }
     
     apple80211_scan_result* result = scan->getNativeType();
@@ -614,7 +608,7 @@ IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(IO80211Interface *interface,
                  | APPLE80211_MODE_11N
                  | APPLE80211_MODE_11AC;
     
-    pd->active_phy_mode = APPLE80211_MODE_AUTO;
+    //pd->active_phy_mode = APPLE80211_MODE_AUTO;
     return kIOReturnSuccess;
 }
 
@@ -814,7 +808,7 @@ IOReturn AppleIntelWifiAdapterV2::getHARDWARE_VERSION(IO80211Interface *interfac
 IOReturn AppleIntelWifiAdapterV2::getASSOCIATION_STATUS(IO80211Interface* interface,
                                                         struct apple80211_assoc_status_data* hv) {
     hv->version = APPLE80211_VERSION;
-    hv->status = APPLE80211_RESULT_UNKNOWN;
+    hv->status = 0;
     return kIOReturnSuccess;
 }
 

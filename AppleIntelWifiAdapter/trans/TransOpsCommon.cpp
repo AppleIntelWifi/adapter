@@ -515,6 +515,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                 trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
                 }
                 
+            
                 it->release();
                 
                 IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);

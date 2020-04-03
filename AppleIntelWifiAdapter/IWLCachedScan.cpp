@@ -218,9 +218,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
     if(this->getSSIDLen() != 0) {
         
         const char* ssid = this->getSSID();
-        memcpy(&result->asr_ssid, ssid, this->getSSIDLen());
         
-        IOFree((void*)ssid, this->getSSIDLen());
+        if(ssid) {
+            memcpy(&result->asr_ssid, ssid, this->getSSIDLen());
+        
+            //IOFree((void*)ssid, this->getSSIDLen());
+        }
     }
     
     
@@ -260,6 +263,10 @@ const char* IWLCachedScan::getSSID() { // ensure to free this resulting buffer
     uint8_t ssid_len = getSSIDLen();
     
     const char* ssid = (const char*)kzalloc(ssid_len + 1); // include null terminator
+    
+    if(!ssid)
+        return NULL;
+    
     memcpy((void*)ssid, &ie[2], ssid_len); // 0x00 == type, 0x01 == size, 0x02 onwards == data
     
     return ssid;
