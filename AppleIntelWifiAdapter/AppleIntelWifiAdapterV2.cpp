@@ -401,13 +401,18 @@ IO80211Interface* AppleIntelWifiAdapterV2::getNetworkInterface() {
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
-    if(!this->drv->m_pDevice->ie_dev->address[0]) {
-        return kIOReturnError;
+    // Check if address is valid (all zeroes means invalid)
+    for (int i=0;i<ETH_ALEN;i++) {
+        if (this->drv->m_pDevice->ie_dev->address[i]) {
+            // Byte is non-zero, this address must be valid and we can return it
+            memcpy(&addrP->bytes, &this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
+            
+            return kIOReturnSuccess;
+        }
     }
-    else {
-        memcpy(&addrP->bytes, &this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
-    }
-    return kIOReturnSuccess;
+    
+    // Address is all zero, return error
+    return kIOReturnError;
 }
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddressForInterface(IO80211Interface* netif, IOEthernetAddress* addr) {
