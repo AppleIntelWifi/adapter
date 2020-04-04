@@ -12,5 +12,8 @@ if [ ! -d "$BUILD" ]; then
 mkdir $BUILD
 fi
 
-sudo chown -R $USER "$BUILD"
-xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD" | xcpretty
+if ! [ -x "$(command -v xcpretty)" ]; then
+  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD"
+else
+  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD" | xcpretty
+fi
