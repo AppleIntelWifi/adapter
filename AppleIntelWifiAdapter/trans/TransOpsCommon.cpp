@@ -241,7 +241,7 @@ void IWLTransOps::restartNIC(bool fw_error) {
         if(trans->m_pDevice->fw.ucode_capa.error_log_size) {
             u32 src_size = trans->m_pDevice->fw.ucode_capa.error_log_size;
             u32 src_addr = trans->m_pDevice->fw.ucode_capa.error_log_addr;
-            u8 *recover_buf = (u8*)IOMallocZero(src_size);
+            u8 *recover_buf = (u8*)kzalloc(src_size);
 
             if (recover_buf) {
                 trans->recovery_buf = recover_buf;

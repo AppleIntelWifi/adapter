@@ -1225,7 +1225,7 @@
 				);
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
 				KEEP_PRIVATE_EXTERNS = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULE_NAME = com.apple.AppleIntelWifiAdapterV2;
 				MODULE_VERSION = 1.0.0d1;
 				OTHER_CFLAGS = (
@@ -1242,7 +1242,6 @@
 					AppleIntelWifiAdapter/compat,
 					AppleIntelWifiAdapter/compat/openbsd,
 					AppleIntelWifiAdapter/compat/linux,
-					/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Kernel.framework/Headers/sys/,
 				);
 				WRAPPER_EXTENSION = kext;
 			};
@@ -1260,7 +1259,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
 				KEEP_PRIVATE_EXTERNS = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MODULE_NAME = com.apple.AppleIntelWifiAdapterV2;
 				MODULE_VERSION = 1.0.0d1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.AppleIntelWifiAdapterV2;
@@ -1270,7 +1269,6 @@
 					AppleIntelWifiAdapter/compat,
 					AppleIntelWifiAdapter/compat/openbsd,
 					AppleIntelWifiAdapter/compat/linux,
-					/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Kernel.framework/Headers/sys/,
 				);
 				WRAPPER_EXTENSION = kext;
 			};

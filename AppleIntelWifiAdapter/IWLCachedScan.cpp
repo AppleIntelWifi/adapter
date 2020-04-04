@@ -95,15 +95,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
         
     this->ie = ((uint8_t*)wh + 36);
     
-    //memcpy(this->ie, ((uint8_t*)wh + 36), this->ie_len);
-    
     this->noise = noise;
     this->rssi = rssi;
     
     memcpy(&this->phy_info, phy_info, sizeof(iwl_rx_phy_info)); //necessary
     this->absolute_time = mach_absolute_time();
     
-    //memcpy(&this->channel, chan, sizeof(apple80211_channel)); //necessary
     
     if(this->ie[0] != 0x00) {
         IWL_ERR(0, "potentially uncompliant frame\n");
@@ -127,11 +124,19 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
        channel.channel = le16toh(this->phy_info.channel);
        
 
+       /*
        if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
            channel.flags |= APPLE80211_C_FLAG_2GHZ;
        } else {
            channel.flags |= APPLE80211_C_FLAG_5GHZ;
        }
+        */
+    
+        if (channel.channel < 15) {
+            channel.flags |= APPLE80211_C_FLAG_2GHZ;
+        } else {
+            channel.flags |= APPLE80211_C_FLAG_5GHZ;
+        }
     
        switch(this->phy_info.rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
            case RATE_MCS_CHAN_WIDTH_20:
@@ -154,69 +159,6 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
                channel.flags |= 0x400;
                break;
        }
-       
-    
-    
-    result = (apple80211_scan_result*)kzalloc(sizeof(apple80211_scan_result));
-    
-    if(result == NULL) {
-        return NULL;
-    }
-
-    result->version = APPLE80211_VERSION;
-    
-    //uint64_t nanosecs;
-    //absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
-    //result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
-                                                                                // I don't get this
-    
-    //result->asr_age = le32toh(this->phy_info.system_timestamp);
-    result->asr_ie_len = this->getIELen();
-    
-    IWL_INFO(0, "IE length: %d\n", result->asr_ie_len);
-    if(result->asr_ie_len != 0) {
-        result->asr_ie_data = ie;
-        
-        uint8_t* buf = (uint8_t*)result->asr_ie_data;
-        size_t out_sz = 0;
-        uint8_t* encode = base64_encode(buf, (size_t)result->asr_ie_len, &out_sz);
-        IWL_INFO(0, "IE: %s", encode);
-    }
-    
-    result->asr_beacon_int = 100;
-    
-    uint8_t* rates = this->getRates();
-    
-    if(rates != NULL) {
-        for(int i = 0; i < 8; i++) {
-            result->asr_rates[i] = (rates[i] >> 1) & 0x3F; // stolen magic
-        }
-        result->asr_nrates = 8;
-    }
-    
-    result->asr_cap = this->getCapabilities();
-    
-    result->asr_channel.channel = this->getChannel().channel;
-    result->asr_channel.flags = this->getChannel().flags;
-    result->asr_channel.version = 1;
-    
-    result->asr_noise = this->getNoise();
-    result->asr_rssi = this->getRSSI();
-    
-    memcpy(&result->asr_bssid, this->getBSSID(), 6);
-    
-    result->asr_ssid_len = this->getSSIDLen();
-    
-    if(this->getSSIDLen() != 0) {
-        
-        const char* ssid = this->getSSID();
-        
-        if(ssid) {
-            memcpy(&result->asr_ssid, ssid, this->getSSIDLen());
-        
-            //IOFree((void*)ssid, this->getSSIDLen());
-        }
-    }
     
     
     
@@ -352,10 +294,68 @@ uint32_t IWLCachedScan::getIELen() {
 
 apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this too
     check_packet()
+    
+    result = (apple80211_scan_result*)kzalloc(sizeof(apple80211_scan_result));
+    
+    if(result == NULL) {
+        return NULL;
+    }
 
-    //IWL_DEBUG(0, "Allocating scan result\n");
+    result->version = APPLE80211_VERSION;
+    
+    //uint64_t nanosecs;
+    //absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
+    //result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18; // MAGIC compiler division..
+                                                                                // I don't get this
+    
+    //result->asr_age = le32toh(this->phy_info.system_timestamp);
+    result->asr_ie_len = this->getIELen();
+    
+    IWL_INFO(0, "IE length: %d\n", result->asr_ie_len);
+    if(result->asr_ie_len != 0) {
+        result->asr_ie_data = ie;
+        
+        //uint8_t* buf = (uint8_t*)result->asr_ie_data;
+        //size_t out_sz = 0;
+        //uint8_t* encode = base64_encode(buf, (size_t)result->asr_ie_len, &out_sz);
+        //IWL_INFO(0, "IE: %s", encode);
+    }
+    
+    result->asr_beacon_int = 100;
+    
+    uint8_t* rates = this->getRates();
+    
+    if(rates != NULL) {
+        for(int i = 0; i < 8; i++) {
+            result->asr_rates[i] = (rates[i] >> 1) & 0x3F; // stolen magic
+        }
+        result->asr_nrates = 8;
+    }
+    
+    result->asr_cap = this->getCapabilities();
+    
+    result->asr_channel.channel = this->getChannel().channel;
+    result->asr_channel.flags = this->getChannel().flags;
+    result->asr_channel.version = 1;
+    
     result->asr_noise = this->getNoise();
     result->asr_rssi = this->getRSSI();
+    
+    memcpy(&result->asr_bssid, this->getBSSID(), 6);
+    
+    result->asr_ssid_len = this->getSSIDLen();
+    
+    if(this->getSSIDLen() != 0) {
+        
+        const char* ssid = this->getSSID();
+        
+        if(ssid) {
+            memcpy(&result->asr_ssid, ssid, this->getSSIDLen() + 1);
+        
+            IOFree((void*)ssid, this->getSSIDLen() + 1);
+        }
+    }
+    
     //result->asr_age = le32toh(this->phy_info.system_timestamp);
     return result;
 }

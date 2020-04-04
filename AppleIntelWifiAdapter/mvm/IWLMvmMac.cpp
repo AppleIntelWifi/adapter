@@ -297,7 +297,7 @@ int iwl_umac_scan_fill_channels(IWLMvmDriver* drv, apple80211_scan_data* appleRe
     
     bool scan_all = false;
     
-    if(num_channels == 0 && appleReq->ssid_len == 0) {
+    if(num_channels == 0) {
         // they probably want us to scan every channel
         num_channels = drv->m_pDevice->n_chans;
         scan_all = true;

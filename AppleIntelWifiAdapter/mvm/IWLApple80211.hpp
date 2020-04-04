@@ -24,9 +24,13 @@ public:
     bool scanning;
     bool published;
     
+    const char* ssid;
+    uint8_t bssid[ETH_ALEN];
+    
     uint32_t state;
     uint32_t n_chans;
     
+    apple80211_scan_data* scan_data;
     apple80211_channel current_channel;
     apple80211_channel channels[256];
     apple80211_channel channels_inactive[256];

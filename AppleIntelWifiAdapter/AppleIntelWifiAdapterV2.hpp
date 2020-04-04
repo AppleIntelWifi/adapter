@@ -73,9 +73,6 @@ public:
     bool createWorkLoop() override;
     IOWorkLoop* getWorkLoop() const override;
     
-    bool useAppleRSNSupplicant(IO80211Interface* iface) override {
-        return true;
-    }
     //IOOutputQueue * createOutputQueue() override;
 
     
