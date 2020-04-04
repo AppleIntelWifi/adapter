@@ -38,9 +38,7 @@ If your card is not listed here (or does not have an open issue), please open an
 
 ## Build instructions
 ```
-./build.sh
-sudo chown -R root:wheel ./build/Build/Products/Debug/AppleIntelWifiAdapterV2.kext/
-sudo kextload -v ./build/Build/Products/Debug/AppleIntelWifiAdapterV2.kext/
+./scripts/build.sh && ./scripts/load.sh
 ```
 
 ## Credits
