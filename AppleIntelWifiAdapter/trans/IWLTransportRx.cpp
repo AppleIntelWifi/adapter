@@ -1420,6 +1420,10 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                 ops->rxMpdu(&rxcb);
                 break;
             
+            case BT_PROFILE_NOTIFICATION:
+                IWL_INFO(0, "BT Profile Notification");
+                break;
+            
             case SCAN_ITERATION_COMPLETE_UMAC:
             case SCAN_COMPLETE_UMAC: {
                 if(trans->m_pDevice->ie_dev->scanning) {
