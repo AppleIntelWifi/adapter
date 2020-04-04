@@ -366,14 +366,14 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif)
 
 const OSString* AppleIntelWifiAdapterV2::newModelString() const {
     if(drv) {
-        return OSString::withCString(drv->m_pDevice->name);
+        return OSString::withCString("Wireless Network Adapter (802.11 a/b/g/n/ac)");
     }
     
     return OSString::withCString("Wireless Card");
 }
 
 const OSString* AppleIntelWifiAdapterV2::newVendorString() const {
-    return OSString::withCString("Intel");
+    return OSString::withCString("Apple");
 }
 
 const OSString* AppleIntelWifiAdapterV2::newRevisionString() const {

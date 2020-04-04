@@ -84,7 +84,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
     wh = (ieee80211_frame*)(packet->data + whOffset);
     iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
     
-    this->ie_len = le16toh(rx_res->byte_count) - 36;
+    this->ie_len = rx_res->byte_count - 36;
     
     if(this->ie_len <= 0)
         return false;
@@ -93,9 +93,9 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
         return false;
     }
         
-    this->ie = (uint8_t*)kzalloc(this->ie_len);
+    this->ie = ((uint8_t*)wh + 36);
     
-    memcpy(this->ie, ((uint8_t*)wh + 36), this->ie_len);
+    //memcpy(this->ie, ((uint8_t*)wh + 36), this->ie_len);
     
     this->noise = noise;
     this->rssi = rssi;
@@ -175,20 +175,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
     
     IWL_INFO(0, "IE length: %d\n", result->asr_ie_len);
     if(result->asr_ie_len != 0) {
-        //memcpy((result + sizeof(apple80211_scan_result)), this->getIE(), this->getIELen());
         result->asr_ie_data = ie;
         
         uint8_t* buf = (uint8_t*)result->asr_ie_data;
-        //uint8_t* buf_2 = (uint8_t*)ie;
-        for(int i = 0; i < result->asr_ie_len; i++) {
-            kprintf("%0.2x ", buf[i]);
-            
-            if(i % 10 == 0 && i != 0) {
-                kprintf("\n");
-            }
-        }
-        kprintf("\n");
-        //memcpy(result->asr_ie_data, this->getIE(), this->getIELen());
+        size_t out_sz = 0;
+        uint8_t* encode = base64_encode(buf, (size_t)result->asr_ie_len, &out_sz);
+        IWL_INFO(0, "IE: %s", encode);
     }
     
     result->asr_beacon_int = 100;

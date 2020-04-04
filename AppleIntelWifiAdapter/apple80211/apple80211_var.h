@@ -434,9 +434,9 @@ struct apple80211_scan_result
     int16_t                        asr_noise; // 0x12 - 0x13
     int16_t asr_snr; // 0x14 - 0x15
     int16_t                        asr_rssi; // 0x16 - 0x17
-    u_int16_t                    asr_beacon_int; // 0x18 - 0x19
+    int16_t                    asr_beacon_int; // 0x18 - 0x19
     
-    u_int16_t                    asr_cap;        // capabilities // 0x1a 0x1b
+    int16_t                    asr_cap;        // capabilities // 0x1a 0x1b
     
     u_int8_t                    asr_bssid[ APPLE80211_ADDR_LEN ]; // 0x1c 0x1d 0x1e 0x1f 0x20 0x21
     u_int8_t                    asr_nrates; // 0x22
@@ -444,12 +444,12 @@ struct apple80211_scan_result
     u_int32_t                    asr_rates[ APPLE80211_MAX_RATES ]; // 0x24 - 0x5f
     u_int8_t                    asr_ssid_len; // 0x60
     u_int8_t                    asr_ssid[ APPLE80211_MAX_SSID_LEN ]; // 0x61 - 0x80
-    u_int16_t unk;
+    __attribute__((packed)) __attribute__((aligned(1))) int16_t unk;
     uint8_t unk2;
     u_int32_t                    asr_age;    // (ms) non-zero for cached scan result // 0x84
     
     u_int16_t  unk3;
-    uint16_t                    asr_ie_len;
+    int16_t                    asr_ie_len;
     uint32_t                   asr_unk3;
     void*                       asr_ie_data;
 };

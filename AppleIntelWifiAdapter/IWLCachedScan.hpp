@@ -48,7 +48,7 @@ public:
     mbuf_t getMbuf();
 private:
     uint8_t* ie;
-    uint32_t ie_len;
+    int16_t ie_len;
     
     uint32_t rssi;
     uint32_t noise;

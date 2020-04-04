@@ -39,6 +39,14 @@ do { if (!trace_only) TraceLog("AppleIntelWifiAdapter ERR: " args); } while (0)
 #define __iwl_dbg(args...) \
 do { DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0)
 
+#define __iwl_dbg_buf(in_buf, size) \
+do { size_t out_len = 0; unsigned char* buf = base64_encode((const unsigned char*)in_buf, size, &out_len); \
+    if (buf != NULL) { \
+        DebugLog("AppleIntelWifiAdapter DEBUG: buffer is %s\n", buf); \
+        _FREE(buf, out_len + 1); \
+    } \
+} while(0)
+
 /* No matter what is m (priv, bus, trans), this will work */
 #define IWL_ERR_DEV(m, f, a...)                        \
         do {                                        \
@@ -65,5 +73,16 @@ do { DebugLog("AppleIntelWifiAdapter DEBUG: " args); } while (0)
         } while (0)
 #define IWL_DEBUG(m, f, args...)               \
         __IWL_DEBUG_DEV(level, f, ##args)
+
+#define IWL_DEBUG_BUF(b, s) \
+        do { \
+            __iwl_dbg_buf(b, s); \
+        } while(0)
+
+unsigned char * base64_encode(unsigned char *src, size_t len,
+                              size_t *out_len);
+
+unsigned char * base64_decode(const unsigned char *src, size_t len,
+                              size_t *out_len);
 
 #endif /* IWLDebug_h */

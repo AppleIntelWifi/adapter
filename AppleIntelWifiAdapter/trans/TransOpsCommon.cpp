@@ -413,7 +413,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
         } else {
             rssi = calc_rssi(trans);
         }
-        rssi = -rssi;
+        rssi = rssi;
     }
     
     ieee80211_frame* wh = (ieee80211_frame*)(packet->data + whOffset);

@@ -154,6 +154,9 @@ if (REQ_TYPE == SIOCSA80211) { \
         case 353:
             ret = 6;
             break;
+        case 90:
+            ret = 0;
+            break;
         default:
             IWL_ERR(0, "Unhandled IOCTL %s (%d)\n", IOCTL_NAMES[request_number], request_number);
             ret = kIOReturnError;
@@ -223,6 +226,7 @@ IOReturn AppleIntelWifiAdapterV2::getCHANNEL(IO80211Interface *interface,
 }
 
 IOReturn AppleIntelWifiAdapterV2::getPROTMODE(IO80211Interface* interface, struct apple80211_protmode_data* pd) {
+    
     if(drv->m_pDevice->ie_dev->state == APPLE80211_S_INIT || drv->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
         return APPLE80211_REASON_NOT_AUTHED;
     }
@@ -430,6 +434,10 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
     drv->m_pDevice->ie_dev->scan_max = 0;
     drv->m_pDevice->ie_dev->scan_index = 0;
     
+    if(sd->scan_type == 3) {
+        return kIOReturnSuccess;
+    }
+    
     if(interface) {
         apple80211_scan_data* request = (apple80211_scan_data*)IOMalloc(sizeof(apple80211_scan_data));
         memcpy(request, sd, sizeof(apple80211_scan_data));
@@ -555,7 +563,9 @@ IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(IO80211Interface *interfa
     caps |= APPLE80211_CAP_SHPREAMBLE;
     caps |= APPLE80211_CAP_WME;
     
-    /*
+    
+    
+    /* Needs further documentation, as setting all of these flags enables AirDrop + IO80211VirtualInterfaces
     cd->capabilities[0] = 0xeb;
     cd->capabilities[1] = 0x7e;
     cd->capabilities[2] = 3;
@@ -563,10 +573,22 @@ IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(IO80211Interface *interfa
     cd->capabilities[2] |= 0x20;
     cd->capabilities[2] |= 0x28;
     cd->capabilities[2] |= 4;
-    cd->capabilities[3] = 2;
+    cd->capabilities[5] |= 8;
+    cd->capabilities[3] |= 2;
+    cd->capabilities[4] |= 1;
+    cd->capabilities[6] |= 8;
+    
     cd->capabilities[3] |= 0x23;
     cd->capabilities[2] |= 0x80;
-     */
+    cd->capabilities[5] |= 4;
+    cd->capabilities[2] |= 0xC0;
+    cd->capabilities[6] |= 0x84;
+    cd->capabilities[3] |= 8;
+    cd->capabilities[6] |= 1;
+    cd->capabilities[5] |= 0x80;
+    
+    */
+    
     
     cd->capabilities[0] = (caps & 0xff);
     cd->capabilities[1] = (caps & 0xff00) >> 8;

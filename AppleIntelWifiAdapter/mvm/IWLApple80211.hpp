@@ -27,7 +27,6 @@ public:
     uint32_t state;
     uint32_t n_chans;
     
-    apple80211_scan_result scan_results[256];
     apple80211_channel current_channel;
     apple80211_channel channels[256];
     apple80211_channel channels_inactive[256];
@@ -38,6 +37,8 @@ public:
 
     OSOrderedSet* scanCache;
     IOLock* scanCacheLock;
+    
+    apple80211_scan_result scan_results[256];
 
 private:
     IO80211Interface* iface;
