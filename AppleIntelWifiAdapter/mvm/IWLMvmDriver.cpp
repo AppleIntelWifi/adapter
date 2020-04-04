@@ -415,7 +415,7 @@ bool IWLMvmDriver::drvStart()
         
     }
     
-    m_pDevice->btForceAntMode = BT_FORCE_ANT_WIFI;
+//    m_pDevice->btForceAntMode = BT_FORCE_ANT_WIFI;
     if (iwl_mvm_has_unified_ucode(m_pDevice)) {
         m_pDevice->cur_fw_img = IWL_UCODE_REGULAR;
     } else {
