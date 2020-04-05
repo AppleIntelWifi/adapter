@@ -73,7 +73,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     cfg_v2->out_of_channel_time[1] = cpu_to_le32(0);
     cfg_v2->suspend_time[0] = cpu_to_le32(0);
     cfg_v2->suspend_time[1] = cpu_to_le32(0);
-    memcpy(&cfg_v2->mac_addr, &drv->m_pDevice->ie_dev->address, ETH_ALEN);
+    memcpy(&cfg_v2->mac_addr, drv->m_pDevice->ie_dev->getMAC(), ETH_ALEN);
     IWL_DEBUG(0, "%02x:%02x:%02x:%02x:%02x:%02x\n", cfg_v2->mac_addr[0],
               cfg_v2->mac_addr[1], cfg_v2->mac_addr[2], cfg_v2->mac_addr[3],
               cfg_v2->mac_addr[4], cfg_v2->mac_addr[5]);
@@ -94,8 +94,14 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
       return -1;
     }
 
+    apple80211_channel* channel_map = drv->m_pDevice->ie_dev->getChannelMap();
+    if (channel_map == NULL) {
+      IWL_ERR(0, "Channel map was null\n");
+      return -1;
+    }
+
     for (nchan = 0; nchan < num_channels; nchan++) {
-      c = &drv->m_pDevice->ie_dev->channels[nchan];
+      c = &channel_map[nchan];
 
       if (!c) continue;
 
@@ -112,7 +118,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
     cfg->out_of_channel_time = cpu_to_le32(0);
     cfg->suspend_time = cpu_to_le32(0);
 
-    memcpy(&cfg->mac_addr, &drv->m_pDevice->ie_dev->address, ETH_ALEN);
+    memcpy(&cfg->mac_addr, drv->m_pDevice->ie_dev->getMAC(), ETH_ALEN);
     IWL_DEBUG(0, "%02x:%02x:%02x:%02x:%02x:%02x\n", cfg->mac_addr[0],
               cfg->mac_addr[1], cfg->mac_addr[2], cfg->mac_addr[3],
               cfg->mac_addr[4], cfg->mac_addr[5]);
@@ -133,8 +139,14 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
       return -1;
     }
 
+    apple80211_channel* channel_map = drv->m_pDevice->ie_dev->getChannelMap();
+    if (channel_map == NULL) {
+      IWL_ERR(0, "Channel map was null\n");
+      return -1;
+    }
+
     for (nchan = 0; nchan < num_channels; nchan++) {
-      c = &drv->m_pDevice->ie_dev->channels[nchan];
+      c = &channel_map[nchan];
 
       if (!c) continue;
 
@@ -188,7 +200,7 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
   wh->i_fc[1] = IEEE80211_FC1_DIR_NODS;
 
   memcpy(wh->i_addr1, etherbroadcastaddr, ETHER_ADDR_LEN);
-  memcpy(wh->i_addr2, drv->m_pDevice->ie_dev->address, ETHER_ADDR_LEN);
+  memcpy(wh->i_addr2, drv->m_pDevice->ie_dev->getMAC(), ETHER_ADDR_LEN);
   memcpy(wh->i_addr3, etherbroadcastaddr, ETHER_ADDR_LEN);
   // clang-format off
   *(uint16_t*)&wh->i_dur[0] = 0; /* filled by HW */  // NOLINT(readability/casting)
@@ -288,19 +300,29 @@ int iwl_umac_scan_fill_channels(IWLMvmDriver* drv,
 
   if (num_channels == 0) {
     // they probably want us to scan every channel
-    num_channels = drv->m_pDevice->n_chans;
+    num_channels = drv->m_pDevice->ie_dev->getChannelMapSize();
     scan_all = true;
   }
 
   struct apple80211_channel* c;
   uint8_t nchan;
 
+  apple80211_channel* channel_map = NULL;
+  if (!scan_all) {
+    channel_map = drv->m_pDevice->ie_dev->getScanChannelMap();
+  } else {
+    channel_map = drv->m_pDevice->ie_dev->getChannelMap();
+  }
+
+  if (channel_map == NULL) {
+    IWL_ERR(0, "Channel map was null\n");
+    return -1;
+  }
+
   for (nchan = 0; nchan < num_channels; nchan++) {
-    if (!scan_all) {
-      c = &drv->m_pDevice->ie_dev->channels_scan[nchan];
-    } else {
-      c = &drv->m_pDevice->ie_dev->channels[nchan];
-    }
+    c = &channel_map[nchan];
+
+    if (!c) continue;
 
     if (c->channel == 0)  // channel should never be 0
       continue;

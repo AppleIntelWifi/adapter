@@ -388,10 +388,13 @@ IO80211Interface *AppleIntelWifiAdapterV2::getNetworkInterface() {
 
 IOReturn AppleIntelWifiAdapterV2::getHardwareAddress(IOEthernetAddress *addrP) {
   // Check if address is valid (all zeroes means invalid)
+  uint8_t *addr = this->drv->m_pDevice->ie_dev->getMAC();
+  if (addr == NULL) return kIOReturnError;
+
   for (int i = 0; i < ETH_ALEN; i++) {
-    if (this->drv->m_pDevice->ie_dev->address[i]) {
+    if (addr[i]) {
       // Byte is non-zero, this address must be valid and we can return it
-      memcpy(&addrP->bytes, &this->drv->m_pDevice->ie_dev->address, ETH_ALEN);
+      memcpy(&addrP->bytes, addr, ETH_ALEN);
 
       return kIOReturnSuccess;
     }

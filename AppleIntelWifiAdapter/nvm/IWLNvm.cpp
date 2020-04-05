@@ -445,7 +445,8 @@ int IWLMvmDriver::nvmInit() {
     IWL_INFO(0, "addr: %02x:%02x:%02x:%02x:%02x:%02x\n", hw_addr[0], hw_addr[1],
              hw_addr[2], hw_addr[3], hw_addr[4], hw_addr[5]);
   }
-  memcpy(&m_pDevice->ie_dev->address, hw_addr, ETH_ALEN);
+
+  m_pDevice->ie_dev->setMAC(ETH_ALEN, hw_addr);
 
   return ret < 0 ? ret : 0;
 }

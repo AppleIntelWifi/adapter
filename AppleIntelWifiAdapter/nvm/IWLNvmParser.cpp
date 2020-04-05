@@ -284,8 +284,12 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     nvm_chan = iwl_nvm_channels;
   }
 
+  if (!dev->ie_dev->initChannelMap(num_of_ch)) {
+    IWL_ERR(0, "Failed to initialize channel map\n");
+    return -1;
+  }
+
   for (; ch_idx < num_of_ch; ch_idx++) {
-    memset(&dev->ie_dev->channels[ch_idx], 0, sizeof(apple80211_channel));
     struct apple80211_channel channel;
     enum nl80211_band band = iwl_nl80211_band_from_channel_idx(ch_idx);
 
@@ -346,7 +350,7 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     }
 
     if (ch_flags & NVM_CHANNEL_80MHZ) {
-      channel.flags |= APPLE80211_C_FLAG_EXT_ABV;
+      channel.flags |= APPLE80211_C_FLAG_80MHZ;
     }
 
     channel.version = APPLE80211_VERSION;
@@ -367,14 +371,13 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     iwl_nvm_print_channel_flags(channel.channel, ch_flags);
 
     // memcpy(&dev->ie_ic.ic_channels[n_channels], &channel, sizeof(channel));
-    memcpy(&dev->ie_dev->channels[ch_idx], &channel, sizeof(channel));
+
+    dev->ie_dev->setChannel(ch_idx, &channel);
 
     n_channels++;
 
     // channel->ic_flags = flags;
   }
-
-  dev->ie_dev->n_chans = n_channels;
 
   return n_channels;
 }

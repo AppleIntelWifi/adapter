@@ -1354,21 +1354,21 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
 
       case SCAN_ITERATION_COMPLETE_UMAC:
       case SCAN_COMPLETE_UMAC: {
-        if (trans->m_pDevice->ie_dev->scanning) {
+        if (trans->m_pDevice->ie_dev->getScanning()) {
           trans->m_pDevice->last_ebs_successful = true;
-          trans->m_pDevice->ie_dev->scanning = false;
-          trans->m_pDevice->ie_dev->published = true;
-          if (!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+          trans->m_pDevice->ie_dev->setScanning(false);
+          trans->m_pDevice->ie_dev->setPublished(true);
+          if (!trans->m_pDevice->ie_dev->lockScanCache()) {
             IWL_ERR(0, "Failed to lock mutex\n");
             break;
           }
 
-          trans->m_pDevice->ie_dev->scan_index = 0;
+          trans->m_pDevice->ie_dev->resetScanIndex();
 
           // IOSleep(100);
-          trans->m_pDevice->ie_dev->state = APPLE80211_S_INIT;
+          trans->m_pDevice->ie_dev->setState(APPLE80211_S_INIT);
 
-          IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+          trans->m_pDevice->ie_dev->unlockScanCache();
 
           if (trans->m_pDevice->ie_dev->scanDone()) {
             IWL_INFO(0, "posted results\n");

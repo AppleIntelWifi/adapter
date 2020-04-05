@@ -43,3 +43,79 @@ bool IWL80211Device::scanDone() {
     return false;
   }
 }
+
+bool IWL80211Device::initChannelMap(size_t channel_map_size) {
+  if (this->channels != NULL) return false;
+
+  if (channel_map_size > 256) return false;
+
+  this->channels = reinterpret_cast<apple80211_channel*>(
+      kzalloc(sizeof(apple80211_channel) * channel_map_size));
+  this->n_chans = channel_map_size;
+
+  return (this->channels != NULL);
+}
+
+void IWL80211Device::setChannel(size_t ch_idx, apple80211_channel* channel) {
+  if (channel == NULL) return;
+
+  if (this->channels == NULL) return;
+
+  if (ch_idx > this->n_chans) return;
+
+  memcpy(&this->channels[ch_idx], channel, sizeof(apple80211_channel));
+}
+
+void IWL80211Device::setSSID(size_t ssid_len, const char* ssid) {
+  if (ssid_len > 32) ssid_len = 32;
+
+  this->ssid = reinterpret_cast<const char*>(kzalloc(ssid_len + 1));
+  if (this->ssid == NULL) return;
+
+  memcpy((void*)this->ssid, ssid, ssid_len); // NOLINT(readability/casting)
+}
+
+bool IWL80211Device::initScanChannelMap(size_t map_size) {
+  if (map_size > 256) return false;
+  // clang-format off
+  if (this->channels_scan)
+    IOFree((void*)this->channels_scan, // NOLINT(readability/casting)
+           sizeof(apple80211_channel) * this->n_scan_chans);
+  // clang-format on
+
+  this->channels_scan = reinterpret_cast<apple80211_channel*>(
+      kzalloc(sizeof(apple80211_channel) * map_size));
+  this->n_scan_chans = map_size;
+
+  return (this->channels_scan != NULL);
+}
+
+bool IWL80211Device::initScanChannelMap(apple80211_channel* channel_map,
+                                        size_t map_size) {
+  if (map_size > 256) map_size = 256;
+
+  if (!channel_map) return false;
+
+  // clang-format off
+  if (this->channels_scan)
+    IOFree((void*)this->channels_scan, // NOLINT(readability/casting)
+           sizeof(apple80211_channel) * this->n_scan_chans);
+  // clang-format on
+
+  this->channels_scan = reinterpret_cast<apple80211_channel*>(
+      kzalloc(sizeof(apple80211_channel) * map_size));
+  this->n_scan_chans = map_size;
+
+  if (!this->channels_scan) return false;
+
+  memcpy(this->channels_scan, channel_map,
+         sizeof(apple80211_channel) * map_size);
+  return (this->channels_scan != NULL);
+}
+
+void IWL80211Device::resetScanChannelMap() {
+  if (!this->channels_scan) return;
+
+  memset(this->channels_scan, 0,
+         sizeof(apple80211_channel) * this->n_scan_chans);
+}

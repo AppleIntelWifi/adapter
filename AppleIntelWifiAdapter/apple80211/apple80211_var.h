@@ -227,6 +227,7 @@ enum apple80211_channel_flag
     APPLE80211_C_FLAG_EXT_ABV    = 0x200,    // If 40 Mhz, extension channel above.
     // If this flag is not set, then the
     // extension channel is below.
+    APPLE80211_C_FLAG_80MHZ = 0x400, // comex
 };
 
 enum apple80211_rate_flag
@@ -283,7 +284,7 @@ enum apple80211_guard_interval
 };
 
 #define APPLE80211_RSC_LEN                 8
-#define APPLE80211_KEY_BUFF_LEN            32
+#define APPLE80211_KEY_BUFF_LEN            64
 
 #define    APPLE80211_KEY_FLAG_UNICAST        0x1
 #define APPLE80211_KEY_FLAG_MULTICAST    0x2
@@ -301,6 +302,12 @@ struct apple80211_key
     u_int32_t            key_rsc_len;
     u_int8_t            key_rsc[ APPLE80211_RSC_LEN ];    // receive sequence counter
     struct ether_addr    key_ea;                            // key applies to this bssid
+  uint32_t            unk_1;
+  uint8_t unk_2[16];
+  uint32_t unk_3;
+  uint8_t unk_4[16];
+  uint8_t unk_5[8];
+  
 };
 
 // Changing this affects any structure that contains a channel

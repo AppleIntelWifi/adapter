@@ -478,6 +478,7 @@ bool IWLMvmDriver::enableDevice() {
   m_pDevice->cur_fw_img = IWL_UCODE_INIT;
   err = runInitMvmUCode(false);
 
+  apple80211_channel *channel_map = m_pDevice->ie_dev->getChannelMap();
   // now we run the proper ucode
 
   if (err) goto fail;
@@ -552,11 +553,16 @@ bool IWLMvmDriver::enableDevice() {
     goto fail;
   }
 
+  if (!channel_map) {
+    IWL_ERR(0, "Cannot continue, channel map == NULL\n");
+    goto fail;
+  }
+
   for (int i = 0; i < NUM_PHY_CTX; i++) {
-    this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_dev->channels[0];
-    IWL_INFO(0, "flags of channel: %d", m_pDevice->ie_dev->channels[0].flags);
+    this->m_pDevice->phy_ctx[i].channel = &channel_map[0];
+    IWL_INFO(0, "flags of channel: %d", channel_map[0].flags);
     if ((err = iwl_phy_ctxt_add(this, &this->m_pDevice->phy_ctx[i],
-                                &m_pDevice->ie_dev->channels[0], 1, 1)) != 0)
+                                &channel_map[0], 1, 1)) != 0)
       goto fail;
   }
 

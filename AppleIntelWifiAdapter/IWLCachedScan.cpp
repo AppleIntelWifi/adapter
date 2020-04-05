@@ -145,12 +145,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
 
     case RATE_MCS_CHAN_WIDTH_80:
       IWL_INFO(0, "Chan width 80mhz\n");
-      channel.flags |= APPLE80211_C_FLAG_EXT_ABV | APPLE80211_C_FLAG_40MHZ;
+      channel.flags |= APPLE80211_C_FLAG_80MHZ;
       break;
 
     case RATE_MCS_CHAN_WIDTH_160:
       IWL_INFO(0, "Chan width 160mhz\n");
-      channel.flags |= 0x400;
+      // channel.flags |= 0x400;
       break;
   }
 

@@ -417,15 +417,16 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
 
   uint32_t device_timestamp = le32toh(last_phy_info->system_timestamp);
 
-  if (trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
+  if (trans->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
     if (ieee80211_is_beacon(wh->i_fc[0])) {
       if (last_phy_info->channel != 0) {
-        if (trans->m_pDevice->ie_dev->scanCache == NULL) {
+        OSOrderedSet* scanCache = trans->m_pDevice->ie_dev->getScanCache();
+        if (scanCache == NULL) {
           IWL_ERR(0, "Scan cache was null, not allocating a new one\n");
           return;
         }
 
-        if (!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+        if (!trans->m_pDevice->ie_dev->lockScanCache()) {
           IWL_INFO(
               0,
               "Skipped beacon packet because scan cache is already locked\n");
@@ -433,14 +434,14 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
           return;
         }
 
-        int indx = trans->m_pDevice->ie_dev->scanCache->getCount();
+        int indx = scanCache->getCount();
 
         uint64_t oldest = UINT64_MAX;
         OSObject* oldest_obj = NULL;
         bool update_old_scan = false;
 
-        OSCollectionIterator* it = OSCollectionIterator::withCollection(
-            trans->m_pDevice->ie_dev->scanCache);
+        OSCollectionIterator* it =
+            OSCollectionIterator::withCollection(scanCache);
 
         if (!it->isValid()) {
           IWL_ERR(0, "Iterator not valid, not recreating\n");
@@ -474,13 +475,11 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
           }
         }
 
-        if (trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx &&
-            !update_old_scan) {
+        if (scanCache->getCapacity() == indx && !update_old_scan) {
           // purge the scan cache of the oldest object
           IWL_INFO(0, "Purging oldest object because we are at capacity\n");
 
-          if (oldest_obj != NULL)
-            trans->m_pDevice->ie_dev->scanCache->removeObject(oldest_obj);
+          if (oldest_obj != NULL) scanCache->removeObject(oldest_obj);
         }
 
         if (!update_old_scan) {
@@ -491,15 +490,14 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                           -101)) {
             scan->free();
             IWL_ERR(0, "failed to init new cached scan object\n");
-            IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+            trans->m_pDevice->ie_dev->unlockScanCache();
             return;
           }
 
-          trans->m_pDevice->ie_dev->scanCache->setObject(
-              scan);  // new scanned object, add it to the list
+          scanCache->setObject(scan);  // new scanned object, add it to the list
         }
         it->release();
-        IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+        trans->m_pDevice->ie_dev->unlockScanCache();
       }
     } else {
       IWL_ERR(0, "ignoring packet since it's not a beacon frame\n");
