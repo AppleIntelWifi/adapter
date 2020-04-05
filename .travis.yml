@@ -42,4 +42,5 @@ matrix:
     osx_image: xcode10.2
     compiler: clang
     script:
+    - pip3 install cpplint # i hope python3 is installed lol
     - ./scripts/lint.sh
