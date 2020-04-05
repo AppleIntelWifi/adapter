@@ -9,8 +9,8 @@
 #ifndef APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
 #define APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
 
-#include "IWLTransport.hpp"
 #include "../fw/fw-api.h"
+#include "IWLTransport.hpp"
 #include "debug.h"
 #include "nan.h"
 
@@ -29,21 +29,21 @@
  *    mutex itself, it will be called from a worker without mvm->mutex held.
  */
 enum iwl_rx_handler_context {
-    RX_HANDLER_SYNC,
-    RX_HANDLER_ASYNC_LOCKED,
-    RX_HANDLER_ASYNC_UNLOCKED,
+  RX_HANDLER_SYNC,
+  RX_HANDLER_ASYNC_LOCKED,
+  RX_HANDLER_ASYNC_UNLOCKED,
 };
 
 struct iwl_rx_handlers {
-    u16 cmd_id;
-    enum iwl_rx_handler_context context;
-    void (*fn)(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb);
+  u16 cmd_id;
+  enum iwl_rx_handler_context context;
+  void (*fn)(struct iwl_mvm *mvm, struct iwl_rx_cmd_buffer *rxb);
 };
 
-#define RX_HANDLER(_cmd_id, _fn, _context)    \
-{ .cmd_id = _cmd_id, .fn = _fn, .context = _context }
-#define RX_HANDLER_GRP(_grp, _cmd, _fn, _context)    \
-{ .cmd_id = WIDE_ID(_grp, _cmd), .fn = _fn, .context = _context }
+#define RX_HANDLER(_cmd_id, _fn, _context) \
+  { .cmd_id = _cmd_id, .fn = _fn, .context = _context }
+#define RX_HANDLER_GRP(_grp, _cmd, _fn, _context) \
+  { .cmd_id = WIDE_ID(_grp, _cmd), .fn = _fn, .context = _context }
 
 /*
  * Handlers for fw notifications
@@ -53,70 +53,70 @@ struct iwl_rx_handlers {
  * The handler can be one from three contexts, see &iwl_rx_handler_context
  */
 static const struct iwl_rx_handlers iwl_mvm_rx_handlers[] = {
-   // RX_HANDLER(TX_CMD, iwl_mvm_rx_tx_cmd, RX_HANDLER_SYNC),
-   // RX_HANDLER(BA_NOTIF, iwl_mvm_rx_ba_notif, RX_HANDLER_SYNC),
-    
-   // RX_HANDLER_GRP(DATA_PATH_GROUP, TLC_MNG_UPDATE_NOTIF,
-   //                iwl_mvm_tlc_update_notif, RX_HANDLER_SYNC),
-    
+    // RX_HANDLER(TX_CMD, iwl_mvm_rx_tx_cmd, RX_HANDLER_SYNC),
+    // RX_HANDLER(BA_NOTIF, iwl_mvm_rx_ba_notif, RX_HANDLER_SYNC),
+
+    // RX_HANDLER_GRP(DATA_PATH_GROUP, TLC_MNG_UPDATE_NOTIF,
+    //                iwl_mvm_tlc_update_notif, RX_HANDLER_SYNC),
+
     RX_HANDLER(BT_PROFILE_NOTIFICATION, IWLMvmDriver::btCoexNotif,
                RX_HANDLER_ASYNC_LOCKED),
-  //  RX_HANDLER(BEACON_NOTIFICATION, iwl_mvm_rx_beacon_notif,
-  //               RX_HANDLER_ASYNC_LOCKED),
-  //  RX_HANDLER(STATISTICS_NOTIFICATION, iwl_mvm_rx_statistics,
-  //             RX_HANDLER_ASYNC_LOCKED),
-    
-  //  RX_HANDLER(BA_WINDOW_STATUS_NOTIFICATION_ID,
-  //             iwl_mvm_window_status_notif, RX_HANDLER_SYNC),
-    
-  //  RX_HANDLER(TIME_EVENT_NOTIFICATION, iwl_mvm_rx_time_event_notif,
-  //             RX_HANDLER_SYNC),
-  //  RX_HANDLER(MCC_CHUB_UPDATE_CMD, iwl_mvm_rx_chub_update_mcc,
-  //             RX_HANDLER_ASYNC_LOCKED),
-    
-  //  RX_HANDLER(EOSP_NOTIFICATION, iwl_mvm_rx_eosp_notif, RX_HANDLER_SYNC),
-    
-  //  RX_HANDLER(SCAN_ITERATION_COMPLETE,
-  //             iwl_mvm_rx_lmac_scan_iter_complete_notif, RX_HANDLER_SYNC),
-  //  RX_HANDLER(SCAN_OFFLOAD_COMPLETE,
-  //             iwl_mvm_rx_lmac_scan_complete_notif,
-  //             RX_HANDLER_ASYNC_LOCKED),
-  //  RX_HANDLER(MATCH_FOUND_NOTIFICATION, iwl_mvm_rx_scan_match_found,
+    //  RX_HANDLER(BEACON_NOTIFICATION, iwl_mvm_rx_beacon_notif,
+    //               RX_HANDLER_ASYNC_LOCKED),
+    //  RX_HANDLER(STATISTICS_NOTIFICATION, iwl_mvm_rx_statistics,
+    //             RX_HANDLER_ASYNC_LOCKED),
+
+    //  RX_HANDLER(BA_WINDOW_STATUS_NOTIFICATION_ID,
+    //             iwl_mvm_window_status_notif, RX_HANDLER_SYNC),
+
+    //  RX_HANDLER(TIME_EVENT_NOTIFICATION, iwl_mvm_rx_time_event_notif,
+    //             RX_HANDLER_SYNC),
+    //  RX_HANDLER(MCC_CHUB_UPDATE_CMD, iwl_mvm_rx_chub_update_mcc,
+    //             RX_HANDLER_ASYNC_LOCKED),
+
+    //  RX_HANDLER(EOSP_NOTIFICATION, iwl_mvm_rx_eosp_notif, RX_HANDLER_SYNC),
+
+    //  RX_HANDLER(SCAN_ITERATION_COMPLETE,
+    //             iwl_mvm_rx_lmac_scan_iter_complete_notif, RX_HANDLER_SYNC),
+    //  RX_HANDLER(SCAN_OFFLOAD_COMPLETE,
+    //             iwl_mvm_rx_lmac_scan_complete_notif,
+    //             RX_HANDLER_ASYNC_LOCKED),
+    //  RX_HANDLER(MATCH_FOUND_NOTIFICATION, iwl_mvm_rx_scan_match_found,
     //           RX_HANDLER_SYNC),
-    //RX_HANDLER(SCAN_COMPLETE_UMAC, iwl_mvm_rx_umac_scan_complete_notif,
+    // RX_HANDLER(SCAN_COMPLETE_UMAC, iwl_mvm_rx_umac_scan_complete_notif,
     //           RX_HANDLER_ASYNC_LOCKED),
-    //RX_HANDLER(SCAN_ITERATION_COMPLETE_UMAC,
+    // RX_HANDLER(SCAN_ITERATION_COMPLETE_UMAC,
     //           iwl_mvm_rx_umac_scan_iter_complete_notif, RX_HANDLER_SYNC),
-    
-    //RX_HANDLER(CARD_STATE_NOTIFICATION, iwl_mvm_rx_card_state_notif,
+
+    // RX_HANDLER(CARD_STATE_NOTIFICATION, iwl_mvm_rx_card_state_notif,
     //           RX_HANDLER_SYNC),
-    
-    //RX_HANDLER(MISSED_BEACONS_NOTIFICATION, iwl_mvm_rx_missed_beacons_notif,
+
+    // RX_HANDLER(MISSED_BEACONS_NOTIFICATION, iwl_mvm_rx_missed_beacons_notif,
     //           RX_HANDLER_SYNC),
-    
+
     RX_HANDLER(REPLY_ERROR, IWLMvmDriver::rxFwErrorNotif, RX_HANDLER_SYNC),
-    //RX_HANDLER(PSM_UAPSD_AP_MISBEHAVING_NOTIFICATION,
+    // RX_HANDLER(PSM_UAPSD_AP_MISBEHAVING_NOTIFICATION,
     //           iwl_mvm_power_uapsd_misbehaving_ap_notif, RX_HANDLER_SYNC),
-    //RX_HANDLER(DTS_MEASUREMENT_NOTIFICATION, iwl_mvm_temp_notif,
+    // RX_HANDLER(DTS_MEASUREMENT_NOTIFICATION, iwl_mvm_temp_notif,
     //           RX_HANDLER_ASYNC_LOCKED),
-    //RX_HANDLER_GRP(PHY_OPS_GROUP, DTS_MEASUREMENT_NOTIF_WIDE,
+    // RX_HANDLER_GRP(PHY_OPS_GROUP, DTS_MEASUREMENT_NOTIF_WIDE,
     //               iwl_mvm_temp_notif, RX_HANDLER_ASYNC_UNLOCKED),
-    //RX_HANDLER_GRP(PHY_OPS_GROUP, CT_KILL_NOTIFICATION,
+    // RX_HANDLER_GRP(PHY_OPS_GROUP, CT_KILL_NOTIFICATION,
     //               iwl_mvm_ct_kill_notif, RX_HANDLER_SYNC),
-    
-    //RX_HANDLER(TDLS_CHANNEL_SWITCH_NOTIFICATION, iwl_mvm_rx_tdls_notif,
+
+    // RX_HANDLER(TDLS_CHANNEL_SWITCH_NOTIFICATION, iwl_mvm_rx_tdls_notif,
     //           RX_HANDLER_ASYNC_LOCKED),
     RX_HANDLER(MFUART_LOAD_NOTIFICATION, IWLMvmDriver::rxMfuartNotif,
                RX_HANDLER_SYNC),
-    //RX_HANDLER(TOF_NOTIFICATION, iwl_mvm_tof_resp_handler,
+    // RX_HANDLER(TOF_NOTIFICATION, iwl_mvm_tof_resp_handler,
     //           RX_HANDLER_ASYNC_LOCKED),
-    //RX_HANDLER_GRP(DEBUG_GROUP, MFU_ASSERT_DUMP_NTF,
+    // RX_HANDLER_GRP(DEBUG_GROUP, MFU_ASSERT_DUMP_NTF,
     //               iwl_mvm_mfu_assert_dump_notif, RX_HANDLER_SYNC),
-    //RX_HANDLER_GRP(PROT_OFFLOAD_GROUP, STORED_BEACON_NTF,
+    // RX_HANDLER_GRP(PROT_OFFLOAD_GROUP, STORED_BEACON_NTF,
     //               iwl_mvm_rx_stored_beacon_notif, RX_HANDLER_SYNC),
-    //RX_HANDLER_GRP(DATA_PATH_GROUP, MU_GROUP_MGMT_NOTIF,
+    // RX_HANDLER_GRP(DATA_PATH_GROUP, MU_GROUP_MGMT_NOTIF,
     //               iwl_mvm_mu_mimo_grp_notif, RX_HANDLER_SYNC),
-    //RX_HANDLER_GRP(DATA_PATH_GROUP, STA_PM_NOTIF,
+    // RX_HANDLER_GRP(DATA_PATH_GROUP, STA_PM_NOTIF,
     //               iwl_mvm_sta_pm_notif, RX_HANDLER_SYNC),
 };
 #undef RX_HANDLER
@@ -329,8 +329,7 @@ static const struct iwl_hcmd_arr iwl_mvm_groups[] = {
     [NAN_GROUP] = HCMD_ARR(iwl_mvm_nan_names),
     [LOCATION_GROUP] = HCMD_ARR(iwl_mvm_location_names),
     [PROT_OFFLOAD_GROUP] = HCMD_ARR(iwl_mvm_prot_offload_names),
-    [REGULATORY_AND_NVM_GROUP] =
-        HCMD_ARR(iwl_mvm_regulatory_and_nvm_names),
+    [REGULATORY_AND_NVM_GROUP] = HCMD_ARR(iwl_mvm_regulatory_and_nvm_names),
 };
 
-#endif   // APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
+#endif  // APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_

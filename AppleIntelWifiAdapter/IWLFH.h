@@ -9,17 +9,17 @@
 #ifndef APPLEINTELWIFIADAPTER_IWLFH_H_
 #define APPLEINTELWIFIADAPTER_IWLFH_H_
 
-#include <linux/types.h>
 #include <linux/bitfield.h>
+#include <linux/types.h>
 
 /**
  * This I/O area is directly read/writable by driver (e.g. Linux uses writel())
  * Addresses are offsets from device's PCI hardware base address.
  */
-#define FH_MEM_LOWER_BOUND                   (0x1000)
-#define FH_MEM_UPPER_BOUND                   (0x2000)
-#define FH_MEM_LOWER_BOUND_GEN2              (0xa06000)
-#define FH_MEM_UPPER_BOUND_GEN2              (0xa08000)
+#define FH_MEM_LOWER_BOUND (0x1000)
+#define FH_MEM_UPPER_BOUND (0x2000)
+#define FH_MEM_LOWER_BOUND_GEN2 (0xa06000)
+#define FH_MEM_UPPER_BOUND_GEN2 (0xa08000)
 
 /**
  * Keep-Warm (KW) buffer base address.
@@ -38,8 +38,7 @@
  * Bit fields:
  *  31-0:  Keep-warm buffer physical base address [35:4], must be 4K aligned
  */
-#define FH_KW_MEM_ADDR_REG             (FH_MEM_LOWER_BOUND + 0x97C)
-
+#define FH_KW_MEM_ADDR_REG (FH_MEM_LOWER_BOUND + 0x97C)
 
 /**
  * TFD Circular Buffers Base (CBBC) addresses
@@ -55,14 +54,14 @@
  * Bit fields in each pointer register:
  *  27-0: TFD CB physical base address [35:8], must be 256-byte aligned
  */
-#define FH_MEM_CBBC_0_15_LOWER_BOUND        (FH_MEM_LOWER_BOUND + 0x9D0)
-#define FH_MEM_CBBC_0_15_UPPER_BOUND        (FH_MEM_LOWER_BOUND + 0xA10)
-#define FH_MEM_CBBC_16_19_LOWER_BOUND        (FH_MEM_LOWER_BOUND + 0xBF0)
-#define FH_MEM_CBBC_16_19_UPPER_BOUND        (FH_MEM_LOWER_BOUND + 0xC00)
-#define FH_MEM_CBBC_20_31_LOWER_BOUND        (FH_MEM_LOWER_BOUND + 0xB20)
-#define FH_MEM_CBBC_20_31_UPPER_BOUND        (FH_MEM_LOWER_BOUND + 0xB80)
+#define FH_MEM_CBBC_0_15_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0x9D0)
+#define FH_MEM_CBBC_0_15_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xA10)
+#define FH_MEM_CBBC_16_19_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xBF0)
+#define FH_MEM_CBBC_16_19_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xC00)
+#define FH_MEM_CBBC_20_31_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xB20)
+#define FH_MEM_CBBC_20_31_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xB80)
 /* 22000 TFD table address, 64 bit */
-#define TFH_TFDQ_CBB_TABLE            (0x1C00)
+#define TFH_TFDQ_CBB_TABLE (0x1C00)
 
 /* 22000 configuration registers */
 
@@ -81,11 +80,11 @@
  * reading chunks of more than 64B only if the read address is aligned to 128B.
  * In case of DRAM read address which is not aligned to 128B, the TFH will
  * enable transfer size which doesn't cross 64B DRAM address boundary.
-*/
-#define TFH_TRANSFER_MODE        (0x1F40)
-#define TFH_TRANSFER_MAX_PENDING_REQ    0xc
-#define TFH_CHUNK_SIZE_128            BIT(8)
-#define TFH_CHUNK_SPLIT_MODE        BIT(10)
+ */
+#define TFH_TRANSFER_MODE (0x1F40)
+#define TFH_TRANSFER_MAX_PENDING_REQ 0xc
+#define TFH_CHUNK_SIZE_128 BIT(8)
+#define TFH_CHUNK_SPLIT_MODE BIT(10)
 /*
  * Defines the offset address in dwords referring from the beginning of the
  * Tx CMD which will be updated in DRAM.
@@ -93,7 +92,7 @@
  * the start of the TFD first TB.
  * In case of a DRAM Tx CMD update the TFH will update PN and Key ID
  */
-#define TFH_TXCMD_UPDATE_CFG        (0x1F48)
+#define TFH_TXCMD_UPDATE_CFG (0x1F48)
 /*
  * Controls TX DMA operation
  *
@@ -106,23 +105,23 @@
  * Bits 25:24: Defines the interrupt target upon dram2sram transfer done. When
  * set to 1 - interrupt is sent to the driver
  * Bit 0: Indicates the snoop configuration
-*/
-#define TFH_SRV_DMA_CHNL0_CTRL    (0x1F60)
-#define TFH_SRV_DMA_SNOOP    BIT(0)
-#define TFH_SRV_DMA_TO_DRIVER    BIT(24)
-#define TFH_SRV_DMA_START    BIT(31)
+ */
+#define TFH_SRV_DMA_CHNL0_CTRL (0x1F60)
+#define TFH_SRV_DMA_SNOOP BIT(0)
+#define TFH_SRV_DMA_TO_DRIVER BIT(24)
+#define TFH_SRV_DMA_START BIT(31)
 
 /* Defines the DMA SRAM write start address to transfer a data block */
-#define TFH_SRV_DMA_CHNL0_SRAM_ADDR    (0x1F64)
+#define TFH_SRV_DMA_CHNL0_SRAM_ADDR (0x1F64)
 
 /* Defines the 64bits DRAM start address to read the DMA data block from */
-#define TFH_SRV_DMA_CHNL0_DRAM_ADDR    (0x1F68)
+#define TFH_SRV_DMA_CHNL0_DRAM_ADDR (0x1F68)
 
 /*
  * Defines the number of bytes to transfer from DRAM to SRAM.
  * Note that this register may be configured with non-dword aligned size.
  */
-#define TFH_SRV_DMA_CHNL0_BC    (0x1F70)
+#define TFH_SRV_DMA_CHNL0_BC (0x1F70)
 
 /**
  * Rx SRAM Control and Status Registers (RSCSR)
@@ -193,23 +192,23 @@
  * and "read" indexes; that is, make sure that there are no more than 254
  * buffers waiting to be filled.
  */
-#define FH_MEM_RSCSR_LOWER_BOUND    (FH_MEM_LOWER_BOUND + 0xBC0)
-#define FH_MEM_RSCSR_UPPER_BOUND    (FH_MEM_LOWER_BOUND + 0xC00)
-#define FH_MEM_RSCSR_CHNL0        (FH_MEM_RSCSR_LOWER_BOUND)
+#define FH_MEM_RSCSR_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xBC0)
+#define FH_MEM_RSCSR_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xC00)
+#define FH_MEM_RSCSR_CHNL0 (FH_MEM_RSCSR_LOWER_BOUND)
 
 /**
  * Physical base address of 8-byte Rx Status buffer.
  * Bit fields:
  *  31-0: Rx status buffer physical base address [35:4], must 16-byte aligned.
  */
-#define FH_RSCSR_CHNL0_STTS_WPTR_REG    (FH_MEM_RSCSR_CHNL0)
+#define FH_RSCSR_CHNL0_STTS_WPTR_REG (FH_MEM_RSCSR_CHNL0)
 
 /**
  * Physical base address of Rx Buffer Descriptor Circular Buffer.
  * Bit fields:
  *  27-0:  RBD CD physical base address [35:8], must be 256-byte aligned.
  */
-#define FH_RSCSR_CHNL0_RBDCB_BASE_REG    (FH_MEM_RSCSR_CHNL0 + 0x004)
+#define FH_RSCSR_CHNL0_RBDCB_BASE_REG (FH_MEM_RSCSR_CHNL0 + 0x004)
 
 /**
  * Rx write pointer (index, really!).
@@ -217,11 +216,11 @@
  *  11-0:  Index of driver's most recent prepared-to-be-filled RBD, + 1.
  *         NOTE:  For 256-entry circular buffer, use only bits [7:0].
  */
-#define FH_RSCSR_CHNL0_RBDCB_WPTR_REG    (FH_MEM_RSCSR_CHNL0 + 0x008)
-#define FH_RSCSR_CHNL0_WPTR        (FH_RSCSR_CHNL0_RBDCB_WPTR_REG)
+#define FH_RSCSR_CHNL0_RBDCB_WPTR_REG (FH_MEM_RSCSR_CHNL0 + 0x008)
+#define FH_RSCSR_CHNL0_WPTR (FH_RSCSR_CHNL0_RBDCB_WPTR_REG)
 
-#define FW_RSCSR_CHNL0_RXDCB_RDPTR_REG    (FH_MEM_RSCSR_CHNL0 + 0x00c)
-#define FH_RSCSR_CHNL0_RDPTR        FW_RSCSR_CHNL0_RXDCB_RDPTR_REG
+#define FW_RSCSR_CHNL0_RXDCB_RDPTR_REG (FH_MEM_RSCSR_CHNL0 + 0x00c)
+#define FH_RSCSR_CHNL0_RDPTR FW_RSCSR_CHNL0_RXDCB_RDPTR_REG
 
 /**
  * Rx Config/Status Registers (RCSR)
@@ -249,37 +248,37 @@
  *        typical value 0x10 (about 1/2 msec)
  *  3- 0: reserved
  */
-#define FH_MEM_RCSR_LOWER_BOUND      (FH_MEM_LOWER_BOUND + 0xC00)
-#define FH_MEM_RCSR_UPPER_BOUND      (FH_MEM_LOWER_BOUND + 0xCC0)
-#define FH_MEM_RCSR_CHNL0            (FH_MEM_RCSR_LOWER_BOUND)
+#define FH_MEM_RCSR_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xC00)
+#define FH_MEM_RCSR_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xCC0)
+#define FH_MEM_RCSR_CHNL0 (FH_MEM_RCSR_LOWER_BOUND)
 
-#define FH_MEM_RCSR_CHNL0_CONFIG_REG    (FH_MEM_RCSR_CHNL0)
-#define FH_MEM_RCSR_CHNL0_RBDCB_WPTR    (FH_MEM_RCSR_CHNL0 + 0x8)
-#define FH_MEM_RCSR_CHNL0_FLUSH_RB_REQ    (FH_MEM_RCSR_CHNL0 + 0x10)
+#define FH_MEM_RCSR_CHNL0_CONFIG_REG (FH_MEM_RCSR_CHNL0)
+#define FH_MEM_RCSR_CHNL0_RBDCB_WPTR (FH_MEM_RCSR_CHNL0 + 0x8)
+#define FH_MEM_RCSR_CHNL0_FLUSH_RB_REQ (FH_MEM_RCSR_CHNL0 + 0x10)
 
-#define FH_RCSR_CHNL0_RX_CONFIG_RB_TIMEOUT_MSK (0x00000FF0) /* bits 4-11 */
-#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_MSK   (0x00001000) /* bits 12 */
+#define FH_RCSR_CHNL0_RX_CONFIG_RB_TIMEOUT_MSK (0x00000FF0)   /* bits 4-11 */
+#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_MSK (0x00001000)     /* bits 12 */
 #define FH_RCSR_CHNL0_RX_CONFIG_SINGLE_FRAME_MSK (0x00008000) /* bit 15 */
-#define FH_RCSR_CHNL0_RX_CONFIG_RB_SIZE_MSK   (0x00030000) /* bits 16-17 */
-#define FH_RCSR_CHNL0_RX_CONFIG_RBDBC_SIZE_MSK (0x00F00000) /* bits 20-23 */
-#define FH_RCSR_CHNL0_RX_CONFIG_DMA_CHNL_EN_MSK (0xC0000000) /* bits 30-31*/
+#define FH_RCSR_CHNL0_RX_CONFIG_RB_SIZE_MSK (0x00030000)      /* bits 16-17 */
+#define FH_RCSR_CHNL0_RX_CONFIG_RBDBC_SIZE_MSK (0x00F00000)   /* bits 20-23 */
+#define FH_RCSR_CHNL0_RX_CONFIG_DMA_CHNL_EN_MSK (0xC0000000)  /* bits 30-31*/
 
-#define FH_RCSR_RX_CONFIG_RBDCB_SIZE_POS    (20)
-#define FH_RCSR_RX_CONFIG_REG_IRQ_RBTH_POS    (4)
-#define RX_RB_TIMEOUT    (0x11)
+#define FH_RCSR_RX_CONFIG_RBDCB_SIZE_POS (20)
+#define FH_RCSR_RX_CONFIG_REG_IRQ_RBTH_POS (4)
+#define RX_RB_TIMEOUT (0x11)
 
-#define FH_RCSR_RX_CONFIG_CHNL_EN_PAUSE_VAL         (0x00000000)
-#define FH_RCSR_RX_CONFIG_CHNL_EN_PAUSE_EOF_VAL     (0x40000000)
-#define FH_RCSR_RX_CONFIG_CHNL_EN_ENABLE_VAL        (0x80000000)
+#define FH_RCSR_RX_CONFIG_CHNL_EN_PAUSE_VAL (0x00000000)
+#define FH_RCSR_RX_CONFIG_CHNL_EN_PAUSE_EOF_VAL (0x40000000)
+#define FH_RCSR_RX_CONFIG_CHNL_EN_ENABLE_VAL (0x80000000)
 
-#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_4K    (0x00000000)
-#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_8K    (0x00010000)
-#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_12K   (0x00020000)
-#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_16K   (0x00030000)
+#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_4K (0x00000000)
+#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_8K (0x00010000)
+#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_12K (0x00020000)
+#define FH_RCSR_RX_CONFIG_REG_VAL_RB_SIZE_16K (0x00030000)
 
-#define FH_RCSR_CHNL0_RX_IGNORE_RXF_EMPTY              (0x00000004)
-#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_NO_INT_VAL    (0x00000000)
-#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_INT_HOST_VAL  (0x00001000)
+#define FH_RCSR_CHNL0_RX_IGNORE_RXF_EMPTY (0x00000004)
+#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_NO_INT_VAL (0x00000000)
+#define FH_RCSR_CHNL0_RX_CONFIG_IRQ_DEST_INT_HOST_VAL (0x00001000)
 
 /**
  * Rx Shared Status Registers (RSSR)
@@ -294,48 +293,47 @@
  * FH_MEM_RSSR_SHARED_CTRL_REG and FH_MEM_RSSR_RX_ENABLE_ERR_IRQ2DRV
  * contain default values that should not be altered by the driver.
  */
-#define FH_MEM_RSSR_LOWER_BOUND           (FH_MEM_LOWER_BOUND + 0xC40)
-#define FH_MEM_RSSR_UPPER_BOUND           (FH_MEM_LOWER_BOUND + 0xD00)
+#define FH_MEM_RSSR_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xC40)
+#define FH_MEM_RSSR_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xD00)
 
-#define FH_MEM_RSSR_SHARED_CTRL_REG       (FH_MEM_RSSR_LOWER_BOUND)
-#define FH_MEM_RSSR_RX_STATUS_REG    (FH_MEM_RSSR_LOWER_BOUND + 0x004)
-#define FH_MEM_RSSR_RX_ENABLE_ERR_IRQ2DRV\
-                    (FH_MEM_RSSR_LOWER_BOUND + 0x008)
+#define FH_MEM_RSSR_SHARED_CTRL_REG (FH_MEM_RSSR_LOWER_BOUND)
+#define FH_MEM_RSSR_RX_STATUS_REG (FH_MEM_RSSR_LOWER_BOUND + 0x004)
+#define FH_MEM_RSSR_RX_ENABLE_ERR_IRQ2DRV (FH_MEM_RSSR_LOWER_BOUND + 0x008)
 
-#define FH_RSSR_CHNL0_RX_STATUS_CHNL_IDLE    (0x01000000)
+#define FH_RSSR_CHNL0_RX_STATUS_CHNL_IDLE (0x01000000)
 
-#define FH_MEM_TFDIB_REG1_ADDR_BITSHIFT    28
-#define FH_MEM_TB_MAX_LENGTH            (0x00020000)
+#define FH_MEM_TFDIB_REG1_ADDR_BITSHIFT 28
+#define FH_MEM_TB_MAX_LENGTH (0x00020000)
 
 /* 9000 rx series registers */
 
 #define RFH_Q0_FRBDCB_BA_LSB 0xA08000 /* 64 bit address */
-#define RFH_Q_FRBDCB_BA_LSB(q) (RFH_Q0_FRBDCB_BA_LSB + (q) * 8)
+#define RFH_Q_FRBDCB_BA_LSB(q) (RFH_Q0_FRBDCB_BA_LSB + (q)*8)
 /* Write index table */
 #define RFH_Q0_FRBDCB_WIDX 0xA08080
-#define RFH_Q_FRBDCB_WIDX(q) (RFH_Q0_FRBDCB_WIDX + (q) * 4)
+#define RFH_Q_FRBDCB_WIDX(q) (RFH_Q0_FRBDCB_WIDX + (q)*4)
 /* Write index table - shadow registers */
 #define RFH_Q0_FRBDCB_WIDX_TRG 0x1C80
-#define RFH_Q_FRBDCB_WIDX_TRG(q) (RFH_Q0_FRBDCB_WIDX_TRG + (q) * 4)
+#define RFH_Q_FRBDCB_WIDX_TRG(q) (RFH_Q0_FRBDCB_WIDX_TRG + (q)*4)
 /* Read index table */
 #define RFH_Q0_FRBDCB_RIDX 0xA080C0
-#define RFH_Q_FRBDCB_RIDX(q) (RFH_Q0_FRBDCB_RIDX + (q) * 4)
+#define RFH_Q_FRBDCB_RIDX(q) (RFH_Q0_FRBDCB_RIDX + (q)*4)
 /* Used list table */
 #define RFH_Q0_URBDCB_BA_LSB 0xA08100 /* 64 bit address */
-#define RFH_Q_URBDCB_BA_LSB(q) (RFH_Q0_URBDCB_BA_LSB + (q) * 8)
+#define RFH_Q_URBDCB_BA_LSB(q) (RFH_Q0_URBDCB_BA_LSB + (q)*8)
 /* Write index table */
 #define RFH_Q0_URBDCB_WIDX 0xA08180
-#define RFH_Q_URBDCB_WIDX(q) (RFH_Q0_URBDCB_WIDX + (q) * 4)
+#define RFH_Q_URBDCB_WIDX(q) (RFH_Q0_URBDCB_WIDX + (q)*4)
 #define RFH_Q0_URBDCB_VAID 0xA081C0
-#define RFH_Q_URBDCB_VAID(q) (RFH_Q0_URBDCB_VAID + (q) * 4)
+#define RFH_Q_URBDCB_VAID(q) (RFH_Q0_URBDCB_VAID + (q)*4)
 /* stts */
 #define RFH_Q0_URBD_STTS_WPTR_LSB 0xA08200 /*64 bits address */
-#define RFH_Q_URBD_STTS_WPTR_LSB(q) (RFH_Q0_URBD_STTS_WPTR_LSB + (q) * 8)
+#define RFH_Q_URBD_STTS_WPTR_LSB(q) (RFH_Q0_URBD_STTS_WPTR_LSB + (q)*8)
 
 #define RFH_Q0_ORB_WPTR_LSB 0xA08280
-#define RFH_Q_ORB_WPTR_LSB(q) (RFH_Q0_ORB_WPTR_LSB + (q) * 8)
+#define RFH_Q_ORB_WPTR_LSB(q) (RFH_Q0_ORB_WPTR_LSB + (q)*8)
 #define RFH_RBDBUF_RBD0_LSB 0xA08300
-#define RFH_RBDBUF_RBD_LSB(q) (RFH_RBDBUF_RBD0_LSB + (q) * 8)
+#define RFH_RBDBUF_RBD_LSB(q) (RFH_RBDBUF_RBD0_LSB + (q)*8)
 
 /**
  * RFH Status Register
@@ -358,68 +356,68 @@
  * RXF to DRAM.
  * Once the RXF-to-DRAM DMA is active, this flag is immediately turned off.
  */
-#define RFH_GEN_STATUS        0xA09808
-#define RFH_GEN_STATUS_GEN3    0xA07824
-#define RBD_FETCH_IDLE    BIT(29)
-#define SRAM_DMA_IDLE    BIT(30)
-#define RXF_DMA_IDLE    BIT(31)
+#define RFH_GEN_STATUS 0xA09808
+#define RFH_GEN_STATUS_GEN3 0xA07824
+#define RBD_FETCH_IDLE BIT(29)
+#define SRAM_DMA_IDLE BIT(30)
+#define RXF_DMA_IDLE BIT(31)
 
 /* DMA configuration */
-#define RFH_RXF_DMA_CFG        0xA09820
-#define RFH_RXF_DMA_CFG_GEN3    0xA07880
+#define RFH_RXF_DMA_CFG 0xA09820
+#define RFH_RXF_DMA_CFG_GEN3 0xA07880
 /* RB size */
 #define RFH_RXF_DMA_RB_SIZE_MASK (0x000F0000) /* bits 16-19 */
 #define RFH_RXF_DMA_RB_SIZE_POS 16
-#define RFH_RXF_DMA_RB_SIZE_1K    (0x1 << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_2K    (0x2 << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_4K    (0x4 << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_8K    (0x8 << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_12K    (0x9 << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_16K    (0xA << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_20K    (0xB << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_24K    (0xC << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_28K    (0xD << RFH_RXF_DMA_RB_SIZE_POS)
-#define RFH_RXF_DMA_RB_SIZE_32K    (0xE << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_1K (0x1 << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_2K (0x2 << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_4K (0x4 << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_8K (0x8 << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_12K (0x9 << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_16K (0xA << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_20K (0xB << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_24K (0xC << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_28K (0xD << RFH_RXF_DMA_RB_SIZE_POS)
+#define RFH_RXF_DMA_RB_SIZE_32K (0xE << RFH_RXF_DMA_RB_SIZE_POS)
 /* RB Circular Buffer size:defines the table sizes in RBD units */
 #define RFH_RXF_DMA_RBDCB_SIZE_MASK (0x00F00000) /* bits 20-23 */
 #define RFH_RXF_DMA_RBDCB_SIZE_POS 20
-#define RFH_RXF_DMA_RBDCB_SIZE_8    (0x3 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_16    (0x4 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_32    (0x5 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_64    (0x7 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_128    (0x7 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_256    (0x8 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_512    (0x9 << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_1024    (0xA << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_RBDCB_SIZE_2048    (0xB << RFH_RXF_DMA_RBDCB_SIZE_POS)
-#define RFH_RXF_DMA_MIN_RB_SIZE_MASK    (0x03000000) /* bit 24-25 */
-#define RFH_RXF_DMA_MIN_RB_SIZE_POS    24
-#define RFH_RXF_DMA_MIN_RB_4_8        (3 << RFH_RXF_DMA_MIN_RB_SIZE_POS)
-#define RFH_RXF_DMA_DROP_TOO_LARGE_MASK    (0x04000000) /* bit 26 */
-#define RFH_RXF_DMA_SINGLE_FRAME_MASK    (0x20000000) /* bit 29 */
-#define RFH_DMA_EN_MASK            (0xC0000000) /* bits 30-31*/
-#define RFH_DMA_EN_ENABLE_VAL        BIT(31)
+#define RFH_RXF_DMA_RBDCB_SIZE_8 (0x3 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_16 (0x4 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_32 (0x5 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_64 (0x7 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_128 (0x7 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_256 (0x8 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_512 (0x9 << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_1024 (0xA << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_RBDCB_SIZE_2048 (0xB << RFH_RXF_DMA_RBDCB_SIZE_POS)
+#define RFH_RXF_DMA_MIN_RB_SIZE_MASK (0x03000000) /* bit 24-25 */
+#define RFH_RXF_DMA_MIN_RB_SIZE_POS 24
+#define RFH_RXF_DMA_MIN_RB_4_8 (3 << RFH_RXF_DMA_MIN_RB_SIZE_POS)
+#define RFH_RXF_DMA_DROP_TOO_LARGE_MASK (0x04000000) /* bit 26 */
+#define RFH_RXF_DMA_SINGLE_FRAME_MASK (0x20000000)   /* bit 29 */
+#define RFH_DMA_EN_MASK (0xC0000000)                 /* bits 30-31*/
+#define RFH_DMA_EN_ENABLE_VAL BIT(31)
 
 #define RFH_RXF_RXQ_ACTIVE 0xA0980C
 
-#define RFH_GEN_CFG    0xA09800
-#define RFH_GEN_CFG_SERVICE_DMA_SNOOP    BIT(0)
-#define RFH_GEN_CFG_RFH_DMA_SNOOP    BIT(1)
-#define RFH_GEN_CFG_RB_CHUNK_SIZE    BIT(4)
-#define RFH_GEN_CFG_RB_CHUNK_SIZE_128    1
-#define RFH_GEN_CFG_RB_CHUNK_SIZE_64    0
+#define RFH_GEN_CFG 0xA09800
+#define RFH_GEN_CFG_SERVICE_DMA_SNOOP BIT(0)
+#define RFH_GEN_CFG_RFH_DMA_SNOOP BIT(1)
+#define RFH_GEN_CFG_RB_CHUNK_SIZE BIT(4)
+#define RFH_GEN_CFG_RB_CHUNK_SIZE_128 1
+#define RFH_GEN_CFG_RB_CHUNK_SIZE_64 0
 /* the driver assumes everywhere that the default RXQ is 0 */
-#define RFH_GEN_CFG_DEFAULT_RXQ_NUM    0xF00
-#define RFH_GEN_CFG_VAL(_n, _v)        FIELD_PREP(RFH_GEN_CFG_ ## _n, _v)
+#define RFH_GEN_CFG_DEFAULT_RXQ_NUM 0xF00
+#define RFH_GEN_CFG_VAL(_n, _v) FIELD_PREP(RFH_GEN_CFG_##_n, _v)
 
 /* end of 9000 rx series registers */
 
 /* TFDB  Area - TFDs buffer table */
-#define FH_MEM_TFDIB_DRAM_ADDR_LSB_MSK      (0xFFFFFFFF)
-#define FH_TFDIB_LOWER_BOUND       (FH_MEM_LOWER_BOUND + 0x900)
-#define FH_TFDIB_UPPER_BOUND       (FH_MEM_LOWER_BOUND + 0x958)
-#define FH_TFDIB_CTRL0_REG(_chnl)  (FH_TFDIB_LOWER_BOUND + 0x8 * (_chnl))
-#define FH_TFDIB_CTRL1_REG(_chnl)  (FH_TFDIB_LOWER_BOUND + 0x8 * (_chnl) + 0x4)
+#define FH_MEM_TFDIB_DRAM_ADDR_LSB_MSK (0xFFFFFFFF)
+#define FH_TFDIB_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0x900)
+#define FH_TFDIB_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0x958)
+#define FH_TFDIB_CTRL0_REG(_chnl) (FH_TFDIB_LOWER_BOUND + 0x8 * (_chnl))
+#define FH_TFDIB_CTRL1_REG(_chnl) (FH_TFDIB_LOWER_BOUND + 0x8 * (_chnl) + 0x4)
 
 /**
  * Transmit DMA Channel Control/Status Registers (TCSR)
@@ -443,44 +441,43 @@
  *     3: Enable internal DMA requests (1, normal operation), disable (0)
  *  2- 0: Reserved, set to "0"
  */
-#define FH_TCSR_LOWER_BOUND  (FH_MEM_LOWER_BOUND + 0xD00)
-#define FH_TCSR_UPPER_BOUND  (FH_MEM_LOWER_BOUND + 0xE60)
+#define FH_TCSR_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xD00)
+#define FH_TCSR_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xE60)
 
 /* Find Control/Status reg for given Tx DMA/FIFO channel */
-#define FH_TCSR_CHNL_NUM                            (8)
+#define FH_TCSR_CHNL_NUM (8)
 
 /* TCSR: tx_config register values */
-#define FH_TCSR_CHNL_TX_CONFIG_REG(_chnl)    \
-        (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl))
-#define FH_TCSR_CHNL_TX_CREDIT_REG(_chnl)    \
-        (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl) + 0x4)
-#define FH_TCSR_CHNL_TX_BUF_STS_REG(_chnl)    \
-        (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl) + 0x8)
+#define FH_TCSR_CHNL_TX_CONFIG_REG(_chnl) (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl))
+#define FH_TCSR_CHNL_TX_CREDIT_REG(_chnl) \
+  (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl) + 0x4)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG(_chnl) \
+  (FH_TCSR_LOWER_BOUND + 0x20 * (_chnl) + 0x8)
 
-#define FH_TCSR_TX_CONFIG_REG_VAL_MSG_MODE_TXF        (0x00000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_MSG_MODE_DRV        (0x00000001)
+#define FH_TCSR_TX_CONFIG_REG_VAL_MSG_MODE_TXF (0x00000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_MSG_MODE_DRV (0x00000001)
 
-#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_DISABLE    (0x00000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE    (0x00000008)
+#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_DISABLE (0x00000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CREDIT_ENABLE (0x00000008)
 
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_NOINT    (0x00000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_ENDTFD    (0x00100000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_IFTFD    (0x00200000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_NOINT (0x00000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_ENDTFD (0x00100000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_HOST_IFTFD (0x00200000)
 
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_NOINT    (0x00000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_ENDTFD    (0x00400000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_IFTFD    (0x00800000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_NOINT (0x00000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_ENDTFD (0x00400000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_CIRQ_RTC_IFTFD (0x00800000)
 
-#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_PAUSE    (0x00000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_PAUSE_EOF    (0x40000000)
-#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE    (0x80000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_PAUSE (0x00000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_PAUSE_EOF (0x40000000)
+#define FH_TCSR_TX_CONFIG_REG_VAL_DMA_CHNL_ENABLE (0x80000000)
 
-#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_EMPTY    (0x00000000)
-#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_WAIT    (0x00002000)
-#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_VALID    (0x00000003)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_EMPTY (0x00000000)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_WAIT (0x00002000)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG_VAL_TFDB_VALID (0x00000003)
 
-#define FH_TCSR_CHNL_TX_BUF_STS_REG_POS_TB_NUM        (20)
-#define FH_TCSR_CHNL_TX_BUF_STS_REG_POS_TB_IDX        (12)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG_POS_TB_NUM (20)
+#define FH_TCSR_CHNL_TX_BUF_STS_REG_POS_TB_IDX (12)
 
 /**
  * Tx Shared Status Registers (TSSR)
@@ -494,10 +491,10 @@
  * 31-24:  1 = Channel buffers empty (channel 7:0)
  * 23-16:  1 = No pending requests (channel 7:0)
  */
-#define FH_TSSR_LOWER_BOUND        (FH_MEM_LOWER_BOUND + 0xEA0)
-#define FH_TSSR_UPPER_BOUND        (FH_MEM_LOWER_BOUND + 0xEC0)
+#define FH_TSSR_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0xEA0)
+#define FH_TSSR_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0xEC0)
 
-#define FH_TSSR_TX_STATUS_REG        (FH_TSSR_LOWER_BOUND + 0x010)
+#define FH_TSSR_TX_STATUS_REG (FH_TSSR_LOWER_BOUND + 0x010)
 
 /**
  * Bit fields for TSSR(Tx Shared Status & Control) error status register:
@@ -516,38 +513,37 @@
  *    synchronized to the TxFIFO status
  *    uCode/driver must write "1" in order to clear this flag
  */
-#define FH_TSSR_TX_ERROR_REG        (FH_TSSR_LOWER_BOUND + 0x018)
-#define FH_TSSR_TX_MSG_CONFIG_REG    (FH_TSSR_LOWER_BOUND + 0x008)
+#define FH_TSSR_TX_ERROR_REG (FH_TSSR_LOWER_BOUND + 0x018)
+#define FH_TSSR_TX_MSG_CONFIG_REG (FH_TSSR_LOWER_BOUND + 0x008)
 
 #define FH_TSSR_TX_STATUS_REG_MSK_CHNL_IDLE(_chnl) ((1 << (_chnl)) << 16)
 
 /* Tx service channels */
-#define FH_SRVC_CHNL        (9)
-#define FH_SRVC_LOWER_BOUND    (FH_MEM_LOWER_BOUND + 0x9C8)
-#define FH_SRVC_UPPER_BOUND    (FH_MEM_LOWER_BOUND + 0x9D0)
+#define FH_SRVC_CHNL (9)
+#define FH_SRVC_LOWER_BOUND (FH_MEM_LOWER_BOUND + 0x9C8)
+#define FH_SRVC_UPPER_BOUND (FH_MEM_LOWER_BOUND + 0x9D0)
 #define FH_SRVC_CHNL_SRAM_ADDR_REG(_chnl) \
-        (FH_SRVC_LOWER_BOUND + ((_chnl) - 9) * 0x4)
+  (FH_SRVC_LOWER_BOUND + ((_chnl)-9) * 0x4)
 
-#define FH_TX_CHICKEN_BITS_REG    (FH_MEM_LOWER_BOUND + 0xE98)
-#define FH_TX_TRB_REG(_chan)    (FH_MEM_LOWER_BOUND + 0x958 + (_chan) * 4)
+#define FH_TX_CHICKEN_BITS_REG (FH_MEM_LOWER_BOUND + 0xE98)
+#define FH_TX_TRB_REG(_chan) (FH_MEM_LOWER_BOUND + 0x958 + (_chan)*4)
 
 /* Instruct FH to increment the retry count of a packet when
  * it is brought from the memory to TX-FIFO
  */
-#define MQ_RX_TABLE_SIZE    512
-#define MQ_RX_TABLE_MASK    (MQ_RX_TABLE_SIZE - 1)
-#define MQ_RX_NUM_RBDS        (MQ_RX_TABLE_SIZE - 1)
-#define FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN    (0x00000002)
+#define MQ_RX_TABLE_SIZE 512
+#define MQ_RX_TABLE_MASK (MQ_RX_TABLE_SIZE - 1)
+#define MQ_RX_NUM_RBDS (MQ_RX_TABLE_SIZE - 1)
+#define FH_TX_CHICKEN_BITS_SCD_AUTO_RETRY_EN (0x00000002)
 
-#define RX_POOL_SIZE(rbds)    ((rbds) - 1 +    \
-                 IWL_MAX_RX_HW_QUEUES *    \
-                 (RX_CLAIM_REQ_ALLOC - RX_POST_REQ_ALLOC))
+#define RX_POOL_SIZE(rbds) \
+  ((rbds)-1 + IWL_MAX_RX_HW_QUEUES * (RX_CLAIM_REQ_ALLOC - RX_POST_REQ_ALLOC))
 /* cb size is the exponent */
-#define RX_QUEUE_CB_SIZE(x)    ilog2(x)
+#define RX_QUEUE_CB_SIZE(x) ilog2(x)
 
-#define RX_QUEUE_SIZE                         256
-#define RX_QUEUE_MASK                         255
-#define RX_QUEUE_SIZE_LOG                     8
+#define RX_QUEUE_SIZE 256
+#define RX_QUEUE_MASK 255
+#define RX_QUEUE_SIZE_LOG 8
 
 /**
  * struct iwl_rb_status - reserve buffer status
@@ -560,29 +556,26 @@
  *     which was transferred
  */
 struct iwl_rb_status {
-    __le16 closed_rb_num;
-    __le16 closed_fr_num;
-    __le16 finished_rb_num;
-    __le16 finished_fr_nam;
-    __le32 __unused;
+  __le16 closed_rb_num;
+  __le16 closed_fr_num;
+  __le16 finished_rb_num;
+  __le16 finished_fr_nam;
+  __le32 __unused;
 } __packed;
 
-
-#define TFD_QUEUE_SIZE_MAX      (256)
+#define TFD_QUEUE_SIZE_MAX (256)
 #define TFD_QUEUE_SIZE_MAX_GEN3 (65536)
 /* cb size is the exponent - 3 */
-#define TFD_QUEUE_CB_SIZE(x)    (ilog2(x) - 3)
-#define TFD_QUEUE_SIZE_BC_DUP    (64)
-#define TFD_QUEUE_BC_SIZE    (TFD_QUEUE_SIZE_MAX + TFD_QUEUE_SIZE_BC_DUP)
-#define TFD_QUEUE_BC_SIZE_GEN3    (TFD_QUEUE_SIZE_MAX_GEN3 + \
-                 TFD_QUEUE_SIZE_BC_DUP)
-#define IWL_TX_DMA_MASK        DMA_BIT_MASK(36)
-#define IWL_NUM_OF_TBS        20
-#define IWL_TFH_NUM_TBS        25
+#define TFD_QUEUE_CB_SIZE(x) (ilog2(x) - 3)
+#define TFD_QUEUE_SIZE_BC_DUP (64)
+#define TFD_QUEUE_BC_SIZE (TFD_QUEUE_SIZE_MAX + TFD_QUEUE_SIZE_BC_DUP)
+#define TFD_QUEUE_BC_SIZE_GEN3 (TFD_QUEUE_SIZE_MAX_GEN3 + TFD_QUEUE_SIZE_BC_DUP)
+#define IWL_TX_DMA_MASK DMA_BIT_MASK(36)
+#define IWL_NUM_OF_TBS 20
+#define IWL_TFH_NUM_TBS 25
 
-static inline u8 iwl_get_dma_hi_addr(dma_addr_t addr)
-{
-    return (sizeof(addr) > sizeof(u32) ? upper_32_bits(addr) : 0) & 0xF;
+static inline u8 iwl_get_dma_hi_addr(dma_addr_t addr) {
+  return (sizeof(addr) > sizeof(u32) ? upper_32_bits(addr) : 0) & 0xF;
 }
 
 /**
@@ -591,8 +584,8 @@ static inline u8 iwl_get_dma_hi_addr(dma_addr_t addr)
  * @TB_HI_N_LEN_LEN_MSK: length of the TB
  */
 enum iwl_tfd_tb_hi_n_len {
-    TB_HI_N_LEN_ADDR_HI_MSK    = 0xf,
-    TB_HI_N_LEN_LEN_MSK    = 0xfff0,
+  TB_HI_N_LEN_ADDR_HI_MSK = 0xf,
+  TB_HI_N_LEN_LEN_MSK = 0xfff0,
 };
 
 /**
@@ -605,8 +598,8 @@ enum iwl_tfd_tb_hi_n_len {
  * @hi_n_len: &enum iwl_tfd_tb_hi_n_len
  */
 struct iwl_tfd_tb {
-    __le32 lo;
-    __le16 hi_n_len;
+  __le32 lo;
+  __le16 hi_n_len;
 } __packed;
 
 /**
@@ -618,8 +611,8 @@ struct iwl_tfd_tb {
  * @addr 64 bits dma address
  */
 struct iwl_tfh_tb {
-    __le16 tb_len;
-    __le64 addr;
+  __le16 tb_len;
+  __le64 addr;
 } __packed;
 
 /**
@@ -652,10 +645,10 @@ struct iwl_tfh_tb {
  * @ __pad    padding
  */
 struct iwl_tfd {
-    u8 __reserved1[3];
-    u8 num_tbs;
-    struct iwl_tfd_tb tbs[IWL_NUM_OF_TBS];
-    __le32 __pad;
+  u8 __reserved1[3];
+  u8 num_tbs;
+  struct iwl_tfd_tb tbs[IWL_NUM_OF_TBS];
+  __le32 __pad;
 } __packed;
 
 /**
@@ -666,13 +659,13 @@ struct iwl_tfd {
  * @ __pad    padding
  */
 struct iwl_tfh_tfd {
-    __le16 num_tbs;
-    struct iwl_tfh_tb tbs[IWL_TFH_NUM_TBS];
-    __le32 __pad;
+  __le16 num_tbs;
+  struct iwl_tfh_tb tbs[IWL_TFH_NUM_TBS];
+  __le32 __pad;
 } __packed;
 
 /* Keep Warm Size */
-#define IWL_KW_SIZE 0x1000    /* 4k */
+#define IWL_KW_SIZE 0x1000 /* 4k */
 
 /* Fixed (non-configurable) rx data from phy */
 
@@ -688,7 +681,7 @@ struct iwl_tfh_tfd {
  *        14-16 - reserved
  */
 struct iwlagn_scd_bc_tbl {
-    __le16 tfd_offset[TFD_QUEUE_BC_SIZE];
+  __le16 tfd_offset[TFD_QUEUE_BC_SIZE];
 } __packed;
 
 /**
@@ -699,7 +692,7 @@ struct iwlagn_scd_bc_tbl {
  *        14-16 - reserved
  */
 struct iwl_gen3_bc_tbl {
-    __le16 tfd_offset[TFD_QUEUE_BC_SIZE_GEN3];
+  __le16 tfd_offset[TFD_QUEUE_BC_SIZE_GEN3];
 } __packed;
 
 #endif  // APPLEINTELWIFIADAPTER_IWLFH_H_
