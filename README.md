@@ -44,8 +44,12 @@ If your card is not listed here (or does not have an open issue), please open an
 ## Credits
 [Apple]() for making macOS, and all of the ~~glorious~~awful APIs that I use
 
-[zxystd](https://github.com/zxystd) for writing the initial base code for this kext
+[@zxystd](https://github.com/zxystd) for writing the initial base code for this kext
 
 [Intel](https://intel.com) for the cheap wireless devices
 
-[Acidanthera](https://github.com/acidanthera) for the CI configuration
+[@acidanthera](https://github.com/acidanthera) for the CI configuration
+
+[@comex](https://github.com/comex) for this amazing [gist](https://gist.github.com/comex/0c19c1b3fa569f549947) which contains several structs I didn't want to RE
+
+[@rpeshkov](https://github.com/rpeshkov) for paving the way initially with IntelWifi/Black80211
