@@ -1,1 +1,1 @@
-log show --last 5m | grep 'AppleIntelWifi' | sed -E 's/^.*(AppleIntelWifiAdapter |\(AppleIntelWifiAdapterV2\) )//' > log.txt
+log show --last boot --predicate 'process == "kernel"' | grep 'AppleIntelWifi' | sed -E 's/^.*(AppleIntelWifiAdapter |\(AppleIntelWifiAdapterV2\) )//' > log.txt
