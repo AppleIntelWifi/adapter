@@ -154,8 +154,8 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
     case 353:
       ret = 6;
       break;
-    case 90:
-      ret = 0;
+    case APPLE80211_IOC_SCANCACHE_CLEAR:
+      ret = setSCANCACHE_CLEAR(interface);
       break;
     default:
       IWL_ERR(0, "Unhandled IOCTL %s (%d)\n", IOCTL_NAMES[request_number],
@@ -531,6 +531,7 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
                 IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
                          candidate_ssid, candidate->getChannel().channel,
                          candidate->getRSSI());
+
                 // clang-format off
                 IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
                 // clang-format on
@@ -617,9 +618,18 @@ IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(
 
   cd->capabilities[0] = 0xeb;
   cd->capabilities[1] = 0x7e;
+  // cd->capabilities[5] |= 4;
+  cd->capabilities[2] |= 0xC0;
+  cd->capabilities[6] |= 0x84;
+  /* Airport-related flags
+  cd->capabilities[3] |= 8;
+  cd->capabilities[6] |= 1;
+  cd->capabilities[5] |= 0x80;
+  */
 
-  /* Needs further documentation, as setting all of these flags enables AirDrop
-  + IO80211VirtualInterfaces
+  /*
+   Needs further documentation,
+   as setting all of these flags enables AirDrop + IO80211VirtualInterface
 
   cd->capabilities[2] = 3;
   cd->capabilities[2] |= 0x13;
@@ -917,5 +927,12 @@ IOReturn AppleIntelWifiAdapterV2::getRADIO_INFO(
     IO80211Interface *interface, struct apple80211_radio_info_data *md) {
   md->version = 1;
   md->count = 1;
+  return kIOReturnSuccess;
+}
+
+IOReturn AppleIntelWifiAdapterV2::setSCANCACHE_CLEAR(IO80211Interface *interface) {
+  if (drv->m_pDevice->ie_dev->scanCache != NULL) {
+    drv->m_pDevice->ie_dev->scanCache->flushCollection();
+  }
   return kIOReturnSuccess;
 }

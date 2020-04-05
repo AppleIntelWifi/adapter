@@ -283,9 +283,9 @@ IWLCachedScan::getNativeType() {  // be sure to free this too
 
   result->version = APPLE80211_VERSION;
 
-  // uint64_t nanosecs;
-  // absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
-  // result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
+  uint64_t nanosecs;
+  absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
+  result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
   // // MAGIC compiler division..
   // I don't get this
 

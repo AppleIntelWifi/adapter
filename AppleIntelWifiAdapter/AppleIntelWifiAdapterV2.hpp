@@ -175,11 +175,16 @@ class AppleIntelWifiAdapterV2 : public IO80211Controller {
   IOReturn getCOUNTRY_CODE(IO80211Interface* interface,
                            struct apple80211_country_code_data* cd);
   // 57 - MCS
-  IOReturn getMCS(IO80211Interface* interface, struct apple80211_mcs_data* md);
+  IOReturn getMCS(IO80211Interface* interface,
+                  struct apple80211_mcs_data* md);
+  // 80 - ROAM_THRESH
   IOReturn getROAM_THRESH(IO80211Interface* interface,
                           struct apple80211_roam_threshold_data* md);
+  // 54 - RADIO_INFO
   IOReturn getRADIO_INFO(IO80211Interface* interface,
                          struct apple80211_radio_info_data* md);
+  // 90 - SCANCACHE_CLEAR
+  IOReturn setSCANCACHE_CLEAR(IO80211Interface* interface);
 
   void releaseAll();
   static void intrOccured(OSObject* object, IOInterruptEventSource*, int count);

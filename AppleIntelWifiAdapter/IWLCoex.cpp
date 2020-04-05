@@ -13,6 +13,7 @@ int IWLMvmDriver::sendBTInitConf() {
   u32 mode;
   IOLockLock(trans->mutex);
 
+  cmd.enabled_modules = 0;
   if (unlikely(m_pDevice->btForceAntMode != BT_FORCE_ANT_DIS)) {
     switch (m_pDevice->btForceAntMode) {
       case BT_FORCE_ANT_BT:
