@@ -161,8 +161,9 @@ static int iwl_pcie_alloc_rxq_dma(IWLTransport *trans_pcie,
     rxq->used_bd_dma = rxq->used_bd_dma_ptr->dma;
   }
 
-  rxq->rb_stts = reinterpret_cast<iwl_rb_status *>((char *)trans_pcie->base_rb_stts + // NOLINT(readability/casting)
-                                   rxq->id * rb_stts_size);
+  rxq->rb_stts = reinterpret_cast<iwl_rb_status *>(
+      (char *)trans_pcie->base_rb_stts +  // NOLINT(readability/casting)
+      rxq->id * rb_stts_size);
   rxq->rb_stts_dma = trans_pcie->base_rb_stts_dma + rxq->id * rb_stts_size;
 
   if (!use_rx_td) return 0;
@@ -206,13 +207,14 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie) {
 
   if (WARN_ON(trans_pcie->rxq)) return -EINVAL;
 
-  trans_pcie->rxq =
-      reinterpret_cast<iwl_rxq *>(iwh_zalloc(trans_pcie->num_rx_queues * sizeof(struct iwl_rxq)));
-  trans_pcie->rx_pool = reinterpret_cast<iwl_rx_mem_buffer *>(iwh_zalloc(
-      RX_POOL_SIZE(trans_pcie->num_rx_bufs) * sizeof(struct iwl_rx_mem_buffer)));
-  trans_pcie->global_table = reinterpret_cast<iwl_rx_mem_buffer **>(iwh_zalloc(
-      RX_POOL_SIZE(trans_pcie->num_rx_bufs) *
-      sizeof(struct iwl_rx_mem_buffer *)));
+  trans_pcie->rxq = reinterpret_cast<iwl_rxq *>(
+      iwh_zalloc(trans_pcie->num_rx_queues * sizeof(struct iwl_rxq)));
+  trans_pcie->rx_pool = reinterpret_cast<iwl_rx_mem_buffer *>(
+      iwh_zalloc(RX_POOL_SIZE(trans_pcie->num_rx_bufs) *
+                 sizeof(struct iwl_rx_mem_buffer)));
+  trans_pcie->global_table = reinterpret_cast<iwl_rx_mem_buffer **>(
+      iwh_zalloc(RX_POOL_SIZE(trans_pcie->num_rx_bufs) *
+                 sizeof(struct iwl_rx_mem_buffer *)));
 
   if (!trans_pcie->rxq || !trans_pcie->rx_pool || !trans_pcie->global_table) {
     ret = -ENOMEM;
@@ -794,7 +796,8 @@ void IWLTransport::rxSqRestock(struct iwl_rxq *_rxq) {
 void IWLTransport::restockBd(struct iwl_rxq *rxq,
                              struct iwl_rx_mem_buffer *rxb) {
   if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
-    struct iwl_rx_transfer_desc *bd = reinterpret_cast<iwl_rx_transfer_desc *>(rxq->bd);
+    struct iwl_rx_transfer_desc *bd =
+        reinterpret_cast<iwl_rx_transfer_desc *>(rxq->bd);
 
     BUILD_BUG_ON(sizeof(*bd) != 2 * sizeof(u64));
 
@@ -1065,7 +1068,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
   IOSimpleLockLock(txq->lock);
 
   cmd_index = iwl_pcie_get_cmd_index(txq, index);
-  cmd = reinterpret_cast<iwl_device_cmd*>(txq->entries[cmd_index].cmd);
+  cmd = reinterpret_cast<iwl_device_cmd *>(txq->entries[cmd_index].cmd);
   meta = &txq->entries[cmd_index].meta;
   group_id = cmd->hdr.group_id;
   cmd_id = iwl_cmd_id(cmd->hdr.cmd, group_id, 0);
@@ -1077,7 +1080,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
     mbuf_t p = rxb_steal_page(rxb);
 
     meta->source->resp_pkt = pkt;
-    meta->source->_rx_page_addr = (unsigned long)p; // NOLINT
+    meta->source->_rx_page_addr = (unsigned long)p;  // NOLINT
     meta->source->_rx_page_order =
         iwl_trans_get_rb_size_order((iwl_amsdu_size)trans->rx_buf_size);
   }
@@ -1252,7 +1255,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
     int index, cmd_index, len;
 
     struct iwl_rx_cmd_buffer rxcb = {
-        ._offset = (int)offset, // NOLINT(readability/casting)
+        ._offset = (int)offset,  // NOLINT(readability/casting)
         ._rx_page_order =
             iwl_trans_get_rb_size_order((iwl_amsdu_size)trans->rx_buf_size),
         ._page = reinterpret_cast<page *>(rxb->page),
@@ -1389,8 +1392,10 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
     //    iwl_op_mode_rx_rss(trans->op_mode, &rxq->napi, &rxcb, rxq->id);
 
     if (reclaim) {
-      iwh_free((void *)txq->entries[cmd_index].free_buf); // NOLINT(readability/casting)
+      // clang-format off
+      iwh_free((void *)txq->entries[cmd_index].free_buf);  // NOLINT(readability/casting)
       txq->entries[cmd_index].free_buf = NULL;
+      // clang-format on
     }
 
     /*
@@ -1470,7 +1475,9 @@ restart:
 
     if (m_pDevice->cfg->trans.mq_rx_supported) {
       // TODO: implement
-      u16 vid = le32_to_cpu(((__le32 *)rxq->used_bd)[i]) & 0x0FFF; // NOLINT(readability/casting)
+      // clang-format off
+      u16 vid = le32_to_cpu(((__le32 *)rxq->used_bd)[i]) & 0x0FFF;  // NOLINT(readability/casting)
+      // clang-format on
 
       if ((!vid || vid > this->global_table_array_size)) {
         IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);

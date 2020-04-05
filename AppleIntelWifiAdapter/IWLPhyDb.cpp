@@ -87,26 +87,28 @@ int iwl_phy_db_set_section(struct iwl_phy_db *phy_db,
   if (!phy_db) return -EINVAL;
 
   if (type == IWL_PHY_DB_CALIB_CHG_PAPD) {
-    chg_id = le16_to_cpup((__le16 *)phy_db_notif->data); // NOLINT(readability/casting)
+    chg_id = le16_to_cpup(
+        (__le16 *)phy_db_notif->data);  // NOLINT(readability/casting)
     if (phy_db && !phy_db->calib_ch_group_papd) {
       /*
        * Firmware sends the largest index first, so we can use
        * it to know how much we should allocate.
        */
-      phy_db->calib_ch_group_papd = reinterpret_cast<iwl_phy_db_entry *>(kcalloc(
-          chg_id + 1, sizeof(struct iwl_phy_db_entry)));
+      phy_db->calib_ch_group_papd = reinterpret_cast<iwl_phy_db_entry *>(
+          kcalloc(chg_id + 1, sizeof(struct iwl_phy_db_entry)));
       if (!phy_db->calib_ch_group_papd) return -ENOMEM;
       phy_db->n_group_papd = chg_id + 1;
     }
   } else if (type == IWL_PHY_DB_CALIB_CHG_TXP) {
-    chg_id = le16_to_cpup((__le16 *)phy_db_notif->data); // NOLINT(readability/casting)
+    chg_id = le16_to_cpup(
+        (__le16 *)phy_db_notif->data);  // NOLINT(readability/casting)
     if (phy_db && !phy_db->calib_ch_group_txp) {
       /*
        * Firmware sends the largest index first, so we can use
        * it to know how much we should allocate.
        */
-      phy_db->calib_ch_group_txp = reinterpret_cast<iwl_phy_db_entry *>(kcalloc(
-          chg_id + 1, sizeof(struct iwl_phy_db_entry)));
+      phy_db->calib_ch_group_txp = reinterpret_cast<iwl_phy_db_entry *>(
+          kcalloc(chg_id + 1, sizeof(struct iwl_phy_db_entry)));
       if (!phy_db->calib_ch_group_txp) return -ENOMEM;
       phy_db->n_group_txp = chg_id + 1;
     }

@@ -10,6 +10,7 @@
 #define APPLEINTELWIFIADAPTER_TRANS_IWLTRANSPORT_HPP_
 
 #include <sys/kpi_mbuf.h>
+
 #include "../IWLCtxtInfo.hpp"
 #include "../IWLDevice.hpp"
 #include "../IWLInternal.hpp"
@@ -108,7 +109,7 @@ class IWLTransport : public IWLIO {
   void setPMI(bool state);
 
   // rx
-  int rxInit();  // _iwl_pcie_rx_init
+  int rxInit();   // _iwl_pcie_rx_init
   void rxFree();  // iwl_pcie_rx_free
 
   void disableICT();
@@ -170,7 +171,7 @@ class IWLTransport : public IWLIO {
 
  public:
   // a bit-mask of transport status flags
-  unsigned long status; // NOLINT(runtime/int)
+  unsigned long status;  // NOLINT(runtime/int)
   IOSimpleLock *irq_lock;
   IOLock *mutex;  // to protect stop_device / start_fw / start_hw
 
@@ -218,8 +219,10 @@ class IWLTransport : public IWLIO {
   // tx
   struct iwl_txq *txq_memory;
   iwl_txq *txq[IWL_MAX_TVQM_QUEUES];
-  unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)]; // NOLINT(runtime/int)
-  unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)]; // NOLINT(runtime/int)
+  // clang-format off
+  unsigned long queue_used[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];  // NOLINT(runtime/int)
+  unsigned long queue_stopped[BITS_TO_LONGS(IWL_MAX_TVQM_QUEUES)];  // NOLINT(runtime/int)
+  // clang-format on
   unsigned int cmd_q_wdg_timeout;
 
   // rx
@@ -294,7 +297,9 @@ static inline void *rxb_addr(struct iwl_rx_cmd_buffer *r) {
   }
   */
   // Can't reinterpret_cast due to all qualifiers
-  return (void *)((u8 *)mbuf_data((mbuf_t)page) + (r->_offset)); // NOLINT(readability/casting)
+  // clang-format off
+  return (void *)((u8 *)mbuf_data((mbuf_t)page) + (r->_offset));  // NOLINT(readability/casting)
+  // clang-format on
 }
 
 static inline int rxb_offset(struct iwl_rx_cmd_buffer *r) { return r->_offset; }
@@ -339,7 +344,7 @@ static inline u8 iwl_pcie_get_cmd_index(struct iwl_txq *q, u32 index) {
 
 static inline void *iwl_pcie_get_tfd(IWLTransport *trans_pcie,
                                      struct iwl_txq *txq, int idx) {
-  return reinterpret_cast<u8*>(txq->tfds) +
+  return reinterpret_cast<u8 *>(txq->tfds) +
          trans_pcie->tfd_size * iwl_pcie_get_cmd_index(txq, idx);
 }
 

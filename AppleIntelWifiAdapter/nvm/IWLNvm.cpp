@@ -22,6 +22,7 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
                                           const struct iwl_fw *fw) {
   struct iwl_nvm_get_info cmd = {};
   struct iwl_nvm_data *nvm;
+  // clang-format off
   struct iwl_host_cmd hcmd = {
       .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
       .data = {
@@ -29,6 +30,7 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
           },
       .len = {sizeof(cmd)},
       .id = WIDE_ID(REGULATORY_AND_NVM_GROUP, NVM_GET_INFO)};
+  // clang-format on
   int ret;
   bool empty_otp;
   u32 mac_flags;
@@ -111,9 +113,12 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
   }
 
   rsp_v3 = (struct iwl_nvm_get_info_rsp_v3 *)rsp;
-  channel_profile = v4 ? (void *)rsp->regulatory.channel_profile // NOLINT(readability/casting)
-                       : (void *)rsp_v3->regulatory.channel_profile; // NOLINT(readability/casting)
+  // clang-format off
+  channel_profile =
+      v4 ? (void *)rsp->regulatory.channel_profile  // NOLINT(readability/casting)
+         : (void *)rsp_v3->regulatory.channel_profile;  // NOLINT(readability/casting)
 
+  // clang-format on
   iwl_init_sbands(trans, nvm, channel_profile,
                   nvm->valid_tx_ant & fw->valid_tx_ant,
                   nvm->valid_rx_ant & fw->valid_rx_ant, sbands_flags, v4);
@@ -178,6 +183,7 @@ static int iwl_nvm_read_chunk(IWLMvmDriver *mvm, u16 section, u16 offset,
   };
   struct iwl_nvm_access_resp *nvm_resp;
   struct iwl_rx_packet *pkt;
+  // clang-format off
   struct iwl_host_cmd cmd = {
       .id = NVM_ACCESS_CMD,
       .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
@@ -185,6 +191,7 @@ static int iwl_nvm_read_chunk(IWLMvmDriver *mvm, u16 section, u16 offset,
               &nvm_access_cmd,
           },
   };
+  // clang-format on
   int ret, bytes_read, offset_read;
   u8 *resp_data;
 
@@ -372,7 +379,8 @@ int IWLMvmDriver::nvmInit() {
   /* load NVM values from nic */
   /* Read From FW NVM */
   IWL_INFO(0, "Read from NVM\n");
-  nvm_buffer = reinterpret_cast<u8*>(IOMalloc(m_pDevice->cfg->trans.base_params->eeprom_size));
+  nvm_buffer = reinterpret_cast<u8 *>(
+      IOMalloc(m_pDevice->cfg->trans.base_params->eeprom_size));
   if (!nvm_buffer) return -ENOMEM;
   for (section = 0; section < NVM_MAX_NUM_SECTIONS; section++) {
     /* we override the constness for initial read */
@@ -389,7 +397,7 @@ int IWLMvmDriver::nvmInit() {
       break;
     }
     size_read += ret;
-    temp = reinterpret_cast<u8*>(kmemdup(nvm_buffer, ret));
+    temp = reinterpret_cast<u8 *>(kmemdup(nvm_buffer, ret));
     if (!temp) {
       ret = -ENOMEM;
       IWL_ERR(0, "Could not duplicate memory from NVM\n");

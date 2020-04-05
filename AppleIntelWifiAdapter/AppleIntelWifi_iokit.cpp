@@ -188,7 +188,9 @@ IOReturn AppleIntelWifiAdapterV2::setSSID(IO80211Interface *interface,
   drv->m_pDevice->ie_dev->state = APPLE80211_S_AUTH;
   interface->postMessage(APPLE80211_M_SSID_CHANGED);
   drv->m_pDevice->ie_dev->ssid = (const char *)kzalloc(sd->ssid_len + 1);
-  memcpy((void *)drv->m_pDevice->ie_dev->ssid, &sd->ssid_bytes, sd->ssid_len); // NOLINT(readability/casting)
+  // clang-format off
+  memcpy((void *)drv->m_pDevice->ie_dev->ssid, &sd->ssid_bytes, sd->ssid_len);  // NOLINT(readability/casting)
+  // clang-format on
 
   return kIOReturnSuccess;
 }
@@ -349,7 +351,8 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0,
                                              void *arg3) {
   IOReturn ret = kIOReturnSuccess;
 
-  AppleIntelWifiAdapterV2 *that = reinterpret_cast<AppleIntelWifiAdapterV2 *>(target);
+  AppleIntelWifiAdapterV2 *that =
+      reinterpret_cast<AppleIntelWifiAdapterV2 *>(target);
   IO80211Interface *iface = reinterpret_cast<IO80211Interface *>(arg0);
   IWLMvmDriver *dev = reinterpret_cast<IWLMvmDriver *>(that->drv);
   apple80211_scan_data *sd = reinterpret_cast<apple80211_scan_data *>(arg1);
@@ -447,8 +450,8 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
   }
 
   if (interface) {
-    apple80211_scan_data *request =
-        reinterpret_cast<apple80211_scan_data *>(IOMalloc(sizeof(apple80211_scan_data)));
+    apple80211_scan_data *request = reinterpret_cast<apple80211_scan_data *>(
+        IOMalloc(sizeof(apple80211_scan_data)));
     memcpy(request, sd, sizeof(apple80211_scan_data));
 
     drv->m_pDevice->ie_dev->scan_data = request;
@@ -528,7 +531,9 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
                 IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
                          candidate_ssid, candidate->getChannel().channel,
                          candidate->getRSSI());
-                IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1); // NOLINT(readability/casting)
+                // clang-format off
+                IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
+                // clang-format on
                 *sr = candidate->getNativeType();
                 IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
                 drv->m_pDevice->ie_dev->scan_index = i + 1;
@@ -539,7 +544,9 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
             IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
                      candidate_ssid, candidate->getChannel().channel,
                      candidate->getRSSI());
-            IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1); // NOLINT(readability/casting)
+            // clang-format off
+            IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
+            // clang-format on
             *sr = candidate->getNativeType();
             IOLockUnlock(drv->m_pDevice->ie_dev->scanCacheLock);
             drv->m_pDevice->ie_dev->scan_index = i + 1;

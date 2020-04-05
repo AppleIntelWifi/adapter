@@ -60,8 +60,8 @@ class IWLTransOps {
   virtual void stopDevice() = 0;  // iwl_trans_pcie_stop_device and
                                   // iwl_trans_pcie_gen2_stop_device
 
-  virtual void stopDeviceDirectly() = 0;  // _iwl_trans_pcie_gen2_stop_device and
-                                          // _iwl_trans_pcie_stop_device
+  virtual void stopDeviceDirectly() = 0;  // _iwl_trans_pcie_gen2_stop_device
+                                          // and _iwl_trans_pcie_stop_device
 
   virtual int forcePowerGating() = 0;
 

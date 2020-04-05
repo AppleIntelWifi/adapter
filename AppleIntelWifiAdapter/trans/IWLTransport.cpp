@@ -418,7 +418,8 @@ int IWLTransport::loadFWChunk(u32 dst_addr, dma_addr_t phy_addr, u32 byte_cnt) {
   this->releaseNICAccess(&flags);
   IOLockLock(this->ucode_write_waitq);
   AbsoluteTime deadline;
-  clock_interval_to_deadline(5, kSecondScale, reinterpret_cast<UInt64 *>(&deadline));
+  clock_interval_to_deadline(5, kSecondScale,
+                             reinterpret_cast<UInt64 *>(&deadline));
   ret =
       IOLockSleepDeadline(this->ucode_write_waitq, &this->ucode_write_complete,
                           deadline, THREAD_INTERRUPTIBLE);
@@ -459,7 +460,9 @@ int IWLTransport::loadSection(u8 section_num, const struct fw_desc *section) {
     u32 copy_size, dst_addr;
     bool extended_addr = false;
 
-    copy_size = min(chunk_sz, (u32)(section->len - offset)); // NOLINT(build/include_what_you_use)
+    copy_size = min(
+        chunk_sz,
+        (u32)(section->len - offset));  // NOLINT(build/include_what_you_use)
     dst_addr = section->offset + offset;
 
     if (dst_addr >= IWL_FW_MEM_EXTENDED_START &&
@@ -469,8 +472,9 @@ int IWLTransport::loadSection(u8 section_num, const struct fw_desc *section) {
     if (extended_addr)
       this->iwlSetBitsPRPH(LMPM_CHICK, LMPM_CHICK_EXTENDED_ADDR_SPACE);
 
-    cmd->writeBytes(0, (u8 *)section->data + offset, copy_size); // NOLINT(readability/casting)
-
+    // clang-format off
+    cmd->writeBytes(0, (u8 *)section->data + offset, copy_size);  // NOLINT(readability/casting)
+    // clang-format on
     ret = loadFWChunk(dst_addr, seg.fIOVMAddr, copy_size);
 
     if (extended_addr)

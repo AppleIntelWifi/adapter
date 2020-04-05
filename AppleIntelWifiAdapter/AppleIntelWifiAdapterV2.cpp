@@ -159,7 +159,10 @@ bool AppleIntelWifiAdapterV2::start(IOService *provider) {
 
   int status = 0;
 
-  getCommandGate()->runAction(&_doCommand, (void *)16, &status, provider); // NOLINT(readability/casting)
+  // clang-format off
+  getCommandGate()->runAction(&_doCommand, (void *)16, &status, // NOLINT(readability/casting)
+                              provider);
+  // clang-format on
 
   return true;
 }
@@ -168,11 +171,12 @@ IOReturn AppleIntelWifiAdapterV2::_doCommand(OSObject *target, void *arg0,
                                              void *arg1, void *arg2,
                                              void *arg3) {
   IWL_DEBUG(0, "gatedStart\n");
-  AppleIntelWifiAdapterV2 *device = reinterpret_cast<AppleIntelWifiAdapterV2 *>(target);
+  AppleIntelWifiAdapterV2 *device =
+      reinterpret_cast<AppleIntelWifiAdapterV2 *>(target);
   int *status = reinterpret_cast<int *>(arg1);
   IOService *provider = reinterpret_cast<IOService *>(arg2);
 
-  if (arg0 == (void *)16) { // NOLINT(readability/casting)
+  if (arg0 == (void *)16) {  // NOLINT(readability/casting)
     if (!device->startGated(provider)) {
       OSIncrementAtomic(status);
     }
@@ -279,7 +283,8 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
 
 bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object,
                                          IOFilterInterruptEventSource *src) {
-  AppleIntelWifiAdapterV2 *me = reinterpret_cast<AppleIntelWifiAdapterV2 *>(object);
+  AppleIntelWifiAdapterV2 *me =
+      reinterpret_cast<AppleIntelWifiAdapterV2 *>(object);
 
   if (me == 0) return false;
 
@@ -291,7 +296,8 @@ bool AppleIntelWifiAdapterV2::intrFilter(OSObject *object,
 void AppleIntelWifiAdapterV2::intrOccured(OSObject *object,
                                           IOInterruptEventSource *sender,
                                           int count) {
-  AppleIntelWifiAdapterV2 *o = reinterpret_cast<AppleIntelWifiAdapterV2 *>(object);
+  AppleIntelWifiAdapterV2 *o =
+      reinterpret_cast<AppleIntelWifiAdapterV2 *>(object);
   if (o == 0) return;
 
   kprintf("interrupt!!!\n");

@@ -9,10 +9,12 @@
 #ifndef APPLEINTELWIFIADAPTER_TRANS_TRANSHDR_H_
 #define APPLEINTELWIFIADAPTER_TRANS_TRANSHDR_H_
 
+// clang-format off
 #include <linux/types.h>
 #include <sys/kernel_types.h>
 #include <sys/queue.h>
 #include <IOKit/network/IOMbufMemoryCursor.h>
+// clang-format on
 
 #include "../fw/api/cmdhdr.h"
 #include "IWLFH.h"
@@ -227,8 +229,8 @@ enum iwl_error_event_table_status {
 struct iwl_host_cmd {
   const void *data[IWL_MAX_CMD_TBS_PER_TFD];
   struct iwl_rx_packet *resp_pkt;
-  size_t resp_pkt_len;  // added by zxy
-  unsigned long _rx_page_addr; // NOLINT(runtime/int)
+  size_t resp_pkt_len;          // added by zxy
+  unsigned long _rx_page_addr;  // NOLINT(runtime/int)
   u32 _rx_page_order;
 
   u32 flags;
@@ -476,14 +478,14 @@ struct iwl_txq {
   struct iwl_dma_ptr *first_tb_dma_ptr;
   struct iwl_pcie_txq_entry *entries;
   IOSimpleLock *lock;
-  unsigned long frozen_expiry_remainder; // NOLINT(runtime/int)
+  unsigned long frozen_expiry_remainder;  // NOLINT(runtime/int)
   //    struct timer_list stuck_timer;
   struct iwl_trans_pcie *trans_pcie;
   bool need_update;
   bool frozen;
   bool ampdu;
   int block;
-  unsigned long wd_timeout; // NOLINT(runtime/int)
+  unsigned long wd_timeout;  // NOLINT(runtime/int)
   mbuf_t overflow_q;
   struct iwl_dma_ptr bc_tbl;
 

@@ -171,6 +171,7 @@ void IWLTransOps::sendRecoveryCmd(u32 flags) {
       .buf_size = 0,
   };
 
+  // clang-format off
   struct iwl_host_cmd host_cmd = {
       .id = WIDE_ID(SYSTEM_GROUP, FW_ERROR_RECOVERY_CMD),
       .flags = CMD_WANT_SKB,
@@ -181,6 +182,7 @@ void IWLTransOps::sendRecoveryCmd(u32 flags) {
               sizeof(recovery_cmd),
           },
   };
+  // clang-format on
 
   if (flags & ERROR_RECOVERY_UPDATE_DB) {
     /* no buf was allocated while HW reset */
@@ -370,15 +372,17 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
 #define S8_MAX ((s8)(U8_MAX >> 1))
 #define S8_MIN ((s8)(-S8_MAX - 1))
 
-    rssi = reinterpret_cast<int>(max(energy_a ? -energy_a : S8_MIN,
-                     energy_b ? -energy_b : S8_MIN));
+    rssi = reinterpret_cast<int>(
+        max(energy_a ? -energy_a : S8_MIN, energy_b ? -energy_b : S8_MIN));
 
   } else {
     last_phy_info = &trans->last_phy_info;
-    iwl_rx_mpdu_res_start* rx_res = reinterpret_cast<iwl_rx_mpdu_res_start*>(packet->data);
+    iwl_rx_mpdu_res_start* rx_res =
+        reinterpret_cast<iwl_rx_mpdu_res_start*>(packet->data);
     whOffset = sizeof(*rx_res);
     len = le16toh(rx_res->byte_count);
-    packetStatus = le32toh(*reinterpret_cast<uint32_t*>(packet->data + sizeof(*rx_res) + len));
+    packetStatus = le32toh(
+        *reinterpret_cast<uint32_t*>(packet->data + sizeof(*rx_res) + len));
 
     if (unlikely(last_phy_info->cfg_phy_cnt > 20)) {
       IWL_ERR(0, "dsp size out of range [0,20]: %d\n",
@@ -395,7 +399,8 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     rssi = rssi;
   }
 
-  ieee80211_frame* wh = reinterpret_cast<ieee80211_frame*>(packet->data + whOffset);
+  ieee80211_frame* wh =
+      reinterpret_cast<ieee80211_frame*>(packet->data + whOffset);
 
   if (!(packetStatus & RX_MPDU_RES_STATUS_CRC_OK) ||
       !(packetStatus & RX_MPDU_RES_STATUS_OVERRUN_OK)) {

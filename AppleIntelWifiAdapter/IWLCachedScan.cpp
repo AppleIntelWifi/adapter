@@ -73,12 +73,14 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
 
   if (!buf) return false;
 
-  packet = reinterpret_cast<iwl_rx_packet*>((u8*)mbuf_data((mbuf_t)buf) + (offset)); // NOLINT(readability/casting)
+  packet = reinterpret_cast<iwl_rx_packet*>(
+      (u8*)mbuf_data((mbuf_t)buf) + (offset));  // NOLINT(readability/casting)
 
   if (!packet) return false;
 
   wh = reinterpret_cast<ieee80211_frame*>(packet->data + whOffset);
-  iwl_rx_mpdu_res_start* rx_res = reinterpret_cast<iwl_rx_mpdu_res_start*>(packet->data);
+  iwl_rx_mpdu_res_start* rx_res =
+      reinterpret_cast<iwl_rx_mpdu_res_start*>(packet->data);
 
   this->ie_len = rx_res->byte_count - 36;
 
@@ -97,9 +99,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
   if (this->ie[0] != 0x00) {
     IWL_ERR(0, "potentially uncompliant frame\n");
     IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[39], ie[5]);
-    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[38], ie[4]);  // first byte
-    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[37], ie[3]);  // len
-    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[36], ie[2]);  // indicator
+    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[38],
+             ie[4]);  // first byte
+    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[37],
+             ie[3]);  // len
+    IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[36],
+             ie[2]);  // indicator
     IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[35], ie[1]);
     IWL_INFO(0, "wh: %x, ie: %x\n", reinterpret_cast<uint8_t*>(wh)[34], ie[0]);
     IWL_INFO(0, "wh: %x\n", reinterpret_cast<uint8_t*>(wh)[34]);
@@ -182,7 +187,7 @@ const char* IWLCachedScan::getSSID() {  // ensure to free this resulting buffer
 
   if (!ssid) return NULL;
 
-  memcpy((void*)ssid, &ie[2], // NOLINT(readability/casting)
+  memcpy((void*)ssid, &ie[2],  // NOLINT(readability/casting)
          ssid_len);  // 0x00 == type, 0x01 == size, 0x02 onwards == data
 
   return ssid;
@@ -213,7 +218,7 @@ uint32_t IWLCachedScan::getNoise() { return noise; }
 uint16_t IWLCachedScan::getCapabilities() {
   check_packet()
 
-  return (*(reinterpret_cast<uint8_t*>(wh) + 35) << 8) |
+          return (*(reinterpret_cast<uint8_t*>(wh) + 35) << 8) |
       (*(reinterpret_cast<uint8_t*>(wh) + 34));
   // these are stored in the fixed parameters, offsets are fine here
 }
@@ -221,13 +226,13 @@ uint16_t IWLCachedScan::getCapabilities() {
 uint8_t* IWLCachedScan::getBSSID() {
   check_packet()
 
-  return &wh->i_addr3[0];
+      return &wh->i_addr3[0];
 }
 
 uint8_t* IWLCachedScan::getRates() {
   check_packet()
 
-  uint8_t* rate_ptr;
+      uint8_t* rate_ptr;
 
   size_t index = 0;
   if (ie[index++] == 0x00) {  // index is 1 when we enter in the frame
@@ -262,7 +267,7 @@ uint8_t* IWLCachedScan::getRates() {
 void* IWLCachedScan::getIE() {
   check_packet()
 
-  return (void*)ie; // NOLINT(readability/casting)
+      return (void*)ie;  // NOLINT(readability/casting)
 }
 
 uint32_t IWLCachedScan::getIELen() { return ie_len; }
@@ -271,7 +276,8 @@ apple80211_scan_result*
 IWLCachedScan::getNativeType() {  // be sure to free this too
   check_packet()
 
-  result = reinterpret_cast<apple80211_scan_result*>(kzalloc(sizeof(apple80211_scan_result)));
+      result = reinterpret_cast<apple80211_scan_result*>(
+          kzalloc(sizeof(apple80211_scan_result)));
 
   if (result == NULL) return NULL;
 
@@ -325,8 +331,9 @@ IWLCachedScan::getNativeType() {  // be sure to free this too
 
     if (ssid) {
       memcpy(&result->asr_ssid, ssid, this->getSSIDLen() + 1);
-
-      IOFree((void*)ssid, this->getSSIDLen() + 1); // NOLINT(readability/casting)
+      // clang-format off
+      IOFree((void*)ssid, this->getSSIDLen() + 1);  // NOLINT(readability/casting)
+      // clang-format on
     }
   }
 

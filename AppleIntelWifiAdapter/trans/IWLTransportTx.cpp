@@ -347,7 +347,8 @@ static void iwl_pcie_txq_free(IWLTransport *trans, int txq_id) {
   if (txq_id == trans->cmd_queue) {
     for (i = 0; i < txq->n_window; i++) {
       iwh_free(txq->entries[i].cmd);
-      iwh_free((void *)txq->entries[i].free_buf); // NOLINT(readability/casting)
+      iwh_free(
+          (void *)txq->entries[i].free_buf);  // NOLINT(readability/casting)
     }
   }
   /* De-alloc circular buffer of TFDs */
@@ -519,7 +520,7 @@ error:
 
 static int iwl_hcmd_names_cmp(const void *key, const void *elt) {
   const struct iwl_hcmd_names *name = (const struct iwl_hcmd_names *)elt;
-  u8 cmd1 = *(u8 *)key; // NOLINT(readability/casting)
+  u8 cmd1 = *(u8 *)key;  // NOLINT(readability/casting)
   u8 cmd2 = name->cmd_id;
 
   return (cmd1 - cmd2);
@@ -592,9 +593,9 @@ static int iwl_pcie_txq_build_tfd(IWLTransport *trans_pcie, struct iwl_txq *txq,
                                   dma_addr_t addr, u16 len, bool reset) {
   void *tfd;
   u32 num_tbs;
-
-  tfd = (u8 *)txq->tfds + trans_pcie->tfd_size * txq->write_ptr; // NOLINT(readability/casting)
-
+  // clang-format off
+  tfd = (u8 *)txq->tfds + trans_pcie->tfd_size * txq->write_ptr;  // NOLINT(readability/casting)
+  // clang-format on
   if (reset) memset(tfd, 0, trans_pcie->tfd_size);
 
   num_tbs = iwl_pcie_tfd_get_num_tbs(trans_pcie, tfd);
@@ -848,8 +849,9 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
     /* copy everything if not nocopy/dup */
     if (!(cmd->dataflags[i] & (IWL_HCMD_DFL_NOCOPY | IWL_HCMD_DFL_DUP))) {
       copy = cmd->len[i];
-
-      memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy); // NOLINT(readability/casting)
+      // clang-format off
+      memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy);  // NOLINT(readability/casting)
+      // clang-format on
       cmd_pos += copy;
       copy_size += copy;
       continue;
@@ -862,7 +864,9 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
      */
     copy = min_t(int, TFD_MAX_PAYLOAD_SIZE - cmd_pos, cmd->len[i]);
 
-    memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy); // NOLINT(readability/casting)
+    // clang-format off
+    memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy);  // NOLINT(readability/casting)
+    // clang-format on
     cmd_pos += copy;
 
     /* However, treat copy_size the proper way, we need it below */
@@ -897,7 +901,8 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
       goto out;
     }
     out_meta->dma[0] = dma;
-    memcpy(dma->addr, reinterpret_cast<u8 *>(&out_cmd->hdr) + tb0_size, copy_size - tb0_size);
+    memcpy(dma->addr, reinterpret_cast<u8 *>(&out_cmd->hdr) + tb0_size,
+           copy_size - tb0_size);
 
     iwl_pcie_txq_build_tfd(trans, txq, dma->dma, copy_size - tb0_size, false);
   }
@@ -926,7 +931,8 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
   out_meta->flags = cmd->flags;
   if (txq->entries[idx].free_buf) {
     IWL_INFO(trans, "txq->entries[%d].free_buf is not null", idx);
-    iwh_free((void *)txq->entries[idx].free_buf); // NOLINT(readability/casting)
+    iwh_free(
+        (void *)txq->entries[idx].free_buf);  // NOLINT(readability/casting)
   }
 
   txq->entries[idx].free_buf = dup_buf;
@@ -963,7 +969,9 @@ free_dup_buf:
 }
 
 void IWLTransport::syncNmi() {
-  unsigned long timeout = jiffies + IWL_TRANS_NMI_TIMEOUT; // NOLINT(runtime/int)
+  // clang-format off
+  unsigned long timeout = jiffies + IWL_TRANS_NMI_TIMEOUT;  // NOLINT(runtime/int)
+  // clang-format on
   bool interrupts_enabled = test_bit(STATUS_INT_ENABLED, &this->status);
   u32 inta_addr, sw_err_bit;
 

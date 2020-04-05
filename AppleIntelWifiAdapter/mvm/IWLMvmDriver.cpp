@@ -9,6 +9,7 @@
 #include "IWLMvmDriver.hpp"
 
 #include "../fw/NotificationWait.hpp"
+#include "../fw/api/txq.h"
 #include "IWLApple80211.hpp"
 #include "IWLMvmMac.hpp"
 #include "IWLMvmPhy.hpp"
@@ -18,7 +19,6 @@
 #include "IWLMvmTransOpsGen2.hpp"
 #include "IWLUcodeParse.hpp"
 #include "MvmCmd.hpp"
-#include "../fw/api/txq.h"
 
 #define super OSObject
 OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject);

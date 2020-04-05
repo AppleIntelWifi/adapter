@@ -9,10 +9,10 @@
 #ifndef APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
 #define APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
 
-#include "../fw/fw-api.h"
-#include "IWLTransport.hpp"
 #include "../fw/api/debug.h"
 #include "../fw/api/nan.h"
+#include "../fw/fw-api.h"
+#include "IWLTransport.hpp"
 
 /* Please keep this array *SORTED* by hex value.
  * Access is done through binary search
