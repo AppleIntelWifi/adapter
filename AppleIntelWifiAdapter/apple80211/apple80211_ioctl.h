@@ -516,6 +516,23 @@ struct apple80211_scan_data
     struct apple80211_channel    channels[APPLE80211_MAX_CHANNELS];    // channel list
 };
 
+struct apple80211_scan_multiple_data
+{
+  uint32_t version;
+  uint32_t three;
+  uint32_t ssid_count;
+  apple80211_ssid_data ssids[16];
+  uint32_t bssid_count;
+  ether_addr bssids[16];
+  uint32_t scan_type;
+  uint32_t phy_mode;
+  uint32_t dwell_time;
+  uint32_t rest_time;
+  uint32_t num_channels;
+  struct apple80211_channel channels[128];
+  uint16_t unk_2;
+};
+
 struct apple80211_apmode_data
 {
     u_int32_t    version;

@@ -193,7 +193,6 @@ IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::setSSID(IO80211Interface *interface,
                                           struct apple80211_ssid_data *sd) {
-  drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
   interface->postMessage(APPLE80211_M_SSID_CHANGED);
 
   drv->m_pDevice->ie_dev->setSSID(
@@ -745,18 +744,25 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
   if (ad->ad_mode == 1) {
     IWL_ERR(0, "p2p-gc and ibss cannot exist\n");
   } else {
-    if (ad->ad_key.key_len != 0)
+    this->setDISASSOCIATE(interface);
+
+    if (ad->ad_key.key_len != 0) {
       drv->m_pDevice->ie_dev->setCipherKey(&ad->ad_key);
+      drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
+    } else {
+      drv->m_pDevice->ie_dev->setState(APPLE80211_S_ASSOC);
+    }
 
     drv->m_pDevice->ie_dev->setRSN_IE(
         reinterpret_cast<uint8_t *>(&ad->ad_rsn_ie), ad->ad_rsn_ie_len);
 
     drv->m_pDevice->ie_dev->setSSID(
         ad->ad_ssid_len, reinterpret_cast<const char *>(&ad->ad_ssid));
+      interface->postMessage(APPLE80211_M_SSID_CHANGED);
     drv->m_pDevice->ie_dev->setAPMode(ad->ad_mode);
     drv->m_pDevice->ie_dev->setBSSID(
         reinterpret_cast<uint8_t *>(&ad->ad_bssid.octet), ETH_ALEN);
-    drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
+      interface->postMessage(APPLE80211_M_BSSID_CHANGED);
   }
 
   return kIOReturnSuccess;
