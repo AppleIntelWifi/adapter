@@ -37,3 +37,9 @@ matrix:
           && eval "$src" || exit 1
         build_command: xcodebuild -configuration Release
         branch_pattern: master
+  - os: osx
+    name: Lint
+    osx_image: xcode10.2
+    compiler: clang
+    script:
+    - ./scripts/lint.sh
