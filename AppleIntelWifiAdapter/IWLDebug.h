@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLDebug_h
-#define IWLDebug_h
+#ifndef APPLEINTELWIFIADAPTER_IWLDEBUG_H_
+#define APPLEINTELWIFIADAPTER_IWLDEBUG_H_
 
 #include <IOKit/IOLib.h>
 
@@ -45,7 +45,7 @@ do { size_t out_len = 0; unsigned char* buf = base64_encode((const unsigned char
         DebugLog("AppleIntelWifiAdapter DEBUG: buffer is %s\n", buf); \
         _FREE(buf, out_len + 1); \
     } \
-} while(0)
+} while (0)
 
 /* No matter what is m (priv, bus, trans), this will work */
 #define IWL_ERR_DEV(m, f, a...)                        \
@@ -77,7 +77,7 @@ do { size_t out_len = 0; unsigned char* buf = base64_encode((const unsigned char
 #define IWL_DEBUG_BUF(b, s) \
         do { \
             __iwl_dbg_buf(b, s); \
-        } while(0)
+        } while (0)
 
 unsigned char * base64_encode(unsigned char *src, size_t len,
                               size_t *out_len);
@@ -85,4 +85,4 @@ unsigned char * base64_encode(unsigned char *src, size_t len,
 unsigned char * base64_decode(const unsigned char *src, size_t len,
                               size_t *out_len);
 
-#endif /* IWLDebug_h */
+#endif  // APPLEINTELWIFIADAPTER_IWLDEBUG_H_

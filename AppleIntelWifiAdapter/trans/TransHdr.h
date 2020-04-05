@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef TransHdr_h
-#define TransHdr_h
+#ifndef APPLEINTELWIFIADAPTER_TRANS_TRANSHDR_H_
+#define APPLEINTELWIFIADAPTER_TRANS_TRANSHDR_H_
 
 #include <linux/types.h>
 #include "IWLFH.h"
@@ -593,4 +593,4 @@ enum iwl_ini_cfg_state {
 };
 
 
-#endif /* TransHdr_h */
+#endif  // APPLEINTELWIFIADAPTER_TRANS_TRANSHDR_H_

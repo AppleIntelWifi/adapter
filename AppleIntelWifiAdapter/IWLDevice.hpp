@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLDevice_hpp
-#define IWLDevice_hpp
+#ifndef APPLEINTELWIFIADAPTER_IWLDEVICE_HPP_
+#define APPLEINTELWIFIADAPTER_IWLDEVICE_HPP_
 
 #include <IOKit/IOLib.h>
 #include <IOKit/pci/IOPCIDevice.h>
@@ -564,4 +564,4 @@ struct iwl_rate_info {
     u8 ieee;    /* MAC header:  IWL_RATE_6M_IEEE, etc. */
 };
 
-#endif /* IWLDevice_hpp */
+#endif  // APPLEINTELWIFIADAPTER_IWLDEVICE_HPP_

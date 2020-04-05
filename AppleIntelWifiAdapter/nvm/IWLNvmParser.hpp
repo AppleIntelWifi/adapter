@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLNvmParser_hpp
-#define IWLNvmParser_hpp
+#ifndef APPLEINTELWIFIADAPTER_NVM_IWLNVMPARSER_HPP_
+#define APPLEINTELWIFIADAPTER_NVM_IWLNVMPARSER_HPP_
 
 #include "IWLeeprom.h"
 #include "IWLTransport.hpp"
@@ -93,4 +93,4 @@ void iwl_init_sbands(IWLTransport *trans,
                      const void *nvm_ch_flags, u8 tx_chains,
                      u8 rx_chains, u32 sbands_flags, bool v4);
 
-#endif /* IWLNvmParser_hpp */
+#endif  // APPLEINTELWIFIADAPTER_NVM_IWLNVMPARSER_HPP_

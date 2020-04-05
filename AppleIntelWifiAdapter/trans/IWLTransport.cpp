@@ -9,21 +9,18 @@
 #include "IWLTransport.hpp"
 #include "IWLDebug.h"
 #include "IWLFH.h"
-#include "tx.h"
+#include "../fw/api/tx.h"
 #include "IWLSCD.h"
 
 #define super IWLIO
 
-IWLTransport::IWLTransport()
-{
+IWLTransport::IWLTransport() {
 }
 
-IWLTransport::~IWLTransport()
-{
+IWLTransport::~IWLTransport() {
 }
 
-bool IWLTransport::prepareCardHW()
-{
+bool IWLTransport::prepareCardHW() {
     IWL_INFO(0, "prepareCardHW\n");
     int t = 0;
     int ret = setHWReady();
@@ -40,7 +37,6 @@ bool IWLTransport::prepareCardHW()
             ret = setHWReady();
             if (ret >= 0)
                 return false;
-            
             IODelay(1000);
             t += 200;
         } while (t < 150000);
@@ -205,7 +201,7 @@ void IWLTransport::release()
         this->rba.alloc_wq = NULL;
     }
     
-    if(this->rba.lock) {
+    if (this->rba.lock) {
         IOSimpleLockFree(this->rba.lock);
         this->rba.lock = NULL;
     }

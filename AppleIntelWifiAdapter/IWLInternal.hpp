@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLInternal_hpp
-#define IWLInternal_hpp
+#ifndef APPLEINTELWIFIADAPTER_IWLINTERNAL_HPP_
+#define APPLEINTELWIFIADAPTER_IWLINTERNAL_HPP_
 
 #include <linux/types.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
@@ -27,4 +27,4 @@ struct iwl_dma_ptr* allocate_dma_buf32(size_t size);
 
 void free_dma_buf(struct iwl_dma_ptr *dma_ptr);
 
-#endif /* IWLInternal_hpp */
+#endif  // APPLEINTELWIFIADAPTER_IWLINTERNAL_HPP_

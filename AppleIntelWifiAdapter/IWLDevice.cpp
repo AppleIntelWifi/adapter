@@ -16,9 +16,9 @@ bool IWLDevice::init()
     this->ie_dev = new IWL80211Device();
     this->registerRWLock = IOSimpleLockAlloc();
     UInt16 vendorID = pciDevice->configRead16(kIOPCIConfigVendorID);
-    if (vendorID != PCI_VENDOR_ID_INTEL) {
+    if (vendorID != PCI_VENDOR_ID_INTEL)
         return false;
-    }
+    
     deviceID = pciDevice->configRead16(kIOPCIConfigDeviceID);
     for (int i = 0; i < ARRAY_SIZE(iwl_hw_card_ids); i++) {
         pci_device_id dev = iwl_hw_card_ids[i];
@@ -30,11 +30,10 @@ bool IWLDevice::init()
     subSystemDeviceID = pciDevice->configRead16(kIOPCIConfigSubSystemID);
     this->rx_sync_waitq = IOLockAlloc();
     this->last_ebs_successful = true;
-    if(this->cfg != NULL) {
+    if (this->cfg != NULL) {
         pciDevice->retain();
         return true;
-    }
-    else {
+    } else {
         this->pciDevice = NULL;
         return false;
     }
@@ -51,9 +50,8 @@ void IWLDevice::release()
         this->rx_sync_waitq = NULL;
     }
     
-    if(this->pciDevice) {
+    if (this->pciDevice)
         this->pciDevice->release();
-    }
 }
 
 void IWLDevice::enablePCI()

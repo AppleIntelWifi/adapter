@@ -145,11 +145,11 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
             *pos++ = (block[2] << 6) | block[3];
             count = 0;
             if (pad) {
-                if (pad == 1)
+                if (pad == 1) {
                     pos--;
-                else if (pad == 2)
+                } else if (pad == 2) {
                     pos -= 2;
-                else {
+                } else {
                     /* Invalid padding */
                     IOFree(out, olen);
                     return NULL;

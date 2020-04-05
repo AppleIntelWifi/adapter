@@ -6,7 +6,7 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmScan_hpp
-#define IWLMvmScan_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMSCAN_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMSCAN_HPP_
 
-#endif /* IWLMvmScan_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMSCAN_HPP_

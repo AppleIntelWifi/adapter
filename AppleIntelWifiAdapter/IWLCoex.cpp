@@ -14,9 +14,9 @@ int IWLMvmDriver::sendBTInitConf()
     u32 mode;
     IOLockLock(trans->mutex);
     
-    if(unlikely(m_pDevice->btForceAntMode != BT_FORCE_ANT_DIS))
+    if (unlikely(m_pDevice->btForceAntMode != BT_FORCE_ANT_DIS))
     {
-        switch(m_pDevice->btForceAntMode) {
+        switch (m_pDevice->btForceAntMode) {
             case BT_FORCE_ANT_BT:
                 mode = BT_COEX_BT;
                 break;

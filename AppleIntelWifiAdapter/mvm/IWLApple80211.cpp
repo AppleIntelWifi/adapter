@@ -22,12 +22,12 @@ bool IWL80211Device::init(IWLMvmDriver* drv) {
 
 bool IWL80211Device::release() {
     
-    if(scanCacheLock) {
+    if (scanCacheLock) {
         IOLockFree(scanCacheLock);
         scanCacheLock = NULL;
     }
     
-    if(scanCache) {
+    if (scanCache) {
         scanCache->release();
         scanCache = NULL;
     }
@@ -36,7 +36,7 @@ bool IWL80211Device::release() {
 }
 
 bool IWL80211Device::scanDone() {
-    if(iface != NULL) {
+    if (iface != NULL) {
         //fDrv->m_pDevice->interface->postMessage(APPLE80211_M_SCAN_DONE);
         fDrv->controller->getNetworkInterface()->postMessage(APPLE80211_M_SCAN_DONE);
         return true;

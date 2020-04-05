@@ -51,7 +51,7 @@ static void iwl_pcie_rx_allocator_get(IWLTransport *trans, struct iwl_rxq *rxq)
         /* Get next free Rx buffer, remove it from free list */
     
         struct iwl_rx_mem_buffer *rxb = TAILQ_FIRST(&rba->rbd_allocated);
-        if(!rxb)
+        if (!rxb)
             continue;
         
         TAILQ_REMOVE(&rba->rbd_allocated, rxb, list);
@@ -336,12 +336,12 @@ static mbuf_t iwl_pcie_rx_alloc_page(IWLTransport *trans, u32 *offset)
 {
     mbuf_t m;
     unsigned int size;
-    if(!trans->m_pDevice) {
+    if (!trans->m_pDevice) {
         IWL_WARN(0, "m_pDevice == NULL\n");
         return 0;
     }
     
-    if(!trans->m_pDevice->controller) {
+    if (!trans->m_pDevice->controller) {
         IWL_WARN(0, "controller == NULL\n");
         int error;
         //IOOptionBits options = kIODirectionInOut | kIOMemoryPhysicallyContiguous | kIOMemoryKernelUserShared;
@@ -356,19 +356,18 @@ static mbuf_t iwl_pcie_rx_alloc_page(IWLTransport *trans, u32 *offset)
         
         //IWL_INFO(0, "packet: %d\n", count);
 
-        if(error == 0) {
+        if (error == 0)
             return 0;
-        }
-        else {
+        else
             IWL_WARN(0, "mbuf_allocpacket error: %d\n", error);
-        }
+        
         return 0;
     }
     
     m = trans->m_pDevice->controller->allocatePacket(PAGE_SIZE);
-    if(m == 0) {
+    if (m == 0)
         IWL_WARN(0, "allocatePacket failed!\n");
-    }
+    
     //IWL_WARN(0, "allocated the normal way\n");
     //mbuf_allocpacket(MBUF_DONTWAIT, PAGE_SIZE, &size, &m);
     return m;
@@ -710,7 +709,7 @@ void IWLTransport::rxMqHWInit()
     }
     
     if (m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_9000) {
-        if(!m_pDevice->cfg->trans.integrated) {
+        if (!m_pDevice->cfg->trans.integrated) {
             
         }
     }
@@ -805,7 +804,7 @@ void IWLTransport::rxSqRestock(struct iwl_rxq *_rxq)
         /* Get next free Rx buffer, remove from free list */
         rxb = TAILQ_FIRST(&_rxq->rx_free);
         
-        if(!rxb) {
+        if (!rxb) {
             IWL_ERR(0, "RXB should never be null?\n");
             return;
         }
@@ -1205,9 +1204,9 @@ int allocate_rxb(OSObject* target, void* arg0, void* arg1, void* arg2, void* arg
     IOSimpleLockUnlock(rba->lock);
     
     
-    while(pending) {
+    while (pending) {
         TAILQ_INIT(&local_allocated);
-        for(int i = 0; i < RX_CLAIM_REQ_ALLOC;) {
+        for (int i = 0; i < RX_CLAIM_REQ_ALLOC;) {
             struct iwl_rx_mem_buffer* rxb;
             mbuf_t page;
             
@@ -1215,23 +1214,23 @@ int allocate_rxb(OSObject* target, void* arg0, void* arg1, void* arg2, void* arg
             rxb = TAILQ_FIRST(&local_empty);
             
             
-            if(!rxb) {
+            if (!rxb) {
                 IWL_ERR(0, "rxb == null\n");
                 continue;
             }
             
-            if(rxb->page)
+            if (rxb->page)
                 IWL_ERR(0, "page isn't null\n");
             
             page = iwl_pcie_rx_alloc_page(trans, &rxb->offset);
             
-            if(!page)
+            if (!page)
                 continue;
             rxb->page = page;
             
             IOMbufNaturalMemoryCursor* cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
             int err = cursor->getPhysicalSegments(rxb->page, &rxb->vec, 1);
-            if(err == 0) {
+            if (err == 0) {
                 rxb->page = NULL;
                 IWL_ERR(0, "Unable to map\n");
                 continue;
@@ -1247,20 +1246,20 @@ int allocate_rxb(OSObject* target, void* arg0, void* arg1, void* arg2, void* arg
         
         OSDecrementAtomic(&rba->req_pending);
         pending--;
-        if(!pending) {
+        if (!pending) {
             pending = rba->req_pending;
-            if(pending)
+            if (pending)
                 IWL_INFO(0, "Got more pending\n");
         }
         
         IOSimpleLockLock(rba->lock);
-        if(!TAILQ_EMPTY(&local_allocated)) {
+        if (!TAILQ_EMPTY(&local_allocated)) {
             TAILQ_CONCAT(&rba->rbd_allocated, &local_allocated, list);
         } else {
             IWL_ERR(0, "local_allocated should not be null\n");
         }
         
-        if(!TAILQ_EMPTY(&rba->rbd_empty)) {
+        if (!TAILQ_EMPTY(&rba->rbd_empty)) {
             TAILQ_CONCAT(&local_empty, &rba->rbd_empty, list);
             TAILQ_INIT(&rba->rbd_empty);
         }
@@ -1270,7 +1269,7 @@ int allocate_rxb(OSObject* target, void* arg0, void* arg1, void* arg2, void* arg
         //rba->req_ready++;
     }
     IOSimpleLockLock(rba->lock);
-    if(!TAILQ_EMPTY(&local_empty)) {
+    if (!TAILQ_EMPTY(&local_empty)) {
         TAILQ_CONCAT(&rba->rbd_empty, &local_empty, list);
     }
     IOSimpleLockUnlock(rba->lock);
@@ -1287,7 +1286,7 @@ static void iwl_pcie_rx_reuse_rbd(IWLTransport *trans,
      struct iwl_rb_allocator *rba = &trans_pcie->rba;
      TAILQ_INSERT_TAIL(&rxq->rx_used, rxb, list);
     
-    if(unlikely(emergency))
+    if (unlikely(emergency))
         return;
     
     rxq->used_count++;
@@ -1389,7 +1388,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         
         u32 cmd_id = iwl_cmd_id(pkt->hdr.cmd, pkt->hdr.group_id, 0);;
         
-        switch(cmd_id) {
+        switch (cmd_id) {
             case MVM_ALIVE:
                 break;
                 
@@ -1426,11 +1425,11 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
             
             case SCAN_ITERATION_COMPLETE_UMAC:
             case SCAN_COMPLETE_UMAC: {
-                if(trans->m_pDevice->ie_dev->scanning) {
+                if (trans->m_pDevice->ie_dev->scanning) {
                     trans->m_pDevice->last_ebs_successful = true;
                     trans->m_pDevice->ie_dev->scanning = false;
                     trans->m_pDevice->ie_dev->published = true;
-                    if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+                    if (!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
                         IWL_ERR(0, "Failed to lock mutex\n");
                         break;
                     }
@@ -1442,7 +1441,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
                     
                     IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                     
-                    if(trans->m_pDevice->ie_dev->scanDone()) {
+                    if (trans->m_pDevice->ie_dev->scanDone()) {
                         IWL_INFO(0, "posted results\n");
                     } else {
                         IWL_ERR(0, "Interface was null?\n");
@@ -1490,18 +1489,18 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq, stru
         offset += LNX_ALIGN(len, FH_RSCSR_FRAME_ALIGN);
     }
     
-    if(page_stolen) {
+    if (page_stolen) {
         IWL_ERR(0, "page stolen, free here\n");
         mbuf_freem(rxb->page);
         rxb->page = NULL;
     }
     
-    if(rxb->page != NULL) {
+    if (rxb->page != NULL) {
         IWL_ERR(0, "rx passed, but page not freed\n");
         IOMbufNaturalMemoryCursor* cursor = IOMbufNaturalMemoryCursor::withSpecification(PAGE_SIZE, 1);
         int err = cursor->getPhysicalSegments(rxb->page, &rxb->vec, 1);
         
-        if(err == 0) {
+        if (err == 0) {
             IWL_ERR(0, "LEAK PAGE\n");
             rxb->page = NULL;
             iwl_pcie_rx_reuse_rbd(trans, rxb, rxq, emergency);
@@ -1533,11 +1532,11 @@ restart:
     if (i == r)
         IWL_INFO(trans, "Q %d: HW = SW = %d (nothing was sent??) \n", _rxq->id, r);
     
-    while(i != r) {
+    while (i != r) {
         struct iwl_rx_mem_buffer *rxb;
         
         u32 rb_pending_alloc = rba.req_pending * RX_CLAIM_REQ_ALLOC;
-        if(unlikely(rb_pending_alloc >= _rxq->queue_size / 2 && !emergency)) {
+        if (unlikely(rb_pending_alloc >= _rxq->queue_size / 2 && !emergency)) {
             move_to_allocator(&rba, _rxq);
             emergency = true;
             IWL_ERR(0, "RX path is in emergency. Pending allocs: %d\n", rb_pending_alloc);
@@ -1546,7 +1545,7 @@ restart:
         if (_rxq->used_count == _rxq->queue_size / 2)
             emergency = true;
         
-        if(m_pDevice->cfg->trans.mq_rx_supported) {
+        if (m_pDevice->cfg->trans.mq_rx_supported) {
             //TODO: implement
             u16 vid = le32_to_cpu(((__le32*)rxq->used_bd)[i]) & 0x0FFF;
             

@@ -1,12 +1,5 @@
 #!/bin/bash
-DIR=$(echo $PWD | rev | cut -d '/' -f1 | rev)
-BUILD="../build"
-PROJECT="../AppleIntelWifiAdapter.xcodeproj"
-
-if [ "$DIR" != "scripts" ]; then
-BUILD="./build"
-PROJECT="./AppleIntelWifiAdapter.xcodeproj"
-fi
+source "$(cd "$(dirname "$0")" && pwd)"/env.sh
 
 if [ ! -d "$BUILD" ]; then
 mkdir $BUILD

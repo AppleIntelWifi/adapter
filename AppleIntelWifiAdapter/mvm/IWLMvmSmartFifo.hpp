@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmSmartFifo_hpp
-#define IWLMvmSmartFifo_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_
 
 #include "../fw/api/sf.h"
 #include "../trans/IWLTransport.hpp"
@@ -65,4 +65,4 @@ iwl_sf_full_timeout[SF_NUM_SCENARIO][SF_NUM_TIMEOUT_TYPES] = {
 int iwl_sf_config(IWLMvmDriver* drv, int new_state);
 void iwl_fill_sf_cmd(IWLMvmDriver* drv, iwl_sf_cfg_cmd *sf_cmd, ieee80211_node *ni);
 
-#endif /* IWLMvmSmartFifo_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_

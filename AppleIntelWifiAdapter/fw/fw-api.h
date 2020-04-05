@@ -62,8 +62,8 @@
  *
  *****************************************************************************/
 
-#ifndef __fw_api_h__
-#define __fw_api_h__
+#ifndef APPLEINTELWIFIADAPTER_FW_FW_API_H_
+#define APPLEINTELWIFIADAPTER_FW_FW_API_H_
 
 #include "tdls.h"
 #include "mac-cfg.h"
@@ -96,4 +96,4 @@
 #include "tx.h"
 #include "testing.h"
 
-#endif /* __fw_api_h__ */
+#endif  // APPLEINTELWIFIADAPTER_FW_FW_API_H_

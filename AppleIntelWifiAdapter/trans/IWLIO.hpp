@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLIO_hpp
-#define IWLIO_hpp
+#ifndef APPLEINTELWIFIADAPTER_TRANS_IWLIO_HPP_
+#define APPLEINTELWIFIADAPTER_TRANS_IWLIO_HPP_
 
 #include <IOKit/IOLib.h>
 #include <IOKit/pci/IOPCIDevice.h>
@@ -130,4 +130,4 @@ private:
     
 };
 
-#endif /* IWLIO_hpp */
+#endif  // APPLEINTELWIFIADAPTER_TRANS_IWLIO_HPP_

@@ -476,9 +476,9 @@ int IWLTransport::txInit() {
     int ret;
     int txq_id, slots_num;
     bool alloc = false;
-    if(!this->txq_memory) {
+    if (!this->txq_memory) {
         ret = iwl_pcie_tx_alloc(this);
-        if(ret) {
+        if (ret) {
             goto error;
         }
         alloc = true;
@@ -1060,7 +1060,7 @@ static int iwl_pcie_send_hcmd_sync(IWLTransport *trans,
              iwl_get_cmd_string(trans, cmd->id));
     
     if (test_and_set_bit(STATUS_SYNC_HCMD_ACTIVE,
-                         &trans->status)){
+                         &trans->status)) {
         IWL_INFO(0, "Command %s: a command is already active!\n",
                  iwl_get_cmd_string(trans, cmd->id));
                  return -EIO;
@@ -1201,11 +1201,11 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
     int txq_id = queue;
     int fifo = -1;
     bool scd_bug = false;
-    if(test_and_set_bit(txq_id, trans->queue_used))
+    if (test_and_set_bit(txq_id, trans->queue_used))
         IWL_WARN(0, "queue %d used already, expect issues", txq_id);
     
     txq->wd_timeout = queue_wdg_timeout;
-    if(cfg) {
+    if (cfg) {
         fifo = cfg->fifo;
         
         /* Disable the scheduler prior configuring the cmd queue */
@@ -1219,7 +1219,7 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
         /* Set this queue as a chain-building queue unless it is CMD */
         if (txq_id != trans->cmd_queue)
             iwl_scd_txq_set_chain(trans, txq_id);
-        if(cfg->aggregate) {
+        if (cfg->aggregate) {
             u16 ra_tid = BUILD_RAxTID(cfg->sta_id, cfg->tid);
             IWL_WARN(0, "need to fix aggregate\n");
             //iwl_pcie_txq_set_ratid_map(ra_tid, txq_id);
@@ -1239,7 +1239,7 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
     txq->read_ptr = (ssn & 0xff);
     txq->write_ptr = (ssn & 0xff);
     
-    if(cfg) {
+    if (cfg) {
         u8 frame_limit = cfg->frame_limit;
         
         trans->iwlWritePRPH(SCD_QUEUE_RDPTR(txq_id), ssn);
@@ -1256,7 +1256,7 @@ iwl_trans_txq_enable_cfg(IWLTransport *trans, int queue, u16 ssn,
                    (1 << SCD_QUEUE_STTS_REG_POS_WSL) |
                    SCD_QUEUE_STTS_REG_MSK);
         
-        if(txq_id == trans->cmd_queue &&
+        if (txq_id == trans->cmd_queue &&
             trans->scd_set_active)
             iwl_scd_enable_set_active(trans, BIT(txq_id));
         
@@ -1299,7 +1299,7 @@ void IWLTransport::txStop()
     
     IOSimpleLockLock(irq_lock);
     
-    if(!grabNICAccess(&state))
+    if (!grabNICAccess(&state))
         goto out;
     
     for (ch = 0; ch < FH_TCSR_CHNL_NUM; ch++) {
@@ -1308,7 +1308,7 @@ void IWLTransport::txStop()
     }
     
     ret = iwlPollBit(FH_TSSR_TX_STATUS_REG, mask, mask, 5000);
-    if(ret < 0)
+    if (ret < 0)
         IWL_ERR(this, "failing on interrupt to disable DMA channel %d [0x%0x]\n",
                 ch, iwlRead32(FH_TSSR_TX_STATUS_REG));
     

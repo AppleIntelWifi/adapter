@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmTransOpsGen1_hpp
-#define IWLMvmTransOpsGen1_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMTRANSOPSGEN1_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMTRANSOPSGEN1_HPP_
 
 #include "IWLIO.hpp"
 #include "IWLTransOps.h"
@@ -18,7 +18,7 @@ class IWLMvmTransOpsGen1 : public IWLTransOps {
 public:
     
     IWLMvmTransOpsGen1() {}
-    IWLMvmTransOpsGen1(IWLTransport *trans) : IWLTransOps(trans) {}
+    explicit IWLMvmTransOpsGen1(IWLTransport *trans) : IWLTransOps(trans) {}
     virtual ~IWLMvmTransOpsGen1() {}
     
     int nicInit() override;
@@ -45,4 +45,4 @@ private:
     void setPwr(bool vaux);
 };
 
-#endif /* IWLMvmTransOpsGen1_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMTRANSOPSGEN1_HPP_

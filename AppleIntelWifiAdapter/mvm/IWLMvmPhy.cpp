@@ -11,7 +11,7 @@
 /* Channel info utils */
 static inline bool iwl_mvm_has_ultra_hb_channel(IWLMvmDriver *mvm)
 {
-    if( mvm->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_8000)
+    if (mvm->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_8000)
         return false;
         
     return fw_has_capa(&mvm->m_pDevice->fw.ucode_capa,
@@ -83,9 +83,8 @@ iwl_phy_ctxt_apply(IWLMvmDriver* drv,
     struct iwl_phy_context_cmd cmd;
     int ret;
     
-    if(iwl_mvm_has_ultra_hb_channel(drv)) {
+    if (iwl_mvm_has_ultra_hb_channel(drv))
         IWL_INFO(0, "got ultra hb chan\n");
-    }
     
     u16 len = sizeof(cmd) - iwl_mvm_chan_info_padding(drv);
     iwl_phy_ctxt_cmd_hdr(drv, ctxt, &cmd, action, apply_time);
@@ -93,9 +92,9 @@ iwl_phy_ctxt_apply(IWLMvmDriver* drv,
         chains_static, chains_dynamic);
     
     ret = drv->sendCmdPdu(PHY_CONTEXT_CMD, 0, len, &cmd);
-    if(ret) {
+    if (ret)
         IWL_ERR(0, "Could not send phy context?\n");
-    }
+
     
     return ret;
 }

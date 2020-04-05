@@ -1,6 +1,13 @@
-/* add your code here */
-#ifndef AppleIntelWifiAdapter_hpp
-#define AppleIntelWifiAdapter_hpp
+//
+//  AppleIntelWifiAdapterV2.hpp
+//  AppleIntelWifiAdapter
+//
+//  Created by Harrison Ford on 4/4/20.
+//  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
+//
+
+#ifndef APPLEINTELWIFIADAPTER_APPLEINTELWIFIADAPTERV2_HPP_
+#define APPLEINTELWIFIADAPTER_APPLEINTELWIFIADAPTERV2_HPP_
 
 //#include "HackIO80211Interface.h"
 #include "IO80211Controller.h"
@@ -165,4 +172,4 @@ private:
 
 };
 
-#endif
+#endif  // APPLEINTELWIFIADAPTER_APPLEINTELWIFIADAPTERV2_HPP_

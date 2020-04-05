@@ -232,13 +232,13 @@ void IWLTransOps::restartNIC(bool fw_error) {
     
     //if(!this->trans->fw_resta)
     
-    if(test_bit(IWL_MVM_STATUS_IN_HW_RESTART, &trans->m_pDevice->status)) {
+    if (test_bit(IWL_MVM_STATUS_IN_HW_RESTART, &trans->m_pDevice->status)) {
         IWL_ERR(0, "failure while probing\n");
-    } else if(test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED, &trans->m_pDevice->status)) {
+    } else if (test_bit(IWL_MVM_STATUS_HW_RESTART_REQUESTED, &trans->m_pDevice->status)) {
         IWL_WARN(0, "restart requested, but not started\n");
-    } else if(trans->m_pDevice->cur_fw_img == IWL_UCODE_REGULAR &&
+    } else if (trans->m_pDevice->cur_fw_img == IWL_UCODE_REGULAR &&
               !test_bit(STATUS_TRANS_DEAD, &trans->m_pDevice->status)) {
-        if(trans->m_pDevice->fw.ucode_capa.error_log_size) {
+        if (trans->m_pDevice->fw.ucode_capa.error_log_size) {
             u32 src_size = trans->m_pDevice->fw.ucode_capa.error_log_size;
             u32 src_addr = trans->m_pDevice->fw.ucode_capa.error_log_addr;
             u8 *recover_buf = (u8*)kzalloc(src_size);
@@ -360,7 +360,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
         u8 channel, energy_a, energy_b;
         len = le16toh(desc->mpdu_len);
         
-        if(trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
+        if (trans->m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
             rate_n_flags = desc->v3.rate_n_flags;
             time = desc->v3.gp2_on_air_rise;
             channel = desc->v3.channel;
@@ -408,7 +408,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
             return;
         }
         
-        if(fw_has_capa(&trans->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_RX_ENERGY_API)) {
+        if (fw_has_capa(&trans->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_RX_ENERGY_API)) {
             rssi = get_signal_strength(trans);
         } else {
             rssi = calc_rssi(trans);
@@ -426,23 +426,23 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     
     rxcb->_page_stolen = true;
     
-    if(len <= sizeof(*wh)) {
+    if (len <= sizeof(*wh)) {
         IWL_INFO(0, "SKIPPING BEACON PACKET BECAUSE TOO SHORT\n");
         return;
     }
     
     uint32_t device_timestamp = le32toh(last_phy_info->system_timestamp);
     
-    if(trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
-        if(ieee80211_is_beacon(wh->i_fc[0])) {
-            if(last_phy_info->channel != 0) {
-                if(trans->m_pDevice->ie_dev->scanCache == NULL) {
+    if (trans->m_pDevice->ie_dev->state == APPLE80211_S_SCAN) {
+        if (ieee80211_is_beacon(wh->i_fc[0])) {
+            if (last_phy_info->channel != 0) {
+                if (trans->m_pDevice->ie_dev->scanCache == NULL) {
                     IWL_ERR(0, "Scan cache was null, not allocating a new one\n");
                     return;
                 }
                 
                 
-                if(!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
+                if (!IOLockTryLock(trans->m_pDevice->ie_dev->scanCacheLock)) {
                     IWL_INFO(0, "Skipped beacon packet because scan cache is already locked\n");
                     // we CANNOT block.
                     return;
@@ -457,33 +457,32 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                     
                 OSCollectionIterator* it = OSCollectionIterator::withCollection(trans->m_pDevice->ie_dev->scanCache);
                     
-                if(!it->isValid()) {
+                if (!it->isValid()) {
                     IWL_ERR(0, "Iterator not valid, not recreating\n");
                     return;
                 }
                     
                 OSObject* obj = NULL;
-                while((obj = it->getNextObject()) != NULL) {
+                while ((obj = it->getNextObject()) != NULL) {
                         
-                    if(obj == NULL)
+                    if (obj == NULL)
                         break;
                         
                     IWLCachedScan* cachedScan = OSDynamicCast(IWLCachedScan, obj);
                         
-                    if(!cachedScan) {
+                    if (!cachedScan)
                         continue;
-                    }
                         
-                    if(cachedScan->getTimestamp() <= oldest) { // the smaller the timestamp, the older
+                    if (cachedScan->getTimestamp() <= oldest) { // the smaller the timestamp, the older
                                                                 // absolute time only increments
                         oldest = cachedScan->getTimestamp();
                         oldest_obj = obj;
                     }
                     
                     
-                    if(memcmp(cachedScan->getBSSID(), &wh->i_addr3[0], 6) == 0)
+                    if (memcmp(cachedScan->getBSSID(), &wh->i_addr3[0], 6) == 0)
                     {
-                        if(cachedScan->getChannel().channel == last_phy_info->channel) {
+                        if (cachedScan->getChannel().channel == last_phy_info->channel) {
                             // existing entry, remove the old one and add in the new one
                             update_old_scan = true;
                             IWL_INFO(0, "Updating old entry\n");
@@ -494,30 +493,28 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
                     }
                 }
                     
-                if(trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx && !update_old_scan) {
+                if (trans->m_pDevice->ie_dev->scanCache->getCapacity() == indx && !update_old_scan) {
                     // purge the scan cache of the oldest object
                     IWL_INFO(0, "Purging oldest object because we are at capacity\n");
-                    if(oldest_obj != NULL) {
+                    
+                    if (oldest_obj != NULL)
                         trans->m_pDevice->ie_dev->scanCache->removeObject(oldest_obj);
-                    }
                 }
                 
-                if(!update_old_scan) {
+                if (!update_old_scan) {
                     IWL_INFO(0, "Adding new object to scan cache\n");
                     
                     IWLCachedScan* scan = new IWLCachedScan();
-                    if(!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi, -101)) {
+                    if (!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi, -101)) {
                         scan->free();
                         IWL_ERR(0, "failed to init new cached scan object\n");
-                    IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
+                        IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
                         return;
                     }
-                trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
+                    
+                    trans->m_pDevice->ie_dev->scanCache->setObject(scan); // new scanned object, add it to the list
                 }
-                
-            
                 it->release();
-                
                 IOLockUnlock(trans->m_pDevice->ie_dev->scanCacheLock);
             }
         } else {
@@ -574,16 +571,15 @@ void print_umac(IWLTransport* trans) {
     
     base = trans->m_pDevice->uc.uc_umac_error_event_table;
     
-    if(base < 0x800000) {
+    if (base < 0x800000) {
         IWL_ERR(0, "Invalid error event table ptr: 0x%0x\n", base);
         return;
     }
     
     trans->iwlReadMem(base, &t, sizeof(t)/sizeof(uint32_t));
     
-    if(!t.valid) {
+    if (!t.valid)
         IWL_ERR(0, "Error log not found\n");
-    }
     
     if (ERROR_START_OFFSET <= t.valid * ERROR_ELEM_SIZE) {
         IWL_ERR(0, "Start uMAC Error Log Dump:\n");
@@ -614,7 +610,7 @@ void print_umac(IWLTransport* trans) {
 }
 
 void IWLTransOps::fwError() {
-    if(test_bit(STATUS_TRANS_DEAD, &trans->status)) {
+    if (test_bit(STATUS_TRANS_DEAD, &trans->status)) {
         return;
     }
     
@@ -624,14 +620,14 @@ void IWLTransOps::fwError() {
     IWL_ERR(0, "Dumping device error log\n");
     base = this->trans->m_pDevice->uc.uc_error_event_table;
     
-    if(base < 0x800000) {
+    if (base < 0x800000) {
         IWL_ERR(0, "Invalid error event table ptr: 0x%0x\n", base);
         return;
     }
     
     trans->iwlReadMem(base, &t, sizeof(t)/sizeof(uint32_t));
     
-    if(!t.valid) {
+    if (!t.valid) {
         IWL_ERR(0, "Error log not found\n");
     }
     
@@ -683,7 +679,7 @@ void IWLTransOps::fwError() {
     IWL_ERR(0, "%08X | timestamp\n", t.u_timestamp);
     IWL_ERR(0, "%08X | flow_handler\n", t.flow_handler);
 
-    if(this->trans->m_pDevice->uc.uc_umac_error_event_table)
+    if (this->trans->m_pDevice->uc.uc_umac_error_event_table)
         print_umac(trans);
     
     

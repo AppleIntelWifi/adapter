@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLCachedScan_hpp
-#define IWLCachedScan_hpp
+#ifndef APPLEINTELWIFIADAPTER_IWLCACHEDSCAN_HPP_
+#define APPLEINTELWIFIADAPTER_IWLCACHEDSCAN_HPP_
 
 #include <apple80211_var.h>
 #include <libkern/c++/OSObject.h>
@@ -64,4 +64,4 @@ private:
     mbuf_t buf; // copied in from the ISR
 };
 
-#endif /* IWLCachedScan_hpp */
+#endif  // APPLEINTELWIFIADAPTER_IWLCACHEDSCAN_HPP_

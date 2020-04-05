@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLTransOps_h
-#define IWLTransOps_h
+#ifndef APPLEINTELWIFIADAPTER_TRANS_IWLTRANSOPS_H_
+#define APPLEINTELWIFIADAPTER_TRANS_IWLTRANSOPS_H_
 
 #include <linux/types.h>
 #include "IWLTransport.hpp"
@@ -19,7 +19,7 @@ class IWLTransOps {
 public:
     
     IWLTransOps() {}
-    IWLTransOps(IWLTransport *trans);
+    explicit IWLTransOps(IWLTransport *trans);
     virtual ~IWLTransOps() {}
     
     void nicConfig(); // nic_config
@@ -80,4 +80,4 @@ private:
     
 };
 
-#endif /* IWLTransOps_h */
+#endif  // APPLEINTELWIFIADAPTER_TRANS_IWLTRANSOPS_H_

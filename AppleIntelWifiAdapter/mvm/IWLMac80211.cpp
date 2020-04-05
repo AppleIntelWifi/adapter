@@ -138,14 +138,14 @@ int IWLMvmDriver::iwm_newstate(struct ieee80211com *ic, enum ieee80211_state nst
 {
     struct ifnet *ifp = &ic->ic_if;
     
-    if(!ifp) {
+    if (!ifp) {
         IWL_ERR(0, "got null ifp\n");
         return -1;
     }
     IWLMvmDriver *sc = (IWLMvmDriver*)ifp->if_softc;
     struct iwm_node *in = (struct iwm_node *)ic->ic_bss;
     
-    if(!in) {
+    if (!in) {
         IWL_ERR(0, "could not get bss\n");
         return -1;
     }

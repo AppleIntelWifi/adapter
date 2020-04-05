@@ -7,8 +7,8 @@
 //
 
 #include "IWLTransport.hpp"
-#ifndef IWLSCD_h
-#define IWLSCD_h
+#ifndef APPLEINTELWIFIADAPTER_TRANS_IWLSCD_H_
+#define APPLEINTELWIFIADAPTER_TRANS_IWLSCD_H_
 
 static inline void iwl_scd_txq_set_chain(IWLTransport *trans,
                      u16 txq_id)
@@ -82,4 +82,4 @@ static inline void iwl_scd_txq_set_inactive(IWLTransport *trans,
                (1 << SCD_QUEUE_STTS_REG_POS_SCD_ACT_EN));
 }
 
-#endif /* IWLSCD_h */
+#endif  // APPLEINTELWIFIADAPTER_TRANS_IWLSCD_H_

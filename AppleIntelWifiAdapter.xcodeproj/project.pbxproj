@@ -267,7 +267,7 @@
 		026C2F702359CB3300C832EF /* IOSkywalkEthernetInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IOSkywalkEthernetInterface.h; sourceTree = "<group>"; };
 		026E8CC92356F0ED000BFD46 /* AppleIntelWifiAdapterV2.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleIntelWifiAdapterV2.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppleIntelWifiAdapterV2.hpp; sourceTree = "<group>"; };
-		026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppleIntelWifiAdapterV2.cpp; sourceTree = "<group>"; };
+		026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */ = {isa = PBXFileReference; indentWidth = 8; lastKnownFileType = sourcecode.cpp.cpp; path = AppleIntelWifiAdapterV2.cpp; sourceTree = "<group>"; tabWidth = 8; usesTabs = 1; };
 		026E8CD02356F0ED000BFD46 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_ioctl.h; sourceTree = "<group>"; };
 		026E8CD82356F2AD000BFD46 /* apple80211_wps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple80211_wps.h; sourceTree = "<group>"; };
@@ -394,8 +394,6 @@
 		68651D6F23F5EE6900A39FAD /* iwlwifi-8265-34.ucode */ = {isa = PBXFileReference; lastKnownFileType = file; path = "iwlwifi-8265-34.ucode"; sourceTree = "<group>"; };
 		6865B3B52421D65B0044C9FE /* IWLApple80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLApple80211.cpp; sourceTree = "<group>"; };
 		6865B3B62421D65B0044C9FE /* IWLApple80211.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLApple80211.hpp; sourceTree = "<group>"; };
-		6868731923FA49ED001C7DEA /* HackIONetworkInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIONetworkInterface.h; path = AppleIntelWifiAdapter/HackIONetworkInterface.h; sourceTree = SOURCE_ROOT; };
-		6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HackIOEthernetInterface.h; path = AppleIntelWifiAdapter/HackIOEthernetInterface.h; sourceTree = SOURCE_ROOT; };
 		6868731D23FA4AB4001C7DEA /* IWLSCD.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = IWLSCD.h; sourceTree = "<group>"; };
 		686AD3E8241C24A6008080E6 /* ioctl_dbg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioctl_dbg.h; sourceTree = "<group>"; };
 		686EA48324377F3A00C88E9B /* OVERVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = OVERVIEW.md; sourceTree = "<group>"; };
@@ -500,7 +498,10 @@
 				026CE67F2357F7F70034342E /* Frameworks */,
 				68FC255123F5C040004958FC /* Recovered References */,
 			);
+			indentWidth = 8;
 			sourceTree = "<group>";
+			tabWidth = 8;
+			usesTabs = 1;
 		};
 		026E8CCA2356F0ED000BFD46 /* Products */ = {
 			isa = PBXGroup;
@@ -551,8 +552,6 @@
 				026E8CD72356F2AD000BFD46 /* apple80211_ioctl.h */,
 				026E8CDA2356F2AD000BFD46 /* apple80211_var.h */,
 				026E8CD82356F2AD000BFD46 /* apple80211_wps.h */,
-				6868731A23FA49ED001C7DEA /* HackIOEthernetInterface.h */,
-				6868731923FA49ED001C7DEA /* HackIONetworkInterface.h */,
 				0248A083235833CB00A85BA3 /* IO80211Controller.h */,
 				026E8CDB2356F2AD000BFD46 /* IO80211Interface.h */,
 				026C2F6F2359CA9600C832EF /* IO80211SkywalkInterface.h */,

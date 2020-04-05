@@ -23,7 +23,7 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
     };
     */
     IOInterruptState state;
-    if(!drv->trans->grabNICAccess(&state))
+    if (!drv->trans->grabNICAccess(&state))
         return 1;
     
     
@@ -34,7 +34,7 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
     
     drv->trans->iwlWrite32(HBUS_TARG_WRPTR, qid << 8 | 0);
     
-    if(qid == IWL_MVM_DQA_CMD_QUEUE) {
+    if (qid == IWL_MVM_DQA_CMD_QUEUE) {
         drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_STATUS_BITS(qid),
                                        (0 << SCD_QUEUE_STTS_REG_POS_ACTIVE)
                                        | (1 << SCD_QUEUE_STTS_REG_POS_SCD_ACT_EN));
@@ -42,7 +42,7 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
         
         drv->trans->iwlClearBitsPRPH(SCD_AGGR_SEL, (1 << qid));
         
-        if(!drv->trans->grabNICAccess(&state))
+        if (!drv->trans->grabNICAccess(&state))
             return 1;
         
         drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_RDPTR(qid), 0);
@@ -58,7 +58,7 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
                 << SCD_QUEUE_CTX_REG2_FRAME_LIMIT_POS) &
             SCD_QUEUE_CTX_REG2_FRAME_LIMIT));
         
-        if(!drv->trans->grabNICAccess(&state))
+        if (!drv->trans->grabNICAccess(&state))
             return 1;
         
         drv->trans->iwlWritePRPHNoGrab(SCD_QUEUE_STATUS_BITS(qid),
@@ -83,13 +83,13 @@ int iwl_enable_txq(IWLMvmDriver* drv, int sta_id, int qid, int fifo) {
 
         drv->trans->releaseNICAccess(&state);
         
-        if((err = drv->sendCmdPdu(SCD_QUEUE_CFG, 0, sizeof(cfg), &cfg))) {
+        if ((err = drv->sendCmdPdu(SCD_QUEUE_CFG, 0, sizeof(cfg), &cfg))) {
             return err;
 
         }
         
         
-        if(!drv->trans->grabNICAccess(&state))
+        if (!drv->trans->grabNICAccess(&state))
             return 1;
     }
     
@@ -108,7 +108,7 @@ int iwl_mvm_add_aux_sta(IWLMvmDriver* drv) {
     uint32_t status;
     
     err = iwl_enable_txq(drv, 1, 15, IWL_MVM_TX_FIFO_MCAST);
-    if(err)
+    if (err)
         return err;
     
     memset(&cmd, 0, sizeof(cmd));

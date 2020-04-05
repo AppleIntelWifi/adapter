@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmPhy_hpp
-#define IWLMvmPhy_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMPHY_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMPHY_HPP_
 
 #include "IWLMvmDriver.hpp"
 
@@ -37,4 +37,4 @@ iwl_phy_ctxt_cmd_hdr(IWLMvmDriver* drv, struct iwl_phy_ctx *ctxt,
                      struct iwl_phy_context_cmd *cmd, uint32_t action, uint32_t apply_time);
 
 
-#endif /* IWLMvmPhy_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMPHY_HPP_

@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef NotificationWait_hpp
-#define NotificationWait_hpp
+#ifndef APPLEINTELWIFIADAPTER_FW_NOTIFICATIONWAIT_HPP_
+#define APPLEINTELWIFIADAPTER_FW_NOTIFICATIONWAIT_HPP_
 
 #include "../trans/TransHdr.h"
 
@@ -99,4 +99,4 @@ iwl_wait_notification(struct iwl_notif_wait_data *notif_data, struct iwl_notific
 void __releases(wait_entry)
 iwl_remove_notification(struct iwl_notif_wait_data *notif_data, struct iwl_notification_wait *wait_entry);
 
-#endif /* NotificationWait_hpp */
+#endif  // APPLEINTELWIFIADAPTER_FW_NOTIFICATIONWAIT_HPP_

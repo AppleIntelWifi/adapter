@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef Mvm_h
-#define Mvm_h
+#ifndef APPLEINTELWIFIADAPTER_MVM_MVM_H_
+#define APPLEINTELWIFIADAPTER_MVM_MVM_H_
 
 #define MVM_UCODE_ALIVE_TIMEOUT    (HZ * CPTCFG_IWL_TIMEOUT_FACTOR)
 #define MVM_UCODE_CALIB_TIMEOUT    (2 * HZ * CPTCFG_IWL_TIMEOUT_FACTOR)
@@ -17,7 +17,6 @@
 struct iwl_mvm_alive_data {
     bool valid;
     u32 scd_base_addr;
-    
     uint32_t uc_error_event_table;
     uint32_t uc_umac_error_event_table;
     uint32_t uc_log_event_table;
@@ -215,4 +214,4 @@ struct iwl_phy_cfg_cmd {
 
 #define IWL_MVM_NUM_CIPHERS             10
 
-#endif /* Mvm_h */
+#endif  // APPLEINTELWIFIADAPTER_MVM_MVM_H_

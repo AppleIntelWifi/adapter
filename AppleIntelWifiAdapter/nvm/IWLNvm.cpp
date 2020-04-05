@@ -461,7 +461,7 @@ int IWLMvmDriver::nvmInit()
              m_pDevice->nvm_data->nvm_version);
     
     u8* hw_addr = m_pDevice->nvm_data->hw_addr;
-    if(hw_addr) {
+    if (hw_addr) {
         // ideally, if we're successful then this should pass and we should get the MAC from our card
         IWL_INFO(0, "addr: %02x:%02x:%02x:%02x:%02x:%02x\n", hw_addr[0],
         hw_addr[1], hw_addr[2],
@@ -531,7 +531,6 @@ struct iwl_mcc_update_resp *IWLMvmDriver::updateMcc(const char *alpha2, enum iwl
             resp_cp = (struct iwl_mcc_update_resp *)ERR_PTR(-ENOMEM);
             goto exit;
         }
-        
         resp_cp->status = mcc_resp_v3->status;
         resp_cp->mcc = mcc_resp_v3->mcc;
         resp_cp->cap = cpu_to_le16(mcc_resp_v3->cap);

@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef FWFile_h
-#define FWFile_h
+#ifndef APPLEINTELWIFIADAPTER_FW_FWFILE_H_
+#define APPLEINTELWIFIADAPTER_FW_FWFILE_H_
 
 #include <linux/netdevice.h>
 #include <linux/nl80211.h>
@@ -1045,26 +1045,19 @@ struct iwl_error_event_table {
     uint32_t frame_ptr;        /* frame pointer */
     uint32_t stack_ptr;        /* stack pointer */
     uint32_t hcmd;        /* last host command header */
-    uint32_t isr0;        /* isr status register LMPM_NIC_ISR0:
-                 * rxtx_flag */
-    uint32_t isr1;        /* isr status register LMPM_NIC_ISR1:
-                 * host_flag */
-    uint32_t isr2;        /* isr status register LMPM_NIC_ISR2:
-                 * enc_flag */
-    uint32_t isr3;        /* isr status register LMPM_NIC_ISR3:
-                 * time_flag */
-    uint32_t isr4;        /* isr status register LMPM_NIC_ISR4:
-                 * wico interrupt */
+    uint32_t isr0;        /* isr status register LMPM_NIC_ISR0: rxtx_flag */
+    uint32_t isr1;        /* isr status register LMPM_NIC_ISR1: host_flag */
+    uint32_t isr2;        /* isr status register LMPM_NIC_ISR2: enc_flag */
+    uint32_t isr3;        /* isr status register LMPM_NIC_ISR3: time_flag */
+    uint32_t isr4;        /* isr status register LMPM_NIC_ISR4: wico interrupt */
     uint32_t last_cmd_id;    /* last HCMD id handled by the firmware */
     uint32_t wait_event;        /* wait event() caller address */
     uint32_t l2p_control;    /* L2pControlField */
     uint32_t l2p_duration;    /* L2pDurationField */
     uint32_t l2p_mhvalid;    /* L2pMhValidBits */
     uint32_t l2p_addr_match;    /* L2pAddrMatchStat */
-    uint32_t lmpm_pmg_sel;    /* indicate which clocks are turned on
-                 * (LMPM_PMG_SEL) */
-    uint32_t u_timestamp;    /* indicate when the date and time of the
-                 * compilation */
+    uint32_t lmpm_pmg_sel;    /* indicate which clocks are turned on (LMPM_PMG_SEL) */
+    uint32_t u_timestamp;    /* indicate when the date and time of the compilation */
     uint32_t flow_handler;    /* FH read/write pointers, RX credit */
 } __packed /* LOG_ERROR_TABLE_API_S_VER_3 */;
 
@@ -1111,4 +1104,4 @@ static inline size_t _iwl_tlv_array_len(const struct iwl_ucode_tlv *tlv,
                sizeof(_struct_ptr->_memb[0]))
 
 
-#endif /* FWFile_h */
+#endif  // APPLEINTELWIFIADAPTER_FW_FWFILE_H_

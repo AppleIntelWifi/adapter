@@ -25,7 +25,7 @@ OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject);
 
 bool IWLMvmDriver::init(IOPCIDevice *pciDevice)
 {
-    if(!super::init()) {
+    if (!super::init()) {
         return false;
     }
     this->fwLoadLock = IOLockAlloc();
@@ -496,7 +496,7 @@ bool IWLMvmDriver::enableDevice() {
     
     // now we run the proper ucode
     
-    if(err)
+    if (err)
         goto fail;
     
     stopDevice();
@@ -505,7 +505,7 @@ bool IWLMvmDriver::enableDevice() {
     
     m_pDevice->cur_fw_img = IWL_UCODE_REGULAR;
     err = loadUcodeWaitAlive(IWL_UCODE_REGULAR);
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Failed to run REGULAR ucode: %d\n", err);
         goto fail;
     }
@@ -515,20 +515,20 @@ bool IWLMvmDriver::enableDevice() {
     */
     
     err = iwl_sf_config(this, SF_INIT_OFF);
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Smart FIFO failed to activate: %d\n", err);
         goto fail;
     }
 
     err = sendTXAntCfg(iwl_mvm_get_valid_tx_ant(m_pDevice));
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Failed to send TX ant: %d\n", err);
         goto fail;
     }
     
-    if(!iwl_mvm_has_unified_ucode(m_pDevice)) {
+    if (!iwl_mvm_has_unified_ucode(m_pDevice)) {
         err = iwl_send_phy_db_data(&phy_db);
-        if(err < 0) {
+        if (err < 0) {
             IWL_ERR(0, "Failed to send phy db: %d\n", err);
             goto fail;
         }
@@ -544,13 +544,13 @@ bool IWLMvmDriver::enableDevice() {
     
     
     err = sendBTInitConf();
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Failed to activate BT coex: %d\n", err);
         goto fail;
     }
     
     
-    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_DQA_SUPPORT))
+    if (fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_DQA_SUPPORT))
     {
         iwl_dqa_enable_cmd cmd = {
             .cmd_queue = cpu_to_le32(IWL_MVM_DQA_CMD_QUEUE),
@@ -559,19 +559,19 @@ bool IWLMvmDriver::enableDevice() {
         u32 cmd_id = iwl_cmd_id(DQA_ENABLE_CMD, DATA_PATH_GROUP, 0);
         
         int ret = sendCmdPdu(cmd_id, 0, sizeof(cmd), &cmd);
-        if(ret)
+        if (ret)
             IWL_ERR(0, "Failed to send DQA enabling commands: %d\n", ret);
         else
             IWL_INFO(0, "Working in DQA mode\n");
     }
     
     err = iwl_mvm_add_aux_sta(this);
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Failed to add aux station: %d\n", err);
         goto fail;
     }
     
-    for(int i = 0; i < NUM_PHY_CTX; i++)
+    for (int i = 0; i < NUM_PHY_CTX; i++)
     {
         this->m_pDevice->phy_ctx[i].channel = &m_pDevice->ie_dev->channels[0];
         IWL_INFO(0, "flags of channel: %d",m_pDevice->ie_dev->channels[0].flags);
@@ -580,7 +580,7 @@ bool IWLMvmDriver::enableDevice() {
             goto fail;
     }
     
-    if(!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_SET_LTR_GEN2))
+    if (!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_SET_LTR_GEN2))
     {
         iwl_ltr_config_cmd cmd = {
             .flags = htole32(LTR_CFG_FLAG_FEATURE_ENABLE),
@@ -590,42 +590,42 @@ bool IWLMvmDriver::enableDevice() {
     }
     
     err = this->sendPowerStatus();
-    if(err < 0) {
+    if (err < 0) {
         IWL_ERR(0, "Failed to send power status command: %d\n", err);
         goto fail;
     }
     
     
-    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_LAR_SUPPORT)) {
+    if (fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_LAR_SUPPORT)) {
         err = (this->updateMcc("ZZ", MCC_SOURCE_OLD_FW) == NULL);
-        if(err < 0) {
+        if (err < 0) {
             IWL_ERR(0, "Failed to update MCC: %d\n", err);
             goto fail;
         }
         IWL_INFO(0, "LAR Support\n");
     }
     
-    if(fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
+    if (fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_CAPA_UMAC_SCAN)) {
         IWL_INFO(0, "umac scanning enabled (ptr: 0x%x)\n", this->m_pDevice);
         this->m_pDevice->umac_scanning = true;
         err = iwl_config_umac_scan(this);
-        if(err < 0) {
+        if (err < 0) {
             IWL_ERR(0, "Failed to init scan config: %d\n", err);
             goto fail;
         }
     }
     
-    for(int ac = 0; ac < 4; ac++) //WME_NUM_AC == 4
+    for (int ac = 0; ac < 4; ac++) //WME_NUM_AC == 4
     {
         err = iwl_enable_txq(this, 0, ac + IWL_MVM_DQA_MIN_MGMT_QUEUE, iwl_mvm_ac_to_tx_fifo[ac]);
-        if(err) {
+        if (err) {
             IWL_ERR(0, "Could not enable tx queue %d (error %d)\n", ac, err);
             goto fail;
         }
     }
     
     err = iwl_disable_beacon_filter(this);
-    if(err) {
+    if (err) {
         IWL_ERR(0, "Could not disable beacon filter (%d)\n", err);
         goto fail;
     }
@@ -867,7 +867,7 @@ int IWLMvmDriver::sendPowerStatus() {
         .flags = 0
     };
     
-    if(!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_DEVICE_PS_CMD)) {
+    if (!fw_has_capa(&this->m_pDevice->fw.ucode_capa, IWL_UCODE_TLV_FLAGS_DEVICE_PS_CMD)) {
         IWL_INFO(0, "No PS Support\n");
         return 0;
     }
@@ -875,9 +875,6 @@ int IWLMvmDriver::sendPowerStatus() {
     cmd.flags |= htole16(DEVICE_POWER_FLAGS_CAM_MSK);
 //    cmd.flags |= htole16(DEVICE_POWER_FLAGS_32K_CLK_VALID_MSK);
 //    cmd.flags |= htole16(DEVICE_POWER_FLAGS_POWER_SAVE_ENA_MSK);
-    
     IWL_INFO(0, "Sending power command with flags (0x%0x)\n", cmd.flags);
-    
     return sendCmdPdu(POWER_TABLE_CMD, 0, sizeof(cmd), &cmd);
 }
-

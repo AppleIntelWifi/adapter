@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef FWImg_h
-#define FWImg_h
+#ifndef APPLEINTELWIFIADAPTER_FW_FWIMG_H_
+#define APPLEINTELWIFIADAPTER_FW_FWIMG_H_
 
 #include <linux/types.h>
 #include "../IWLInternal.hpp"
@@ -394,4 +394,4 @@ iwl_fw_lookup_notif_ver(const struct iwl_fw *fw, u8 grp, u8 cmd, u8 def)
     return def;
 }
 
-#endif /* FWImg_h */
+#endif  // APPLEINTELWIFIADAPTER_FW_FWIMG_H_

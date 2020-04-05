@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLUcodeParse_hpp
-#define IWLUcodeParse_hpp
+#ifndef APPLEINTELWIFIADAPTER_FW_IWLUCODEPARSE_HPP_
+#define APPLEINTELWIFIADAPTER_FW_IWLUCODEPARSE_HPP_
 
 #include <linux/types.h>
 
@@ -19,7 +19,7 @@ class IWLUcodeParse {
     
 public:
     
-    IWLUcodeParse(IWLDevice *drv);
+    explicit IWLUcodeParse(IWLDevice *drv);
     ~IWLUcodeParse();
     
     bool parseFW(const void *raw, size_t len, struct iwl_fw *fw, struct iwl_firmware_pieces *pieces);
@@ -71,4 +71,4 @@ private:
     IWLDevice *drv;
 };
 
-#endif /* IWLUcodeParse_hpp */
+#endif  // APPLEINTELWIFIADAPTER_FW_IWLUCODEPARSE_HPP_

@@ -21,7 +21,7 @@ int IWLMvmTransOpsGen1::nicInit()
     if (ret)
         return ret;
     
-    if(trans->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_7000)
+    if (trans->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_7000)
         setPwr(false);
     
     nicConfig();
@@ -29,7 +29,7 @@ int IWLMvmTransOpsGen1::nicInit()
     IWL_INFO(0, "Allocating both queues\n");
     
     /* Allocate the RX queue, or reset if it is already allocated */
-    if(rxInit())
+    if (rxInit())
         return -ENOMEM;
     /* Allocate or reset and init all Tx and Command queues */
     if (txInit())
@@ -54,12 +54,10 @@ int IWLMvmTransOpsGen1::nicInit()
             IEEE80211_C_SHPREAMBLE |
             IEEE80211_C_RSN |
             IEEE80211_C_QOS |
-            IEEE80211_C_TXPMGT
-            //IEEE80211_C_BGSCAN     
-            ;
+            IEEE80211_C_TXPMGT;
     
     
-    for(int i = 0; i < NUM_PHY_CTX; i++) {
+    for (int i = 0; i < NUM_PHY_CTX; i++) {
         trans->m_pDevice->phy_ctx[i].id = i;
         trans->m_pDevice->phy_ctx[i].color = 0;
         trans->m_pDevice->phy_ctx[i].ref = 0;
@@ -221,7 +219,7 @@ out:
 void IWLMvmTransOpsGen1::stopDevice()
 {
     bool was_in_rfkill;
-    if(!IOLockTryLock(trans->mutex)) {
+    if (!IOLockTryLock(trans->mutex)) {
         IWL_ERR(0, "unable to lock mutex\n");
         return;
     }
@@ -390,10 +388,10 @@ void IWLMvmTransOpsGen1::apmStop(bool op_mode_leave)
         if (!test_bit(STATUS_DEVICE_ENABLED, &trans->status))
             apmInit();
         /* inform ME that we are leaving */
-        if (trans->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_7000)
+        if (trans->m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_7000) {
             trans->iwlSetBitsPRPH(APMG_PCIDEV_STT_REG,
                                   APMG_PCIDEV_STT_VAL_WAKE_ME);
-        else if (trans->m_pDevice->cfg->trans.device_family >=
+        } else if (trans->m_pDevice->cfg->trans.device_family >=
                  IWL_DEVICE_FAMILY_8000) {
             trans->setBit(CSR_DBG_LINK_PWR_MGMT_REG,
                           CSR_RESET_LINK_PWR_MGMT_DISABLED);

@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLPhyDb_hpp
-#define IWLPhyDb_hpp
+#ifndef APPLEINTELWIFIADAPTER_IWLPHYDB_HPP_
+#define APPLEINTELWIFIADAPTER_IWLPHYDB_HPP_
 
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -71,4 +71,4 @@ int iwl_phy_db_get_section_data(struct iwl_phy_db *phy_db,
 
 int iwl_send_phy_db_data(struct iwl_phy_db *phy_db);
 
-#endif /* IWLPhyDb_hpp */
+#endif  // APPLEINTELWIFIADAPTER_IWLPHYDB_HPP_

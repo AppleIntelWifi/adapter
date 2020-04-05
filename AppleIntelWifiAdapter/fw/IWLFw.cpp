@@ -40,17 +40,17 @@ int IWLMvmDriver::runInitMvmUCode(bool read_nvm)
     
     //this->trans->mutex = IOLockAlloc();
     
-    if(!this->trans) {
+    if (!this->trans) {
         IWL_ERR(0, "trans ???");
         return 0;
     }
     
-    if(!this->trans->mutex) {
+    if (!this->trans->mutex) {
         IWL_ERR(0, "Could not alloc mutex\n");
         return 0;
     }
     
-    if(!IOLockTryLock(this->trans->mutex)) {
+    if (!IOLockTryLock(this->trans->mutex)) {
         IWL_ERR(0, "Could not lock mutex\n");
         return 0;
     }
@@ -311,7 +311,7 @@ int IWLMvmDriver::sendPhyCfgCmd()
     phy_cfg_cmd.phy_cfg = cpu_to_le32(iwl_mvm_get_phy_config(m_pDevice));
     //phy_cfg_cmd.phy_cfg |= cpu_to_le32(m_pDevice->cfg->)
     
-    if(trans->m_pDevice->cfg->tx_with_siso_diversity) {
+    if (trans->m_pDevice->cfg->tx_with_siso_diversity) {
         phy_cfg_cmd.phy_cfg =
         cpu_to_le32(FW_PHY_CFG_CHAIN_SAD_ENABLED);
     }
@@ -325,7 +325,7 @@ int IWLMvmDriver::sendPhyCfgCmd()
     
     u8 cmd_ver = iwl_fw_lookup_cmd_ver(&trans->m_pDevice->fw, IWL_ALWAYS_LONG_GROUP, PHY_CONFIGURATION_CMD);
     
-    if(cmd_ver == 3) {
+    if (cmd_ver == 3) {
         iwl_mvm_phy_filter_init(this, &phy_filters);
         memcpy(&phy_cfg_cmd.phy_specific_cfg, &phy_filters,
                sizeof(struct iwl_phy_specific_cfg));
@@ -393,21 +393,19 @@ static bool iwl_alive_fn(struct iwl_notif_wait_data *notif_wait,
 }
 
 bool free_paging(IWLMvmDriver* drv) {
-    if(drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
-        if(drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
-            for(int i = 0; i < NUM_OF_FW_PAGING_BLOCKS; i++) {
-                if(drv->m_pDevice->fw_paging_db[i].fw_paging_block) {
+    if (drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
+        if (drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
+            for (int i = 0; i < NUM_OF_FW_PAGING_BLOCKS; i++) {
+                if (drv->m_pDevice->fw_paging_db[i].fw_paging_block) {
                     free_dma_buf(drv->m_pDevice->fw_paging_db[i].fw_paging_block);
                     drv->m_pDevice->fw_paging_db[i].fw_paging_block = NULL;
                 }
             }
             memset(drv->m_pDevice->fw_paging_db, 0, sizeof(drv->m_pDevice->fw_paging_db));
-        }
-        else {
+        } else {
             return false;
         }
-    }
-    else {
+    } else {
         return false;
     }
     
@@ -417,8 +415,8 @@ bool free_paging(IWLMvmDriver* drv) {
 
 bool alloc_pages(IWLMvmDriver* drv, fw_img* img) {
     int blk_idx = 0;
-    if(drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
-        if(drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
+    if (drv->m_pDevice->fw_paging_db[0].fw_paging_block) {
+        if (drv->m_pDevice->fw_paging_db[0].fw_paging_block->addr != NULL) {
             return false;
         }
     }
@@ -434,10 +432,9 @@ bool alloc_pages(IWLMvmDriver* drv, fw_img* img) {
     int error;
     
     iwl_dma_ptr* ptr = allocate_dma_buf(4096, drv->trans->dma_mask);
-    if(ptr) {
+    if (ptr) {
         drv->m_pDevice->fw_paging_db[blk_idx].fw_paging_block = ptr;
-    }
-    else {
+    } else {
         free_paging(drv);
         return false;
     }
@@ -698,14 +695,14 @@ int IWLMvmDriver::loadUcodeWaitAlive(enum iwl_ucode_type ucode_type)
     
     set_bit(IWL_MVM_STATUS_FIRMWARE_RUNNING, &m_pDevice->status);
     
-    if(m_pDevice->fw.img[m_pDevice->cur_fw_img].paging_mem_size) {
+    if (m_pDevice->fw.img[m_pDevice->cur_fw_img].paging_mem_size) {
         ret = save_paging(this, &m_pDevice->fw.img[m_pDevice->cur_fw_img]);
-        if(ret)
+        if (ret)
             return ret;
         
         ret = send_paging(this,  &m_pDevice->fw.img[m_pDevice->cur_fw_img]);
         
-        if(ret) {
+        if (ret) {
             free_paging(this);
             
             return ret;

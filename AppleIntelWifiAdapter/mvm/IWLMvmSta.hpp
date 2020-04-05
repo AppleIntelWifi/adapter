@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmSta_hpp
-#define IWLMvmSta_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMSTA_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMSTA_HPP_
 
 #include "../trans/IWLTransport.hpp"
 #include "../mvm/IWLMvmDriver.hpp"
@@ -32,4 +32,4 @@ int iwl_mvm_add_aux_sta(IWLMvmDriver* drv);
 
 int iwl_mvm_sta_send_to_fw(IWLMvmDriver* drv, struct iwm_node *in, bool update, unsigned int flags);
 
-#endif /* IWLMvmSta_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMSTA_HPP_

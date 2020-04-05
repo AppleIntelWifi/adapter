@@ -28,9 +28,10 @@ void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd, ieee80211_node* ni)
                     else
         #endif
                         watermark = SF_W_MARK_SISO;
-                } else
+                } else {
         #endif
                     watermark = SF_W_MARK_LEGACY;
+                }
         
     } else {
         watermark = SF_W_MARK_MIMO2;
@@ -57,7 +58,7 @@ void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd, ieee80211_node* ni)
 int iwl_sf_config(IWLMvmDriver* drv, int new_state) {
     IWLTransport* trans = drv->trans;
     ieee80211com* ic = &trans->m_pDevice->ie_ic;
-    if(!ic)
+    if (!ic)
         return -1;
     
     struct iwl_sf_cfg_cmd sf_cmd = {

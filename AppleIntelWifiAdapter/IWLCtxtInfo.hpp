@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLCtxtInfo_hpp
-#define IWLCtxtInfo_hpp
+#ifndef APPLEINTELWIFIADAPTER_IWLCTXTINFO_HPP_
+#define APPLEINTELWIFIADAPTER_IWLCTXTINFO_HPP_
 
 #include "IWLTransport.hpp"
 #include "IWLInternal.hpp"
@@ -403,4 +403,4 @@ struct iwl_context_info_gen3 {
     __le32 reserved;
 } __packed; /* IPC_CONTEXT_INFO_S */
 
-#endif /* IWLCtxtInfo_hpp */
+#endif  // APPLEINTELWIFIADAPTER_IWLCTXTINFO_HPP_

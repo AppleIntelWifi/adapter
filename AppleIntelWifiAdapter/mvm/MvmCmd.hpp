@@ -6,11 +6,11 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef MvmCmd_hpp
-#define MvmCmd_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_
 
 #include "IWLTransport.hpp"
-#include "fw-api.h"
+#include "../fw/fw-api.h"
 #include "debug.h"
 #include "nan.h"
 
@@ -333,4 +333,4 @@ static const struct iwl_hcmd_arr iwl_mvm_groups[] = {
         HCMD_ARR(iwl_mvm_regulatory_and_nvm_names),
 };
 
-#endif /* MvmCmd_hpp */
+#endif   // APPLEINTELWIFIADAPTER_MVM_MVMCMD_HPP_

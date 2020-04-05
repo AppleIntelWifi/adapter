@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLApple80211_hpp
-#define IWLApple80211_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLAPPLE80211_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLAPPLE80211_HPP_
 
 #include "IWLMvmDriver.hpp"
 
@@ -49,4 +49,4 @@ private:
     IWLMvmDriver* fDrv;
     
 };
-#endif /* IWLApple80211_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLAPPLE80211_HPP_

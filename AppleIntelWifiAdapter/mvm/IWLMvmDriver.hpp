@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLMvmDriver_hpp
-#define IWLMvmDriver_hpp
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMDRIVER_HPP_
+#define APPLEINTELWIFIADAPTER_MVM_IWLMVMDRIVER_HPP_
 
 #include <libkern/OSKextLib.h>
 #include <IOKit/IOLib.h>
@@ -146,4 +146,4 @@ static inline bool iwl_mvm_has_new_rx_api(struct iwl_fw *fw)
                        IWL_UCODE_TLV_CAPA_MULTI_QUEUE_RX_SUPPORT);
 }
 
-#endif /* IWLMvmDriver_hpp */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMDRIVER_HPP_

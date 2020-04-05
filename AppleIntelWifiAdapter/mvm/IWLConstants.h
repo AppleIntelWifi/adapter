@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLConstants_h
-#define IWLConstants_h
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWLCONSTANTS_H_
+#define APPLEINTELWIFIADAPTER_MVM_IWLCONSTANTS_H_
 
 #include "fw-api.h"
 
@@ -111,4 +111,4 @@
 #define IWL_MVM_PHY_FILTER_CHAIN_C        0
 #define IWL_MVM_PHY_FILTER_CHAIN_D        0
 
-#endif /* IWLConstants_h */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWLCONSTANTS_H_

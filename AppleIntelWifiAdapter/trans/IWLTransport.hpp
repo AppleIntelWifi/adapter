@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLTransport_hpp
-#define IWLTransport_hpp
+#ifndef APPLEINTELWIFIADAPTER_TRANS_IWLTRANSPORT_HPP_
+#define APPLEINTELWIFIADAPTER_TRANS_IWLTRANSPORT_HPP_
 
 #include "IWLIO.hpp"
 #include "../IWLDevice.hpp"
@@ -352,4 +352,4 @@ static inline void *iwl_pcie_get_tfd(IWLTransport *trans_pcie, struct iwl_txq *t
     return (u8*)txq->tfds + trans_pcie->tfd_size * iwl_pcie_get_cmd_index(txq, idx);
 }
 
-#endif /* IWLTransport_hpp */
+#endif  // APPLEINTELWIFIADAPTER_TRANS_IWLTRANSPORT_HPP_

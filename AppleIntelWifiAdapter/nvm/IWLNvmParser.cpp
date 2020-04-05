@@ -309,11 +309,9 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
         enum nl80211_band band =
             iwl_nl80211_band_from_channel_idx(ch_idx);
         
-        if(v4) {
+        if (v4)
             IWL_INFO(0, "weird thing\n");
-        }
 
-        
         if (v4)
             ch_flags =
                 __le32_to_cpup((__le32 *)nvm_ch_flags + ch_idx);
@@ -362,19 +360,19 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
             channel.flags |= APPLE80211_C_FLAG_ACTIVE;
         }
         
-        if(ch_flags & NVM_CHANNEL_IBSS) {
+        if (ch_flags & NVM_CHANNEL_IBSS) {
             channel.flags |= APPLE80211_C_FLAG_IBSS;
         }
         
-        if(ch_flags & NVM_CHANNEL_20MHZ) {
+        if (ch_flags & NVM_CHANNEL_20MHZ) {
             channel.flags |= APPLE80211_C_FLAG_20MHZ;
         }
         
-        if(ch_flags & NVM_CHANNEL_40MHZ) {
+        if (ch_flags & NVM_CHANNEL_40MHZ) {
             channel.flags |= APPLE80211_C_FLAG_40MHZ;
         }
         
-        if(ch_flags & NVM_CHANNEL_80MHZ) {
+        if (ch_flags & NVM_CHANNEL_80MHZ) {
             channel.flags |= APPLE80211_C_FLAG_EXT_ABV;
         }
         
@@ -971,13 +969,11 @@ iwl_parse_nvm_data(IWLTransport *trans, const struct iwl_cfg *cfg,
 //        data_size = struct_size(data, channels,
 //                                IWL_NVM_NUM_CHANNELS_UHB);
         data_size = sizeof(*data) + sizeof(ieee80211_channel) * IWL_NVM_NUM_CHANNELS_UHB;
-    }
-    else if (cfg->nvm_type != IWL_NVM_EXT) {
+    } else if (cfg->nvm_type != IWL_NVM_EXT) {
 //        data_size = struct_size(data, channels,
 //                                IWL_NVM_NUM_CHANNELS);
         data_size = sizeof(*data) + sizeof(ieee80211_channel) * IWL_NVM_NUM_CHANNELS;
-    }
-    else {
+    } else {
 //        data_size = struct_size(data, channels,
 //                                IWL_NVM_NUM_CHANNELS_EXT);
         data_size = sizeof(*data) + sizeof(ieee80211_channel) * IWL_NVM_NUM_CHANNELS_EXT;

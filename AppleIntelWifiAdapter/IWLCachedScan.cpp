@@ -17,7 +17,7 @@
 #define super OSObject
 OSDefineMetaClassAndStructors(IWLCachedScan, OSObject);
 
-#define check_packet() if(!packet) \
+#define check_packet() if (!packet) \
 { IWL_ERR(0, "Packet should exist in IWLCachedScan (func: %s)\n", __FUNCTION__); return NULL; }
 
 /*
@@ -28,22 +28,19 @@ OSDefineMetaClassAndStructors(IWLCachedScan, OSObject);
 
 SInt32 orderCachedScans(const OSMetaClassBase * obj1, const OSMetaClassBase * obj2, void * context) {
     IWLCachedScan* cachedScan_l = OSDynamicCast(IWLCachedScan, obj1);
-    if(!cachedScan_l) {
+    if (!cachedScan_l)
         return 0;
-    }
     
     IWLCachedScan* cachedScan_r = OSDynamicCast(IWLCachedScan, obj2);
-    if(!cachedScan_r) {
+    if (!cachedScan_r)
         return 0;
-    }
     
-    if(cachedScan_l->getTimestamp() < cachedScan_r->getTimestamp()) { // smaller timestamps go before
+    if (cachedScan_l->getTimestamp() < cachedScan_r->getTimestamp()) // smaller timestamps go before
         return 1;
-    } else if(cachedScan_l->getTimestamp() == cachedScan_r->getTimestamp()) {
+    else if (cachedScan_l->getTimestamp() == cachedScan_r->getTimestamp())
         return 0;
-    } else { // object 2 is older, put it before
+    else // object 2 is older, put it before
         return -1;
-    }
     
 }
 
@@ -60,38 +57,34 @@ bool IWLCachedScan::update(iwl_rx_phy_info* phy_info, int rssi, int noise) {
 
 bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info, int rssi, int noise) {
     
-    if(!super::init()) {
+    if (!super::init())
         return false;
-    }
     
     errno_t err = mbuf_dup(mbuf, MBUF_DONTWAIT, &buf);
     
-    if(err != 0) {
+    if (err != 0) {
         IWL_ERR(0, "mbuf dup complained\n");
         return false;
     }
     
-    if(!buf) {
+    if (!buf)
         return false;
-    }
     
     packet = (iwl_rx_packet*)((u8*)mbuf_data((mbuf_t)buf) + (offset));
     
-    if(!packet) {
+    if (!packet)
         return false;
-    }
     
     wh = (ieee80211_frame*)(packet->data + whOffset);
     iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
     
     this->ie_len = rx_res->byte_count - 36;
     
-    if(this->ie_len <= 0)
+    if (this->ie_len <= 0)
         return false;
     
-    if(le16toh(rx_res->byte_count) <= 36) {
+    if (le16toh(rx_res->byte_count) <= 36)
         return false;
-    }
         
     this->ie = ((uint8_t*)wh + 36);
     
@@ -102,7 +95,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
     this->absolute_time = mach_absolute_time();
     
     
-    if(this->ie[0] != 0x00) {
+    if (this->ie[0] != 0x00) {
         IWL_ERR(0, "potentially uncompliant frame\n");
         IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[39], ie[5]);
         IWL_INFO(0, "wh: %x, ie: %x\n", ((uint8_t*)wh)[38], ie[4]); // first byte
@@ -132,13 +125,13 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
        }
         */
     
-        if (channel.channel < 15) {
+        if (channel.channel < 15)
             channel.flags |= APPLE80211_C_FLAG_2GHZ;
-        } else {
+        else
             channel.flags |= APPLE80211_C_FLAG_5GHZ;
-        }
+        
     
-       switch(this->phy_info.rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
+       switch (this->phy_info.rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
            case RATE_MCS_CHAN_WIDTH_20:
                IWL_INFO(0, "Chan width 20mhz\n");
                channel.flags |= APPLE80211_C_FLAG_20MHZ;
@@ -168,7 +161,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info*
 void IWLCachedScan::free() {
     super::free();
     
-    if(buf) {
+    if (buf) {
         mbuf_freem(buf);
     }
     packet = NULL;
@@ -189,7 +182,7 @@ uint64_t IWLCachedScan::getSysTimestamp() {
 const char* IWLCachedScan::getSSID() { // ensure to free this resulting buffer
     check_packet()
     
-    if(ie[0] != 0x00) {
+    if (ie[0] != 0x00) {
         IWL_ERR(0, "haven't handled this yet\n");
         return NULL;
     }
@@ -198,7 +191,7 @@ const char* IWLCachedScan::getSSID() { // ensure to free this resulting buffer
     
     const char* ssid = (const char*)kzalloc(ssid_len + 1); // include null terminator
     
-    if(!ssid)
+    if (!ssid)
         return NULL;
     
     memcpy((void*)ssid, &ie[2], ssid_len); // 0x00 == type, 0x01 == size, 0x02 onwards == data
@@ -209,14 +202,14 @@ const char* IWLCachedScan::getSSID() { // ensure to free this resulting buffer
 uint32_t IWLCachedScan::getSSIDLen() {
     check_packet()
     
-    if(ie[0] != 0x00) {
+    if (ie[0] != 0x00) {
         IWL_ERR(0, "haven't handled this yet\n");
         return NULL;
     }
     
     uint8_t ssid_len = ie[1];
     
-    if(ssid_len > 32) {
+    if (ssid_len > 32) {
         IWL_ERR(0, "ssid length too large, clamping to 32\n");
         ssid_len = 32;
     }
@@ -251,30 +244,28 @@ uint8_t* IWLCachedScan::getRates() {
     uint8_t* rate_ptr;
     
     size_t index = 0;
-    if(ie[index++] == 0x00) { // index is 1 when we enter in the frame
+    if (ie[index++] == 0x00) { // index is 1 when we enter in the frame
         index += ie[1] + 1; // increment by size of ssid AND skip over length byte
-    }
-    else {
+    } else {
         IWL_ERR(0, "still can't handle this\n");
         return NULL;
     }
     
-    if(index >= ie_len) {
+    if (index >= ie_len) {
         IWL_ERR(0, "tried to access too far within IE, buffer overrun\n");
         return NULL;
     }
     
-    if(ie[index++] == 0x01) {
+    if (ie[index++] == 0x01) {
         //good, we found it!
         uint32_t rate_size = ie[index++];
-        if(rate_size != 8) {
+        if (rate_size != 8) {
             IWL_ERR(0, "rate set is NOT correct\n");
             return NULL;
         }
         
         rate_ptr = &ie[index];
-    }
-    else {
+    } else {
         IWL_ERR(0, "found ssid, but no rateset\n");
         return NULL;
     }
@@ -297,9 +288,8 @@ apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this
     
     result = (apple80211_scan_result*)kzalloc(sizeof(apple80211_scan_result));
     
-    if(result == NULL) {
+    if (result == NULL)
         return NULL;
-    }
 
     result->version = APPLE80211_VERSION;
     
@@ -312,7 +302,7 @@ apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this
     result->asr_ie_len = this->getIELen();
     
     IWL_INFO(0, "IE length: %d\n", result->asr_ie_len);
-    if(result->asr_ie_len != 0) {
+    if (result->asr_ie_len != 0) {
         result->asr_ie_data = ie;
         
         //uint8_t* buf = (uint8_t*)result->asr_ie_data;
@@ -325,8 +315,8 @@ apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this
     
     uint8_t* rates = this->getRates();
     
-    if(rates != NULL) {
-        for(int i = 0; i < 8; i++) {
+    if (rates != NULL) {
+        for (int i = 0; i < 8; i++) {
             result->asr_rates[i] = (rates[i] >> 1) & 0x3F; // stolen magic
         }
         result->asr_nrates = 8;
@@ -345,11 +335,11 @@ apple80211_scan_result* IWLCachedScan::getNativeType() { // be sure to free this
     
     result->asr_ssid_len = this->getSSIDLen();
     
-    if(this->getSSIDLen() != 0) {
+    if (this->getSSIDLen() != 0) {
         
         const char* ssid = this->getSSID();
         
-        if(ssid) {
+        if (ssid) {
             memcpy(&result->asr_ssid, ssid, this->getSSIDLen() + 1);
         
             IOFree((void*)ssid, this->getSSIDLen() + 1);

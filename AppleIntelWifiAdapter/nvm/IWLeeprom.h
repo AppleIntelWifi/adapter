@@ -6,10 +6,10 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLeeprom_h
-#define IWLeeprom_h
+#ifndef APPLEINTELWIFIADAPTER_NVM_IWLEEPROM_H_
+#define APPLEINTELWIFIADAPTER_NVM_IWLEEPROM_H_
 
-//#include <linux/mac80211.h>
+// #include <linux/mac80211.h>
 #include <net80211/ieee80211_var.h>
 #include <linux/types.h>
 #include <linux/netdevice.h>
@@ -46,8 +46,8 @@ struct iwl_nvm_data {
 
     bool lar_enabled;
     bool vht160_supported;
-    //TODO
-    //ieee80211_supported_band bands[NUM_NL80211_BANDS];
+    // TODO
+    // ieee80211_supported_band bands[NUM_NL80211_BANDS];
     struct ieee80211_channel channels[];
 };
 
@@ -63,4 +63,4 @@ struct iwl_nvm_section {
     const u8 *data;
 };
 
-#endif /* IWLeeprom_h */
+#endif   // APPLEINTELWIFIADAPTER_NVM_IWLEEPROM_H_

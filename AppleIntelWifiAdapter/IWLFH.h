@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWLFH_h
-#define IWLFH_h
+#ifndef APPLEINTELWIFIADAPTER_IWLFH_H_
+#define APPLEINTELWIFIADAPTER_IWLFH_H_
 
 #include <linux/types.h>
 #include <linux/bitfield.h>
@@ -702,4 +702,4 @@ struct iwl_gen3_bc_tbl {
     __le16 tfd_offset[TFD_QUEUE_BC_SIZE_GEN3];
 } __packed;
 
-#endif /* IWLFH_h */
+#endif  // APPLEINTELWIFIADAPTER_IWLFH_H_

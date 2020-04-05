@@ -6,8 +6,8 @@
 //  Copyright © 2020 IntelWifi for MacOS authors. All rights reserved.
 //
 
-#ifndef IWMHdr_h
-#define IWMHdr_h
+#ifndef APPLEINTELWIFIADAPTER_MVM_IWMHDR_H_
+#define APPLEINTELWIFIADAPTER_MVM_IWMHDR_H_
 
 #include "../compat/openbsd/net80211/ieee80211_var.h"
 #include "../compat/openbsd/net80211/ieee80211_amrr.h"
@@ -36,4 +36,4 @@ struct iwm_node {
 
 };
 
-#endif /* IWMHdr_h */
+#endif  // APPLEINTELWIFIADAPTER_MVM_IWMHDR_H_
