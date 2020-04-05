@@ -16,6 +16,8 @@ bool IWL80211Device::init(IWLMvmDriver* drv) {
 
   iface = fDrv->controller->getNetworkInterface();
 
+  auth_lower = APPLE80211_AUTHTYPE_OPEN;
+
   return true;
 }
 
@@ -72,7 +74,7 @@ void IWL80211Device::setSSID(size_t ssid_len, const char* ssid) {
   this->ssid = reinterpret_cast<const char*>(kzalloc(ssid_len + 1));
   if (this->ssid == NULL) return;
 
-  memcpy((void*)this->ssid, ssid, ssid_len); // NOLINT(readability/casting)
+  memcpy((void*)this->ssid, ssid, ssid_len);  // NOLINT(readability/casting)
 }
 
 bool IWL80211Device::initScanChannelMap(size_t map_size) {

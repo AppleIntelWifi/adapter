@@ -38,6 +38,13 @@ class IWL80211Device {
   inline uint32_t getFlags() { return this->flags; }
 
   inline uint8_t* getBSSID() { return reinterpret_cast<uint8_t*>(this->bssid); }
+  inline bool setBSSID(uint8_t* bssid, size_t bssid_len) {
+    if (bssid_len != 6) return false;
+
+    memcpy(&this->bssid, bssid, 6);
+    return true;
+  }
+  inline void resetBSSID() { memset(&this->bssid, 0, ETH_ALEN); }
 
   inline bool getScanning() { return this->scanning; }
   inline void setScanning(bool status) { this->scanning = status; }
@@ -49,6 +56,12 @@ class IWL80211Device {
 
   void setSSID(size_t ssid_len, const char* ssid);
 
+  inline void resetSSID() {
+    if (this->ssid) {
+      IOFree((void*)this->ssid, this->ssid_len + 1); // NOLINT(readability/casting)
+      this->ssid = NULL;
+    }
+  }
   inline size_t getSSIDLen() {
     if (this->ssid_len > 32) this->ssid_len = 32;
 
@@ -101,6 +114,59 @@ class IWL80211Device {
 
   inline void setScanIndex(uint32_t new_index) { this->scan_index = new_index; }
 
+  inline void setCipherKey(apple80211_key* cipher_key) {
+    if (cipher_key) {
+      if (!cipher_key->version) return;
+
+      // clang-format off
+      if (this->key) IOFree((void*)this->key, sizeof(apple80211_key)); // NOLINT(readability/casting)
+      // clang-format on
+      this->key =
+          reinterpret_cast<apple80211_key*>(kzalloc(sizeof(apple80211_key)));
+      memcpy(this->key, cipher_key, sizeof(apple80211_key));
+    }
+  }
+
+  inline void resetCipherKey() {
+    // clang-format off
+    if (this->key) IOFree((void*)this->key, sizeof(apple80211_key)); // NOLINT(readability/casting)
+    // clang-format on
+  }
+
+  inline apple80211_key* getCipherKey() { return this->key; }
+
+  inline uint8_t* getRSN_IE() { return reinterpret_cast<uint8_t*>(&rsn_ie); }
+
+  inline uint32_t getRSN_IELen() { return this->rsn_ie_len; }
+
+  inline void resetRSN_IE() { memset(&rsn_ie, 0, APPLE80211_MAX_RSN_IE_LEN); }
+
+  inline void setRSN_IE(uint8_t* ie, uint32_t ie_len) {
+    if (ie_len > APPLE80211_MAX_RSN_IE_LEN) return;
+
+    memcpy(&rsn_ie, ie, ie_len);
+  }
+
+  inline uint32_t getAuthUpper() { return this->auth_upper; }
+
+  inline void setAuthUpper(uint32_t upper) { this->auth_upper = upper; }
+
+  inline uint32_t getAuthLower() { return this->auth_lower; }
+
+  inline void setAuthLower(uint32_t lower) { this->auth_lower = lower; }
+
+  inline uint32_t getAPMode() { return ap_mode; }
+
+  inline void setAPMode(uint32_t mode) { this->ap_mode = mode; }
+
+  inline uint32_t getPhyMode() { return phy_mode; }
+
+  inline void setPhyMode(uint32_t phy) { this->phy_mode = phy; }
+
+  inline uint32_t getOPMode() { return this->op_mode; }
+
+  inline void setOPMode(uint32_t op) { this->op_mode = op; }
+
  private:
   uint8_t address[ETH_ALEN];
   uint32_t flags;
@@ -121,12 +187,22 @@ class IWL80211Device {
   apple80211_channel* channels;
   apple80211_channel* channels_scan;
 
+  uint32_t auth_lower;
+  uint32_t auth_upper;
+  uint32_t ap_mode;
+  uint32_t phy_mode;
+  uint32_t op_mode;
+
   uint32_t n_scan_chans;
   uint32_t scan_max;
   uint32_t scan_index;
 
   OSOrderedSet* scanCache;
   IOLock* scanCacheLock;
+
+  apple80211_key* key;
+  uint8_t rsn_ie[APPLE80211_MAX_RSN_IE_LEN];
+  uint32_t rsn_ie_len;
 
   IO80211Interface* iface;
   IWLMvmDriver* fDrv;

@@ -150,6 +150,7 @@ class AppleIntelWifiAdapterV2 : public IO80211Controller {
   // 20 - ASSOCIATE
   IOReturn setASSOCIATE(IO80211Interface* interface,
                         struct apple80211_assoc_data* ad);
+  IOReturn setDISASSOCIATE(IO80211Interface* interface);
   // 27 - SUPPORTED_CHANNELS
   IOReturn getSUPPORTED_CHANNELS(IO80211Interface* interface,
                                  struct apple80211_sup_channel_data* ad);

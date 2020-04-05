@@ -104,8 +104,7 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
       IOCTL_SET(request_type, ASSOCIATE, apple80211_assoc_data);
       break;
     case APPLE80211_IOC_DISASSOCIATE:
-      drv->m_pDevice->ie_dev->setState(APPLE80211_S_INIT);
-      ret = 0;
+      ret = setDISASSOCIATE(interface);
       break;
     case APPLE80211_IOC_SUPPORTED_CHANNELS:  // 27
       IOCTL_GET(request_type, SUPPORTED_CHANNELS, apple80211_sup_channel_data);
@@ -211,8 +210,8 @@ IOReturn AppleIntelWifiAdapterV2::getAUTH_TYPE(
     IO80211Interface *interface, struct apple80211_authtype_data *ad) {
   ad->version = APPLE80211_VERSION;
 
-  ad->authtype_lower = APPLE80211_AUTHTYPE_OPEN;
-  ad->authtype_upper = APPLE80211_AUTHTYPE_NONE;
+  ad->authtype_lower = drv->m_pDevice->ie_dev->getAuthLower();
+  ad->authtype_upper = drv->m_pDevice->ie_dev->getAuthUpper();
 
   return kIOReturnSuccess;
 }
@@ -291,7 +290,8 @@ IOReturn AppleIntelWifiAdapterV2::getBSSID(IO80211Interface *interface,
 
   bzero(bd, sizeof(*bd));
   bd->version = APPLE80211_VERSION;
-  // memcpy(bd->bssid.octet, fake_bssid, sizeof(fake_bssid));
+  memcpy(bd->bssid.octet, drv->m_pDevice->ie_dev->getBSSID(), ETH_ALEN);
+
   return kIOReturnSuccess;
 }
 
@@ -448,6 +448,10 @@ const char *fake_ssid = "UPC5424297";
 
 IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
     IO80211Interface *interface, struct apple80211_scan_result **sr) {
+  OSOrderedSet *scanCache = drv->m_pDevice->ie_dev->getScanCache();
+
+  if (!scanCache) return 5;
+
   IWL_DEBUG(0, "Locking mutex\n");
 
   if (!drv->m_pDevice->ie_dev->lockScanCache()) {
@@ -456,13 +460,13 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
   }
 
   OSObject *obj = NULL;
-  OSOrderedSet *scanCache = drv->m_pDevice->ie_dev->getScanCache();
 
   apple80211_scan_data *scan_data = drv->m_pDevice->ie_dev->getScanData();
 
-  if (!scanCache) return kIOReturnError;
-
-  if (!scan_data) return kIOReturnError;
+  if (!scan_data) {
+    drv->m_pDevice->ie_dev->unlockScanCache();
+    return 5;
+  }
 
   if (scan_data->ssid_len != 0) {
     for (int i = drv->m_pDevice->ie_dev->getScanIndex();
@@ -642,7 +646,7 @@ IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(
                  APPLE80211_MODE_11G | APPLE80211_MODE_11N |
                  APPLE80211_MODE_11AC;
 
-  // pd->active_phy_mode = APPLE80211_MODE_AUTO;
+  pd->active_phy_mode = drv->m_pDevice->ie_dev->getPhyMode();
   return kIOReturnSuccess;
 }
 
@@ -653,7 +657,7 @@ IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(
 IOReturn AppleIntelWifiAdapterV2::getOP_MODE(
     IO80211Interface *interface, struct apple80211_opmode_data *od) {
   od->version = APPLE80211_VERSION;
-  od->op_mode = APPLE80211_M_NONE;
+  od->op_mode = this->drv->m_pDevice->ie_dev->getOPMode();
   return kIOReturnSuccess;
 }
 
@@ -738,7 +742,35 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
     IO80211Interface *interface, struct apple80211_assoc_data *ad) {
   IWL_INFO(0, "ASSOCIATE TO %s\n", ad->ad_ssid);
 
-  interface->setLinkState(IO80211LinkState::kIO80211NetworkLinkUp, 0);
+  if (ad->ad_mode == 1) {
+    IWL_ERR(0, "p2p-gc and ibss cannot exist\n");
+  } else {
+    if (ad->ad_key.key_len != 0)
+      drv->m_pDevice->ie_dev->setCipherKey(&ad->ad_key);
+
+    drv->m_pDevice->ie_dev->setRSN_IE(
+        reinterpret_cast<uint8_t *>(&ad->ad_rsn_ie), ad->ad_rsn_ie_len);
+
+    drv->m_pDevice->ie_dev->setSSID(
+        ad->ad_ssid_len, reinterpret_cast<const char *>(&ad->ad_ssid));
+    drv->m_pDevice->ie_dev->setAPMode(ad->ad_mode);
+    drv->m_pDevice->ie_dev->setBSSID(
+        reinterpret_cast<uint8_t *>(&ad->ad_bssid.octet), ETH_ALEN);
+    drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
+  }
+
+  return kIOReturnSuccess;
+}
+
+IOReturn AppleIntelWifiAdapterV2::setDISASSOCIATE(IO80211Interface *interface) {
+  drv->m_pDevice->ie_dev->setState(APPLE80211_S_INIT);
+  drv->m_pDevice->ie_dev->resetBSSID();
+  drv->m_pDevice->ie_dev->resetSSID();
+  drv->m_pDevice->ie_dev->resetCipherKey();
+  drv->m_pDevice->ie_dev->resetRSN_IE();
+  drv->m_pDevice->ie_dev->setAPMode(0);
+  drv->m_pDevice->ie_dev->setPhyMode(0);
+  drv->m_pDevice->ie_dev->setOPMode(0);
   return kIOReturnSuccess;
 }
 
