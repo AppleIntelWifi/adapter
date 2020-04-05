@@ -32,7 +32,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
           (drv->m_pDevice->fw.ucode_capa.n_scan_channels);
   }
 
-  cfg = (iwl_scan_config_v1*)kzalloc(len);
+  cfg = reinterpret_cast<iwl_scan_config_v1*>(kzalloc(len));
 
   iwl_host_cmd hcmd = {.id = iwl_cmd_id(SCAN_CFG_CMD, IWL_ALWAYS_LONG_GROUP, 0),
                        .dataflags = {IWL_HCMD_DFL_NOCOPY},
@@ -64,7 +64,7 @@ int iwl_config_umac_scan(IWLMvmDriver* drv) {
   if (iwl_mvm_cdb_scan_api(drv->m_pDevice) &&
       iwl_mvm_is_cdb_supported(drv->m_pDevice)) {
     IWL_INFO(0, "cfg_v2 scan config being used\n");
-    iwl_scan_config_v2* cfg_v2 = (iwl_scan_config_v2*)cfg;
+    iwl_scan_config_v2* cfg_v2 = reinterpret_cast<iwl_scan_config_v2*>(cfg);
     cfg_v2->dwell.active = 10;
     cfg_v2->dwell.passive = 110;
     cfg_v2->dwell.fragmented = 44;
@@ -161,12 +161,12 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
   iwl_scan_probe_req* preq_v2;
   struct ieee80211_frame* wh;
   if (ext_chan) {
-    preq_v2 = (iwl_scan_probe_req*)preq;
+    preq_v2 = reinterpret_cast<iwl_scan_probe_req*>(preq);
     memset(preq_v2, 0, sizeof(*preq_v2));
-    wh = (ieee80211_frame*)preq_v2->buf;
+    wh = reinterpret_cast<ieee80211_frame*>(preq_v2->buf);
   } else {
     memset(preq, 0, sizeof(*preq));
-    wh = (ieee80211_frame*)preq->buf;
+    wh = reinterpret_cast<ieee80211_frame*>(preq->buf);
   }
 
   ieee80211_rateset rs;
@@ -190,15 +190,15 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
   memcpy(wh->i_addr1, etherbroadcastaddr, ETHER_ADDR_LEN);
   memcpy(wh->i_addr2, drv->m_pDevice->ie_dev->address, ETHER_ADDR_LEN);
   memcpy(wh->i_addr3, etherbroadcastaddr, ETHER_ADDR_LEN);
-  *(uint16_t*)&wh->i_dur[0] = 0; /* filled by HW */
-  *(uint16_t*)&wh->i_seq[0] = 0; /* filled by HW */
-  frm = (uint8_t*)(wh + 1);
+  *(uint16_t*)&wh->i_dur[0] = 0; /* filled by HW */ // NOLINT(readability/casting)
+  *(uint16_t*)&wh->i_seq[0] = 0; /* filled by HW */ // NOLINT(readability/casting)
+  frm = (uint8_t*)(wh + 1); // NOLINT(readability/casting)
   frm = ieee80211_add_ssid(frm, appleReq->ssid, appleReq->ssid_len);
 
   /* Tell the firmware where the MAC header is. */
   preq->mac_header.offset = 0;
-  preq->mac_header.len = htole16(frm - (uint8_t*)wh);
-  remain -= frm - (uint8_t*)wh;
+  preq->mac_header.len = htole16(frm - reinterpret_cast<uint8_t*>(wh));
+  remain -= frm - reinterpret_cast<uint8_t*>(wh);
 
   /* 2Ghz IEs */
   memset(&rs, 0, sizeof(ieee80211_rateset));
@@ -214,7 +214,7 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
     return ENOBUFS;
   }
 
-  preq->band_data[0].offset = htole16(frm - (uint8_t*)wh);
+  preq->band_data[0].offset = htole16(frm - reinterpret_cast<uint8_t*>(wh));
   pos = frm;
   frm = ieee80211_add_rates(frm, &rs);
   if (rs.rs_nrates > IEEE80211_RATE_SIZE) frm = ieee80211_add_xrates(frm, &rs);
@@ -246,7 +246,7 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
       IWL_ERR(0, "no space for 5ghz nrates 2\n");
       return ENOBUFS;
     }
-    preq->band_data[1].offset = htole16(frm - (uint8_t*)wh);
+    preq->band_data[1].offset = htole16(frm - reinterpret_cast<uint8_t*>(wh));
     pos = frm;
     frm = ieee80211_add_rates(frm, &rs);
     if (rs.rs_nrates > IEEE80211_RATE_SIZE)
@@ -256,12 +256,12 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
   }
 
   if (ext_chan) {
-    preq_v2->common_data.offset = htole16(frm - (uint8_t*)wh);
+    preq_v2->common_data.offset = htole16(frm - reinterpret_cast<uint8_t*>(wh));
     pos = frm;
 
     preq_v2->common_data.len = htole16(frm - pos);
   } else {
-    preq->common_data.offset = htole16(frm - (uint8_t*)wh);
+    preq->common_data.offset = htole16(frm - reinterpret_cast<uint8_t*>(wh));
     pos = frm;
 
     preq->common_data.len = htole16(frm - pos);
@@ -337,17 +337,14 @@ bool iwl_scan_use_ebs(IWLMvmDriver* drv) {
 int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
   iwl_host_cmd hcmd = {
       .id = iwl_cmd_id(SCAN_REQ_UMAC, IWL_ALWAYS_LONG_GROUP, 0),
-      .len =
-          {
+      .len = {
               0,
           },
-      .data =
-          {
+      .data = {
               NULL,
           },
       .flags = CMD_ASYNC,
-      .dataflags =
-          {
+      .dataflags = {
               IWL_HCMD_DFL_DUP,
           },
   };
@@ -412,7 +409,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     return ENOMEM;
   }
 
-  req = (iwl_scan_req_umac*)kzalloc(req_len);
+  req = reinterpret_cast<iwl_scan_req_umac*>(kzalloc(req_len));
 
   hcmd.len[0] = req_len;
   hcmd.data[0] = req;
@@ -503,14 +500,14 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     if (ext_chan)
       tail_v2 =
           (struct
-           iwl_scan_req_umac_tail_v2*)((char*)&req->v7.data +
+           iwl_scan_req_umac_tail_v2*)((char*)&req->v7.data + // NOLINT(readability/casting)
                                        sizeof(
                                            struct iwl_scan_channel_cfg_umac) *
                                            num_channels);
     else
       tail =
           (struct
-           iwl_scan_req_umac_tail_v1*)((char*)&req->v7.data +
+           iwl_scan_req_umac_tail_v1*)((char*)&req->v7.data + // NOLINT(readability/casting)
                                        sizeof(
                                            struct iwl_scan_channel_cfg_umac) *
                                            num_channels);
@@ -529,7 +526,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
     // req->v1.suspend_time = htole32(120);
     tail =
         (struct
-         iwl_scan_req_umac_tail_v1*)((char*)&req->v1.data +
+         iwl_scan_req_umac_tail_v1*)((char*)&req->v1.data + // NOLINT(readability/casting)
                                      sizeof(struct iwl_scan_channel_cfg_umac) *
                                          num_channels);
   }
@@ -558,7 +555,7 @@ int iwl_umac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
   IWL_INFO(0, "Filling probe request\n");
   if (ext_chan)
     err = iwl_fill_probe_req(drv, appleReq,
-                             (iwl_scan_probe_req_v1*)&tail_v2->preq);
+                             reinterpret_cast<iwl_scan_probe_req_v1*>(&tail_v2->preq));
   else
     err = iwl_fill_probe_req(drv, appleReq, &tail->preq);
 
@@ -644,17 +641,14 @@ uint8_t iwl_lmac_scan_fill_channels(IWLMvmDriver* drv,
 int iwl_lmac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
   iwl_host_cmd hcmd = {
       .id = iwl_cmd_id(SCAN_OFFLOAD_REQUEST_CMD, IWL_ALWAYS_LONG_GROUP, 0),
-      .len =
-          {
+      .len = {
               0,
           },
-      .data =
-          {
+      .data = {
               NULL,
           },
       .flags = 0,
-      .dataflags =
-          {
+      .dataflags = {
               IWL_HCMD_DFL_NOCOPY,
           },
   };
@@ -668,7 +662,7 @@ int iwl_lmac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
 
   if (len > MAX_CMD_PAYLOAD_SIZE) return ENOMEM;
 
-  req = (iwl_scan_req_lmac*)kzalloc(len);
+  req = reinterpret_cast<iwl_scan_req_lmac*>(kzalloc(len));
   hcmd.len[0] = len;
   hcmd.data[0] = req;
 
@@ -721,12 +715,12 @@ int iwl_lmac_scan(IWLMvmDriver* drv, apple80211_scan_data* appleReq) {
   }
 
   req->n_channels = iwl_lmac_scan_fill_channels(
-      drv, appleReq, (struct iwl_scan_channel_cfg_lmac*)req->data,
+      drv, appleReq, reinterpret_cast<iwl_scan_channel_cfg_lmac*>(req->data),
       appleReq->ssid_len != 0);
 
   err = iwl_fill_probe_req(
       drv, appleReq,
-      (iwl_scan_probe_req_v1*)(req->data +
+      reinterpret_cast<iwl_scan_probe_req_v1*>(req->data +
                                sizeof(struct iwl_scan_channel_cfg_lmac) *
                                    appleReq->num_channels));
 

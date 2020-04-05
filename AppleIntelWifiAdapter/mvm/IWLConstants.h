@@ -9,7 +9,7 @@
 #ifndef APPLEINTELWIFIADAPTER_MVM_IWLCONSTANTS_H_
 #define APPLEINTELWIFIADAPTER_MVM_IWLCONSTANTS_H_
 
-#include "fw-api.h"
+#include "../fw/fw-api.h"
 
 #define DRIVER_NAME "IntelWifi"
 

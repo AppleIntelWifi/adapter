@@ -19,7 +19,7 @@ static inline bool iwl_mvm_has_ultra_hb_channel(IWLMvmDriver *mvm) {
 
 static inline void *iwl_mvm_chan_info_cmd_tail(IWLMvmDriver *mvm,
                                                struct iwl_fw_channel_info *ci) {
-  return (u8 *)ci + (iwl_mvm_has_ultra_hb_channel(mvm)
+  return (u8 *)ci + (iwl_mvm_has_ultra_hb_channel(mvm) // NOLINT(readability/casting)
                          ? sizeof(struct iwl_fw_channel_info)
                          : sizeof(struct iwl_fw_channel_info_v1));
 }
@@ -124,7 +124,7 @@ void iwl_phy_ctxt_cmd_data(IWLMvmDriver *drv, struct iwl_phy_context_cmd *cmd,
   }
 
   iwl_phy_context_cmd_tail *tail =
-      (iwl_phy_context_cmd_tail *)iwl_mvm_chan_info_cmd_tail(drv, &cmd->ci);
+      reinterpret_cast<iwl_phy_context_cmd_tail *>(iwl_mvm_chan_info_cmd_tail(drv, &cmd->ci));
   tail->rxchain_info = htole32(iwl_mvm_get_valid_rx_ant(drv->m_pDevice)
                                << PHY_RX_CHAIN_VALID_POS);
   tail->rxchain_info |= htole32(idle_cnt << PHY_RX_CHAIN_CNT_POS);

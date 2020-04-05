@@ -12,6 +12,7 @@
 #include <linux/types.h>
 #include <sys/kernel_types.h>
 #include <sys/queue.h>
+#include <IOKit/network/IOMbufMemoryCursor.h>
 
 #include "../fw/api/cmdhdr.h"
 #include "IWLFH.h"
@@ -227,7 +228,7 @@ struct iwl_host_cmd {
   const void *data[IWL_MAX_CMD_TBS_PER_TFD];
   struct iwl_rx_packet *resp_pkt;
   size_t resp_pkt_len;  // added by zxy
-  unsigned long _rx_page_addr;
+  unsigned long _rx_page_addr; // NOLINT(runtime/int)
   u32 _rx_page_order;
 
   u32 flags;
@@ -308,8 +309,6 @@ struct iwl_rx_completion_desc {
   u8 flags;
   u8 reserved2[25];
 } __packed;
-
-#include <IOKit/network/IOMbufMemoryCursor.h>
 
 /**
  * struct iwl_rx_mem_buffer
@@ -477,14 +476,14 @@ struct iwl_txq {
   struct iwl_dma_ptr *first_tb_dma_ptr;
   struct iwl_pcie_txq_entry *entries;
   IOSimpleLock *lock;
-  unsigned long frozen_expiry_remainder;
+  unsigned long frozen_expiry_remainder; // NOLINT(runtime/int)
   //    struct timer_list stuck_timer;
   struct iwl_trans_pcie *trans_pcie;
   bool need_update;
   bool frozen;
   bool ampdu;
   int block;
-  unsigned long wd_timeout;
+  unsigned long wd_timeout; // NOLINT(runtime/int)
   mbuf_t overflow_q;
   struct iwl_dma_ptr bc_tbl;
 

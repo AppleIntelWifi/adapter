@@ -9,7 +9,7 @@
 #ifndef APPLEINTELWIFIADAPTER_APPLEINTELWIFIADAPTERV2_HPP_
 #define APPLEINTELWIFIADAPTER_APPLEINTELWIFIADAPTERV2_HPP_
 
-//#include "HackIO80211Interface.h"
+// #include "HackIO80211Interface.h"
 #include <IOKit/IOFilterInterruptEventSource.h>
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
@@ -43,8 +43,10 @@ static IOPMPowerState gPowerStates[kNumPowerStates] = {
      kIOPMPowerOn, 0, 0, 0, 0, 0, 0, 0, 0}};
 
 class AppleIntelWifiAdapterV2 : public IO80211Controller {
-  OSDeclareDefaultStructors(AppleIntelWifiAdapterV2) public
-      : bool init(OSDictionary* parameters) override;
+  OSDeclareDefaultStructors(AppleIntelWifiAdapterV2);
+
+ public:
+  bool init(OSDictionary* parameters) override;
   void free() override;
   bool start(IOService* provider) override;
   bool startGated(IOService* provider);

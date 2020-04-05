@@ -117,12 +117,13 @@ static int iwl_pcie_txq_alloc(IWLTransport *trans, struct iwl_txq *txq,
 
   if (!txq->entries) goto error;
 
-  if (cmd_queue)
+  if (cmd_queue) {
     for (i = 0; i < slots_num; i++) {
       txq->entries[i].cmd =
           (struct iwl_device_cmd *)iwh_zalloc(sizeof(struct iwl_device_cmd));
       if (!txq->entries[i].cmd) goto error;
     }
+  }
 
   /* Circular buffer of transmit frame descriptors (TFDs),
    * shared with device */
@@ -150,8 +151,11 @@ static int iwl_pcie_txq_alloc(IWLTransport *trans, struct iwl_txq *txq,
 err_free_tfds:
   free_dma_buf(txq->tfds_dma);
 error:
-  if (txq->entries && cmd_queue)
-    for (i = 0; i < slots_num; i++) iwh_free(txq->entries[i].cmd);
+  if (txq->entries && cmd_queue) {
+    for (i = 0; i < slots_num; i++) {
+      iwh_free(txq->entries[i].cmd);
+    }
+  }
   // kfree(txq->entries[i].cmd);
 
   iwh_free(txq->entries);
@@ -193,7 +197,7 @@ int iwl_pcie_txq_init(IWLTransport *trans, struct iwl_txq *txq, int slots_num,
   }
 
   // TODO: Implement
-  //__skb_queue_head_init(&txq->overflow_q);
+  // __skb_queue_head_init(&txq->overflow_q);
 
   return 0;
 }
@@ -266,7 +270,7 @@ void iwl_pcie_txq_free_tfd(IWLTransport *trans, struct iwl_txq *txq) {
   if (txq->entries) {
     sk_buff *skb;
 
-    skb = (sk_buff *)txq->entries[idx].skb;
+    skb = reinterpret_cast<sk_buff *>(txq->entries[idx].skb);
 
     /* Can be called from irqs-disabled context
      * If skb is not NULL, it means that the whole queue is being
@@ -340,12 +344,12 @@ static void iwl_pcie_txq_free(IWLTransport *trans, int txq_id) {
   iwl_pcie_txq_unmap(trans, txq_id);
 
   /* De-alloc array of command/tx buffers */
-  if (txq_id == trans->cmd_queue)
+  if (txq_id == trans->cmd_queue) {
     for (i = 0; i < txq->n_window; i++) {
       iwh_free(txq->entries[i].cmd);
-      iwh_free((void *)txq->entries[i].free_buf);
+      iwh_free((void *)txq->entries[i].free_buf); // NOLINT(readability/casting)
     }
-
+  }
   /* De-alloc circular buffer of TFDs */
   if (txq->tfds) {
     free_dma_buf(txq->tfds_dma);
@@ -515,7 +519,7 @@ error:
 
 static int iwl_hcmd_names_cmp(const void *key, const void *elt) {
   const struct iwl_hcmd_names *name = (const struct iwl_hcmd_names *)elt;
-  u8 cmd1 = *(u8 *)key;
+  u8 cmd1 = *(u8 *)key; // NOLINT(readability/casting)
   u8 cmd2 = name->cmd_id;
 
   return (cmd1 - cmd2);
@@ -589,7 +593,7 @@ static int iwl_pcie_txq_build_tfd(IWLTransport *trans_pcie, struct iwl_txq *txq,
   void *tfd;
   u32 num_tbs;
 
-  tfd = (u8 *)txq->tfds + trans_pcie->tfd_size * txq->write_ptr;
+  tfd = (u8 *)txq->tfds + trans_pcie->tfd_size * txq->write_ptr; // NOLINT(readability/casting)
 
   if (reset) memset(tfd, 0, trans_pcie->tfd_size);
 
@@ -845,7 +849,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
     if (!(cmd->dataflags[i] & (IWL_HCMD_DFL_NOCOPY | IWL_HCMD_DFL_DUP))) {
       copy = cmd->len[i];
 
-      memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy);
+      memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy); // NOLINT(readability/casting)
       cmd_pos += copy;
       copy_size += copy;
       continue;
@@ -858,7 +862,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
      */
     copy = min_t(int, TFD_MAX_PAYLOAD_SIZE - cmd_pos, cmd->len[i]);
 
-    memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy);
+    memcpy((u8 *)out_cmd + cmd_pos, cmd->data[i], copy); // NOLINT(readability/casting)
     cmd_pos += copy;
 
     /* However, treat copy_size the proper way, we need it below */
@@ -893,7 +897,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
       goto out;
     }
     out_meta->dma[0] = dma;
-    memcpy(dma->addr, ((u8 *)&out_cmd->hdr) + tb0_size, copy_size - tb0_size);
+    memcpy(dma->addr, reinterpret_cast<u8 *>(&out_cmd->hdr) + tb0_size, copy_size - tb0_size);
 
     iwl_pcie_txq_build_tfd(trans, txq, dma->dma, copy_size - tb0_size, false);
   }
@@ -922,7 +926,7 @@ static int iwl_pcie_enqueue_hcmd(IWLTransport *trans,
   out_meta->flags = cmd->flags;
   if (txq->entries[idx].free_buf) {
     IWL_INFO(trans, "txq->entries[%d].free_buf is not null", idx);
-    iwh_free((void *)txq->entries[idx].free_buf);
+    iwh_free((void *)txq->entries[idx].free_buf); // NOLINT(readability/casting)
   }
 
   txq->entries[idx].free_buf = dup_buf;
@@ -959,7 +963,7 @@ free_dup_buf:
 }
 
 void IWLTransport::syncNmi() {
-  unsigned long timeout = jiffies + IWL_TRANS_NMI_TIMEOUT;
+  unsigned long timeout = jiffies + IWL_TRANS_NMI_TIMEOUT; // NOLINT(runtime/int)
   bool interrupts_enabled = test_bit(STATUS_INT_ENABLED, &this->status);
   u32 inta_addr, sw_err_bit;
 
@@ -996,7 +1000,7 @@ void IWLTransport::syncNmi() {
    */
   if (interrupts_enabled) enableIntr();
 
-  IWLTransOps *ops = (IWLTransOps *)trans_ops;
+  IWLTransOps *ops = reinterpret_cast<IWLTransOps *>(trans_ops);
 
   ops->fwError();
 
@@ -1033,7 +1037,7 @@ static int iwl_pcie_send_hcmd_sync(IWLTransport *trans,
   IOLockLock(trans->wait_command_queue);
   AbsoluteTime deadline;
   clock_interval_to_deadline(HOST_COMPLETE_TIMEOUT * 2, kMillisecondScale,
-                             (UInt64 *)&deadline);
+                             reinterpret_cast<UInt64 *>(&deadline));
   ret = IOLockSleepDeadline(trans->wait_command_queue, &trans->status, deadline,
                             THREAD_INTERRUPTIBLE);
   IOLockUnlock(trans->wait_command_queue);

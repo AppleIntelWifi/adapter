@@ -77,7 +77,7 @@ out:
 int IWLIO::iwlReadMem(u32 addr, void *buf, int dwords) {
   IOInterruptState flags;
   int offs, ret = 0;
-  u32 *vals = (u32 *)buf;
+  u32 *vals = reinterpret_cast<u32 *>(buf);
 
   if (grabNICAccess(&flags)) {
     iwlWrite32(HBUS_TARG_MEM_RADDR, addr);
@@ -99,7 +99,7 @@ u32 IWLIO::iwlReadMem32(u32 addr) {
 int IWLIO::iwlWriteMem(u32 addr, void *buf, int dwords) {
   IOInterruptState flags;
   int offs, ret = 0;
-  const u32 *vals = (u32 *)buf;
+  const u32 *vals = reinterpret_cast<u32 *>(buf);
   if (grabNICAccess(&flags)) {
     iwlWrite32(HBUS_TARG_MEM_WADDR, addr);
     for (offs = 0; offs < dwords; offs++)

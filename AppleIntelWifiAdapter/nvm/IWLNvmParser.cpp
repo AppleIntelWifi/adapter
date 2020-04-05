@@ -112,10 +112,10 @@ static const u16 iwl_uhb_nvm_channels[] = {
 //    { .bitrate = 48 * 10, .hw_value = 10, .hw_value_short = 10, },
 //    { .bitrate = 54 * 10, .hw_value = 11, .hw_value_short = 11, },
 //};
-//#define RATES_24_OFFS    0
-//#define N_RATES_24    ARRAY_SIZE(iwl_cfg80211_rates)
-//#define RATES_52_OFFS    4
-//#define N_RATES_52    (N_RATES_24 - RATES_52_OFFS)
+// #define RATES_24_OFFS    0
+// #define N_RATES_24    ARRAY_SIZE(iwl_cfg80211_rates)
+// #define RATES_52_OFFS    4
+// #define N_RATES_52    (N_RATES_24 - RATES_52_OFFS)
 
 /**
  * enum iwl_nvm_channel_flags - channel flags in NVM
@@ -292,9 +292,9 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
     if (v4) IWL_INFO(0, "weird thing\n");
 
     if (v4)
-      ch_flags = __le32_to_cpup((__le32 *)nvm_ch_flags + ch_idx);
+      ch_flags = __le32_to_cpup((__le32 *)nvm_ch_flags + ch_idx); // NOLINT(readability/casting)
     else
-      ch_flags = __le16_to_cpup((__le16 *)nvm_ch_flags + ch_idx);
+      ch_flags = __le16_to_cpup((__le16 *)nvm_ch_flags + ch_idx); // NOLINT(readability/casting)
 
     if (band == NL80211_BAND_5GHZ && !data->sku_cap_band_52ghz_enable) {
       IWL_INFO(0,
@@ -463,9 +463,9 @@ static int iwl_init_channel_map(IWLDevice *dev, const struct iwl_cfg *cfg,
 //            cpu_to_le16(IEEE80211_VHT_MCS_NOT_SUPPORTED << 2);
 //    }
 //
-//#ifdef CPTCFG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+// #ifdef CPTCFG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
 //    vht_cap->cap ^= trans->dbg_cfg.vht_cap_flip;
-//#endif
+// #endif
 //
 //    vht_cap->vht_mcs.tx_mcs_map = vht_cap->vht_mcs.rx_mcs_map;
 //
@@ -715,7 +715,7 @@ static int iwl_get_sku(const struct iwl_cfg *cfg, const __le16 *nvm_sw,
                        const __le16 *phy_sku) {
   if (cfg->nvm_type != IWL_NVM_EXT) return le16_to_cpup(nvm_sw + SKU);
 
-  return le32_to_cpup((__le32 *)(phy_sku + SKU_FAMILY_8000));
+  return le32_to_cpup((__le32 *)(phy_sku + SKU_FAMILY_8000)); // NOLINT(readability/casting)
 }
 
 static int iwl_get_nvm_version(const struct iwl_cfg *cfg,
@@ -723,14 +723,14 @@ static int iwl_get_nvm_version(const struct iwl_cfg *cfg,
   if (cfg->nvm_type != IWL_NVM_EXT)
     return le16_to_cpup(nvm_sw + NVM_VERSION);
   else
-    return le32_to_cpup((__le32 *)(nvm_sw + NVM_VERSION_EXT_NVM));
+    return le32_to_cpup((__le32 *)(nvm_sw + NVM_VERSION_EXT_NVM)); // NOLINT(readability/casting)
 }
 
 static int iwl_get_radio_cfg(const struct iwl_cfg *cfg, const __le16 *nvm_sw,
                              const __le16 *phy_sku) {
   if (cfg->nvm_type != IWL_NVM_EXT) return le16_to_cpup(nvm_sw + RADIO_CFG);
 
-  return le32_to_cpup((__le32 *)(phy_sku + RADIO_CFG_FAMILY_EXT_NVM));
+  return le32_to_cpup((__le32 *)(phy_sku + RADIO_CFG_FAMILY_EXT_NVM)); // NOLINT(readability/casting)
 }
 
 static int iwl_get_n_hw_addrs(const struct iwl_cfg *cfg, const __le16 *nvm_sw) {
@@ -738,7 +738,7 @@ static int iwl_get_n_hw_addrs(const struct iwl_cfg *cfg, const __le16 *nvm_sw) {
 
   if (cfg->nvm_type != IWL_NVM_EXT) return le16_to_cpup(nvm_sw + N_HW_ADDRS);
 
-  n_hw_addr = le32_to_cpup((__le32 *)(nvm_sw + N_HW_ADDRS_FAMILY_8000));
+  n_hw_addr = le32_to_cpup((__le32 *)(nvm_sw + N_HW_ADDRS_FAMILY_8000)); // NOLINT(readability/casting)
 
   return n_hw_addr & N_HW_ADDR_MASK;
 }

@@ -13,16 +13,18 @@
 #include <apple80211_var.h>
 #include <libkern/c++/OSObject.h>
 
-#include "ieee80211.h"
-#include "rx.h"
+#include "compat/openbsd/net80211/ieee80211.h"
+#include "fw/api/rx.h"
 
 SInt32 orderCachedScans(const OSMetaClassBase* obj1,
                         const OSMetaClassBase* obj2, void* context);
 
 class IWLCachedScan : public OSObject {
-  OSDeclareDefaultStructors(IWLCachedScan) public
-      : bool init(mbuf_t mbuf, int offset, int whOffset,
-                  iwl_rx_phy_info* phy_info, int rssi, int noise);
+  OSDeclareDefaultStructors(IWLCachedScan);
+
+ public:
+  bool init(mbuf_t mbuf, int offset, int whOffset, iwl_rx_phy_info* phy_info,
+            int rssi, int noise);
   bool update(iwl_rx_phy_info* phy_info, int rssi, int noise);
   void free() override;
 

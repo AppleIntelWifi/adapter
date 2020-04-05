@@ -43,9 +43,9 @@ bool IWLMvmDriver::ieee80211Init() {
   //    ifp->if_start = iwm_start;
   //    ifp->if_watchdog = iwm_watchdog;
   memcpy(ifp->if_xname, DRIVER_NAME, IFNAMSIZ);
-  //#if NBPFILTER > 0
+  // #if NBPFILTER > 0
   //    iwm_radiotap_attach(sc);
-  //#endif
+  // #endif
   //    timeout_set(&sc->sc_calib_to, iwm_calib_timeout, sc);
   //    timeout_set(&sc->sc_led_blink_to, iwm_led_blink_timeout, sc);
   //    task_set(&sc->init_task, iwm_init_task, sc);
@@ -134,7 +134,7 @@ int IWLMvmDriver::iwm_newstate(struct ieee80211com *ic,
     IWL_ERR(0, "got null ifp\n");
     return -1;
   }
-  IWLMvmDriver *sc = (IWLMvmDriver *)ifp->if_softc;
+  IWLMvmDriver *sc = reinterpret_cast<IWLMvmDriver *>(ifp->if_softc);
   struct iwm_node *in = (struct iwm_node *)ic->ic_bss;
 
   if (!in) {

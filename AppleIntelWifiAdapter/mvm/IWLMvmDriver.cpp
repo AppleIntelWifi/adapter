@@ -18,7 +18,7 @@
 #include "IWLMvmTransOpsGen2.hpp"
 #include "IWLUcodeParse.hpp"
 #include "MvmCmd.hpp"
-#include "txq.h"
+#include "../fw/api/txq.h"
 
 #define super OSObject
 OSDefineMetaClassAndStructors(IWLMvmDriver, OSObject);
@@ -296,7 +296,7 @@ bool IWLMvmDriver::start() {
 void IWLMvmDriver::reqFWCallback(OSKextRequestTag requestTag, OSReturn result,
                                  const void *resourceData,
                                  uint32_t resourceDataLength, void *context) {
-  IWLMvmDriver *that = (IWLMvmDriver *)context;
+  IWLMvmDriver *that = reinterpret_cast<IWLMvmDriver *>(context);
   bool ret;
   if (resourceDataLength <= 4) {
     IWL_ERR(0, "Error loading fw, size=%d\n", resourceDataLength);
@@ -596,8 +596,8 @@ bool IWLMvmDriver::enableDevice() {
     }
   }
 
-  for (int ac = 0; ac < 4; ac++)  // WME_NUM_AC == 4
-  {
+  // WME_NUM_AC == 4
+  for (int ac = 0; ac < 4; ac++) {
     err = iwl_enable_txq(this, 0, ac + IWL_MVM_DQA_MIN_MGMT_QUEUE,
                          iwl_mvm_ac_to_tx_fifo[ac]);
     if (err) {

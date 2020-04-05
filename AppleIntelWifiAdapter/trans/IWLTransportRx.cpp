@@ -161,7 +161,7 @@ static int iwl_pcie_alloc_rxq_dma(IWLTransport *trans_pcie,
     rxq->used_bd_dma = rxq->used_bd_dma_ptr->dma;
   }
 
-  rxq->rb_stts = (iwl_rb_status *)((char *)trans_pcie->base_rb_stts +
+  rxq->rb_stts = reinterpret_cast<iwl_rb_status *>((char *)trans_pcie->base_rb_stts + // NOLINT(readability/casting)
                                    rxq->id * rb_stts_size);
   rxq->rb_stts_dma = trans_pcie->base_rb_stts_dma + rxq->id * rb_stts_size;
 
@@ -170,13 +170,13 @@ static int iwl_pcie_alloc_rxq_dma(IWLTransport *trans_pcie,
   /* Allocate the driver's pointer to TR tail */
   rxq->tr_tail_dma_ptr = allocate_dma_buf(sizeof(__le16), trans_pcie->dma_mask);
   if (!rxq->tr_tail_dma_ptr) goto err;
-  rxq->tr_tail = (__le16 *)rxq->tr_tail_dma_ptr->addr;
+  rxq->tr_tail = reinterpret_cast<__le16 *>(rxq->tr_tail_dma_ptr->addr);
   rxq->tr_tail_dma = rxq->tr_tail_dma_ptr->dma;
 
   /* Allocate the driver's pointer to CR tail */
   rxq->cr_tail_dma_ptr = allocate_dma_buf(sizeof(__le16), trans_pcie->dma_mask);
   if (!rxq->cr_tail_dma_ptr) goto err;
-  rxq->cr_tail = (__le16 *)rxq->cr_tail_dma_ptr->addr;
+  rxq->cr_tail = reinterpret_cast<__le16 *>(rxq->cr_tail_dma_ptr->addr);
   rxq->cr_tail_dma = rxq->cr_tail_dma_ptr->dma;
 
   return 0;
@@ -207,12 +207,12 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie) {
   if (WARN_ON(trans_pcie->rxq)) return -EINVAL;
 
   trans_pcie->rxq =
-      (iwl_rxq *)iwh_zalloc(trans_pcie->num_rx_queues * sizeof(struct iwl_rxq));
-  trans_pcie->rx_pool = (struct iwl_rx_mem_buffer *)iwh_zalloc(
-      RX_POOL_SIZE(trans_pcie->num_rx_bufs) * sizeof(struct iwl_rx_mem_buffer));
-  trans_pcie->global_table = (struct iwl_rx_mem_buffer **)iwh_zalloc(
+      reinterpret_cast<iwl_rxq *>(iwh_zalloc(trans_pcie->num_rx_queues * sizeof(struct iwl_rxq)));
+  trans_pcie->rx_pool = reinterpret_cast<iwl_rx_mem_buffer *>(iwh_zalloc(
+      RX_POOL_SIZE(trans_pcie->num_rx_bufs) * sizeof(struct iwl_rx_mem_buffer)));
+  trans_pcie->global_table = reinterpret_cast<iwl_rx_mem_buffer **>(iwh_zalloc(
       RX_POOL_SIZE(trans_pcie->num_rx_bufs) *
-      sizeof(struct iwl_rx_mem_buffer *));
+      sizeof(struct iwl_rx_mem_buffer *)));
 
   if (!trans_pcie->rxq || !trans_pcie->rx_pool || !trans_pcie->global_table) {
     ret = -ENOMEM;
@@ -258,7 +258,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie) {
       struct iwl_dma_ptr *used_bd_buf = allocate_dma_buf(
           sizeof(__le32) * rxq->queue_size, trans_pcie->dma_mask);
       rxq->used_bd_dma_ptr = used_bd_buf;
-      rxq->used_bd = (__le32 *)used_bd_buf->addr;
+      rxq->used_bd = reinterpret_cast<__le32 *>(used_bd_buf->addr);
       rxq->used_bd_dma = used_bd_buf->dma;
       bzero(rxq->used_bd, sizeof(__le32) * rxq->queue_size);
     }
@@ -267,7 +267,7 @@ static int iwl_pcie_rx_alloc(IWLTransport *trans_pcie) {
     struct iwl_dma_ptr *rxq_rb_stts_buf =
         allocate_dma_buf(sizeof(*rxq->rb_stts), trans_pcie->dma_mask);
     rxq->rb_stts_dma_ptr = rxq_rb_stts_buf;
-    rxq->rb_stts = (struct iwl_rb_status *)rxq_rb_stts_buf->addr;
+    rxq->rb_stts = reinterpret_cast<iwl_rb_status *>(rxq_rb_stts_buf->addr);
     rxq->rb_stts_dma = rxq_rb_stts_buf->dma;
     bzero(rxq->rb_stts, sizeof(struct iwl_rb_status));
 
@@ -673,10 +673,12 @@ void IWLTransport::rxMqHWInit() {
                this->rxq[i].write_actual);
   }
 
+  /*
   if (m_pDevice->cfg->trans.device_family == IWL_DEVICE_FAMILY_9000) {
     if (!m_pDevice->cfg->trans.integrated) {
     }
   }
+  */
 }
 
 /*
@@ -757,7 +759,7 @@ void IWLTransport::rxSqRestock(struct iwl_rxq *_rxq) {
   IWL_INFO(0, "restocking (space: %d, free: %d, used: %d)\n",
            iwl_rxq_space(_rxq), _rxq->free_count, _rxq->used_count);
   while ((iwl_rxq_space(_rxq) > 0) && (_rxq->free_count)) {
-    __le32 *bd = (__le32 *)_rxq->bd;
+    __le32 *bd = reinterpret_cast<__le32 *>(_rxq->bd);
     /* The overwritten rxb must be a used one */
     rxb = _rxq->queue[_rxq->write];
     //        BUG_ON(rxb && rxb->page);
@@ -792,14 +794,14 @@ void IWLTransport::rxSqRestock(struct iwl_rxq *_rxq) {
 void IWLTransport::restockBd(struct iwl_rxq *rxq,
                              struct iwl_rx_mem_buffer *rxb) {
   if (m_pDevice->cfg->trans.device_family >= IWL_DEVICE_FAMILY_AX210) {
-    struct iwl_rx_transfer_desc *bd = (struct iwl_rx_transfer_desc *)rxq->bd;
+    struct iwl_rx_transfer_desc *bd = reinterpret_cast<iwl_rx_transfer_desc *>(rxq->bd);
 
     BUILD_BUG_ON(sizeof(*bd) != 2 * sizeof(u64));
 
     bd[rxq->write].addr = cpu_to_le64(rxb->page_dma);
     bd[rxq->write].rbid = cpu_to_le16(rxb->vid);
   } else {
-    __le64 *bd = (__le64 *)rxq->bd;
+    __le64 *bd = reinterpret_cast<__le64 *>(rxq->bd);
 
     bd[rxq->write] = cpu_to_le64(rxb->page_dma | rxb->vid);
   }
@@ -855,7 +857,7 @@ int IWLTransport::allocICT() {
     return -ENOMEM;
   }
   this->ict_tbl_dma = this->ict_tbl_ptr->dma;
-  this->ict_tbl = (__le32 *)this->ict_tbl_ptr->addr;
+  this->ict_tbl = reinterpret_cast<__le32 *>(this->ict_tbl_ptr->addr);
   /* just an API sanity check ... it is guaranteed to be aligned */
   if (this->ict_tbl_dma & (ICT_SIZE - 1)) {
     freeICT();
@@ -1063,7 +1065,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
   IOSimpleLockLock(txq->lock);
 
   cmd_index = iwl_pcie_get_cmd_index(txq, index);
-  cmd = (iwl_device_cmd *)txq->entries[cmd_index].cmd;
+  cmd = reinterpret_cast<iwl_device_cmd*>(txq->entries[cmd_index].cmd);
   meta = &txq->entries[cmd_index].meta;
   group_id = cmd->hdr.group_id;
   cmd_id = iwl_cmd_id(cmd->hdr.cmd, group_id, 0);
@@ -1075,7 +1077,7 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
     mbuf_t p = rxb_steal_page(rxb);
 
     meta->source->resp_pkt = pkt;
-    meta->source->_rx_page_addr = (unsigned long)p;
+    meta->source->_rx_page_addr = (unsigned long)p; // NOLINT
     meta->source->_rx_page_order =
         iwl_trans_get_rb_size_order((iwl_amsdu_size)trans->rx_buf_size);
   }
@@ -1121,8 +1123,8 @@ void iwl_pcie_hcmd_complete(IWLTransport *trans,
 
 int allocate_rxb(OSObject *target, void *arg0, void *arg1, void *arg2,
                  void *arg3) {
-  iwl_rb_allocator *rba = (iwl_rb_allocator *)arg0;
-  IWLTransport *trans = (IWLTransport *)arg1;
+  iwl_rb_allocator *rba = reinterpret_cast<iwl_rb_allocator *>(arg0);
+  IWLTransport *trans = reinterpret_cast<IWLTransport *>(arg1);
   TAILQ_HEAD(, iwl_rx_mem_buffer) local_empty;
   TAILQ_INIT(&local_empty);
 
@@ -1230,7 +1232,7 @@ static void iwl_pcie_rx_reuse_rbd(IWLTransport *trans,
 static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
                                   struct iwl_rx_mem_buffer *rxb,
                                   bool emergency) {
-  IWLTransOps *ops = (IWLTransOps *)trans->trans_ops;
+  IWLTransOps *ops = reinterpret_cast<IWLTransOps *>(trans->trans_ops);
   IWLTransport *trans_pcie = trans;
   struct iwl_txq *txq = trans->txq[trans->cmd_queue];
   bool page_stolen = false;
@@ -1250,10 +1252,10 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
     int index, cmd_index, len;
 
     struct iwl_rx_cmd_buffer rxcb = {
-        ._offset = (int)offset,
+        ._offset = (int)offset, // NOLINT(readability/casting)
         ._rx_page_order =
             iwl_trans_get_rb_size_order((iwl_amsdu_size)trans->rx_buf_size),
-        ._page = (page *)rxb->page,
+        ._page = reinterpret_cast<page *>(rxb->page),
         ._page_stolen = false,
         .truesize = max_len,
     };
@@ -1312,7 +1314,6 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
       iwl_notification_wait_notify(&trans->m_pDevice->notif_wait, pkt);
 
     u32 cmd_id = iwl_cmd_id(pkt->hdr.cmd, pkt->hdr.group_id, 0);
-    ;
 
     switch (cmd_id) {
       case MVM_ALIVE:
@@ -1324,12 +1325,12 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
         struct iwl_dts_measurement_notif_v2 *notif2;
 
         if (iwl_rx_packet_payload_len(pkt) == sizeof(*notif1)) {
-          notif1 = (iwl_dts_measurement_notif_v1 *)pkt->data;
+          notif1 = reinterpret_cast<iwl_dts_measurement_notif_v1 *>(pkt->data);
           IWL_INFO(0, "DTS temp=%d C\n", notif1->temp);
           break;
         }
         if (iwl_rx_packet_payload_len(pkt) == sizeof(*notif2)) {
-          notif2 = (iwl_dts_measurement_notif_v2 *)pkt->data;
+          notif2 = reinterpret_cast<iwl_dts_measurement_notif_v2 *>(pkt->data);
           IWL_INFO(0, "DTS temp=%d C\n", notif2->temp);
           break;
         }
@@ -1388,7 +1389,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
     //    iwl_op_mode_rx_rss(trans->op_mode, &rxq->napi, &rxcb, rxq->id);
 
     if (reclaim) {
-      iwh_free((void *)txq->entries[cmd_index].free_buf);
+      iwh_free((void *)txq->entries[cmd_index].free_buf); // NOLINT(readability/casting)
       txq->entries[cmd_index].free_buf = NULL;
     }
 
@@ -1469,7 +1470,7 @@ restart:
 
     if (m_pDevice->cfg->trans.mq_rx_supported) {
       // TODO: implement
-      u16 vid = le32_to_cpu(((__le32 *)rxq->used_bd)[i]) & 0x0FFF;
+      u16 vid = le32_to_cpu(((__le32 *)rxq->used_bd)[i]) & 0x0FFF; // NOLINT(readability/casting)
 
       if ((!vid || vid > this->global_table_array_size)) {
         IWL_ERR(0, "Invalid rxb from hw %u\n", (u32)vid);

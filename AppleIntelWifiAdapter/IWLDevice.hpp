@@ -22,8 +22,8 @@
 #include "fw/api/cmdhdr.h"
 #include "mvm/IWLConstants.h"
 #include "mvm/Mvm.h"
-#include "paging.h"
-#include "txq.h"
+#include "fw/api/paging.h"
+#include "fw/api/txq.h"
 
 enum iwl_power_level {
   IWL_POWER_INDEX_1,
@@ -139,7 +139,7 @@ struct iwl_mvm_dqa_txq_info {
   u8 txq_tid;     /* The TID "owner" of this queue*/
   u16 tid_bitmap; /* Bitmap of the TIDs mapped to this queue */
   /* Timestamp for inactivation per TID of this queue */
-  unsigned long last_frame_time[IWL_MAX_TID_COUNT + 1];
+  unsigned long last_frame_time[IWL_MAX_TID_COUNT + 1]; // NOLINT(runtime/int)
   enum iwl_mvm_queue_status status;
 };
 
@@ -199,7 +199,7 @@ class IWLDevice {
   const char *name;
 
   // MARK: mvm
-  unsigned long status;
+  unsigned long status; // NOLINT(runtime/int)
   bool rfkill_safe_init_done;
   iwl_notif_wait_data notif_wait;
   IOLock *rx_sync_waitq;
@@ -352,8 +352,8 @@ static inline bool iwl_mvm_is_dqa_data_queue(IWLDevice *mvm, u8 queue) {
 }
 
 static inline bool iwl_mvm_is_dqa_mgmt_queue(IWLDevice *mvm, u8 queue) {
-  return (queue >= IWL_MVM_DQA_MIN_MGMT_QUEUE) &&
-         (queue <= IWL_MVM_DQA_MAX_MGMT_QUEUE);
+  return (queue >= IWL_MVM_DQA_MIN_MGMT_QUEUE) && // NOLINT(build/include_what_you_use)
+         (queue <= IWL_MVM_DQA_MAX_MGMT_QUEUE); // NOLINT(build/include_what_you_use)
 }
 
 static inline bool iwl_mvm_is_lar_supported(IWLDevice *mvm) {
@@ -461,10 +461,13 @@ static inline bool iwl_mvm_has_tlc_offload(const IWLDevice *mvm) {
 
 static inline struct agg_tx_status *iwl_mvm_get_agg_status(IWLDevice *mvm,
                                                            void *tx_resp) {
-  if (iwl_mvm_has_new_tx_api(mvm))
-    return &((struct iwl_mvm_tx_resp *)tx_resp)->status;
-  else
-    return ((struct iwl_mvm_tx_resp_v3 *)tx_resp)->status;
+  if (iwl_mvm_has_new_tx_api(mvm)) {
+    iwl_mvm_tx_resp* resp = reinterpret_cast<iwl_mvm_tx_resp *>(tx_resp);
+    return &resp->status;
+  } else {
+    iwl_mvm_tx_resp_v3* resp_v3 = reinterpret_cast<iwl_mvm_tx_resp_v3 *>(tx_resp);
+    return resp_v3->status;
+  }
 }
 
 static inline bool iwl_mvm_is_tt_in_fw(IWLDevice *mvm) {

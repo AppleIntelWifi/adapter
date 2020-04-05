@@ -174,12 +174,10 @@ void IWLTransOps::sendRecoveryCmd(u32 flags) {
   struct iwl_host_cmd host_cmd = {
       .id = WIDE_ID(SYSTEM_GROUP, FW_ERROR_RECOVERY_CMD),
       .flags = CMD_WANT_SKB,
-      .data =
-          {
+      .data = {
               &recovery_cmd,
           },
-      .len =
-          {
+      .len = {
               sizeof(recovery_cmd),
           },
   };
@@ -205,7 +203,7 @@ void IWLTransOps::sendRecoveryCmd(u32 flags) {
 
   /* skb respond is only relevant in ERROR_RECOVERY_UPDATE_DB */
   if (flags & ERROR_RECOVERY_UPDATE_DB) {
-    resp = le32_to_cpu(*(__le32*)host_cmd.resp_pkt->data);
+    resp = le32_to_cpu(*reinterpret_cast<__le32*>(host_cmd.resp_pkt->data));
     if (resp)
       IWL_ERR(mvm, "Failed to send recovery cmd blob was invalid %d\n", resp);
   }
@@ -224,7 +222,7 @@ void IWLTransOps::restartNIC(bool fw_error) {
     if (trans->m_pDevice->fw.ucode_capa.error_log_size) {
       u32 src_size = trans->m_pDevice->fw.ucode_capa.error_log_size;
       u32 src_addr = trans->m_pDevice->fw.ucode_capa.error_log_addr;
-      u8* recover_buf = (u8*)kzalloc(src_size);
+      u8* recover_buf = reinterpret_cast<u8*>(kzalloc(src_size));
 
       if (recover_buf) {
         trans->recovery_buf = recover_buf;
@@ -246,7 +244,7 @@ void IWLTransOps::restartNIC(bool fw_error) {
 }
 
 void IWLTransOps::rxPhy(iwl_rx_packet* packet) {
-  iwl_rx_phy_info* info = (iwl_rx_phy_info*)packet->data;
+  iwl_rx_phy_info* info = reinterpret_cast<iwl_rx_phy_info*>(packet->data);
   IWL_INFO(0, "received new phy info (timestamp: %lld, system: %ld)\n",
            info->timestamp, info->system_timestamp);
   IWL_INFO(0, "channel: %d\n", info->channel);
@@ -327,7 +325,7 @@ int calc_rssi(IWLTransport* trans) {
 #include "IWLApple80211.hpp"
 
 void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
-  iwl_rx_packet* packet = (iwl_rx_packet*)rxb_addr(rxcb);
+  iwl_rx_packet* packet = reinterpret_cast<iwl_rx_packet*>(rxb_addr(rxcb));
   mbuf_t page = (mbuf_t)rxcb->_page;
 
   iwl_rx_phy_info* last_phy_info;
@@ -337,7 +335,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
   int rssi;
 
   if (trans->m_pDevice->cfg->trans.mq_rx_supported) {
-    iwl_rx_mpdu_desc* desc = (iwl_rx_mpdu_desc*)packet->data;
+    iwl_rx_mpdu_desc* desc = reinterpret_cast<iwl_rx_mpdu_desc*>(packet->data);
     packetStatus = desc->status;
     __le32 rate_n_flags, time;
     u8 channel, energy_a, energy_b;
@@ -372,15 +370,15 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
 #define S8_MAX ((s8)(U8_MAX >> 1))
 #define S8_MIN ((s8)(-S8_MAX - 1))
 
-    rssi = ((int)max(energy_a ? -energy_a : S8_MIN,
+    rssi = reinterpret_cast<int>(max(energy_a ? -energy_a : S8_MIN,
                      energy_b ? -energy_b : S8_MIN));
 
   } else {
     last_phy_info = &trans->last_phy_info;
-    iwl_rx_mpdu_res_start* rx_res = (iwl_rx_mpdu_res_start*)packet->data;
+    iwl_rx_mpdu_res_start* rx_res = reinterpret_cast<iwl_rx_mpdu_res_start*>(packet->data);
     whOffset = sizeof(*rx_res);
     len = le16toh(rx_res->byte_count);
-    packetStatus = le32toh(*(uint32_t*)(packet->data + sizeof(*rx_res) + len));
+    packetStatus = le32toh(*reinterpret_cast<uint32_t*>(packet->data + sizeof(*rx_res) + len));
 
     if (unlikely(last_phy_info->cfg_phy_cnt > 20)) {
       IWL_ERR(0, "dsp size out of range [0,20]: %d\n",
@@ -397,7 +395,7 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
     rssi = rssi;
   }
 
-  ieee80211_frame* wh = (ieee80211_frame*)(packet->data + whOffset);
+  ieee80211_frame* wh = reinterpret_cast<ieee80211_frame*>(packet->data + whOffset);
 
   if (!(packetStatus & RX_MPDU_RES_STATUS_CRC_OK) ||
       !(packetStatus & RX_MPDU_RES_STATUS_OVERRUN_OK)) {

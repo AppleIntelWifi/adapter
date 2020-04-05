@@ -24,8 +24,7 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
   struct iwl_nvm_data *nvm;
   struct iwl_host_cmd hcmd = {
       .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
-      .data =
-          {
+      .data = {
               &cmd,
           },
       .len = {sizeof(cmd)},
@@ -48,7 +47,7 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
 
   //    ret = iwl_trans_send_cmd(trans, &hcmd);
   ret = trans->sendCmd(&hcmd);
-  if (ret) return (iwl_nvm_data *)ERR_PTR(ret);
+  if (ret) return reinterpret_cast<iwl_nvm_data *>(ERR_PTR(ret));
 
   if (iwl_rx_packet_payload_len(hcmd.resp_pkt) != rsp_size) {
     IWL_ERR(0, "Invalid payload len in NVM response from FW %d",
@@ -112,8 +111,8 @@ struct iwl_nvm_data *IWLMvmDriver::getNvm(IWLTransport *trans,
   }
 
   rsp_v3 = (struct iwl_nvm_get_info_rsp_v3 *)rsp;
-  channel_profile = v4 ? (void *)rsp->regulatory.channel_profile
-                       : (void *)rsp_v3->regulatory.channel_profile;
+  channel_profile = v4 ? (void *)rsp->regulatory.channel_profile // NOLINT(readability/casting)
+                       : (void *)rsp_v3->regulatory.channel_profile; // NOLINT(readability/casting)
 
   iwl_init_sbands(trans, nvm, channel_profile,
                   nvm->valid_tx_ant & fw->valid_tx_ant,
@@ -182,8 +181,7 @@ static int iwl_nvm_read_chunk(IWLMvmDriver *mvm, u16 section, u16 offset,
   struct iwl_host_cmd cmd = {
       .id = NVM_ACCESS_CMD,
       .flags = CMD_WANT_SKB | CMD_SEND_IN_RFKILL,
-      .data =
-          {
+      .data = {
               &nvm_access_cmd,
           },
   };
@@ -374,7 +372,7 @@ int IWLMvmDriver::nvmInit() {
   /* load NVM values from nic */
   /* Read From FW NVM */
   IWL_INFO(0, "Read from NVM\n");
-  nvm_buffer = (u8 *)IOMalloc(m_pDevice->cfg->trans.base_params->eeprom_size);
+  nvm_buffer = reinterpret_cast<u8*>(IOMalloc(m_pDevice->cfg->trans.base_params->eeprom_size));
   if (!nvm_buffer) return -ENOMEM;
   for (section = 0; section < NVM_MAX_NUM_SECTIONS; section++) {
     /* we override the constness for initial read */
@@ -391,7 +389,7 @@ int IWLMvmDriver::nvmInit() {
       break;
     }
     size_read += ret;
-    temp = (u8 *)kmemdup(nvm_buffer, ret);
+    temp = reinterpret_cast<u8*>(kmemdup(nvm_buffer, ret));
     if (!temp) {
       ret = -ENOMEM;
       IWL_ERR(0, "Could not duplicate memory from NVM\n");

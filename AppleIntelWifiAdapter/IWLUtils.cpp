@@ -37,12 +37,10 @@ int IWLMvmDriver::sendCmd(struct iwl_host_cmd *cmd) {
 int IWLMvmDriver::sendCmdPdu(u32 id, u32 flags, u16 len, const void *data) {
   struct iwl_host_cmd cmd = {
       .id = id,
-      .len =
-          {
+      .len = {
               len,
           },
-      .data =
-          {
+      .data = {
               data,
           },
       .flags = flags,
@@ -53,8 +51,7 @@ int IWLMvmDriver::sendCmdPdu(u32 id, u32 flags, u16 len, const void *data) {
 int IWLMvmDriver::sendCmdPduStatus(u32 id, u16 len, const void *data,
                                    u32 *status) {
   struct iwl_host_cmd cmd = {.id = id,
-                             .len =
-                                 {
+                             .len = {
                                      len,
                                  },
                              .data = {

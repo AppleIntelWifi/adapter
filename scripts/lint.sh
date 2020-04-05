@@ -10,7 +10,7 @@ cpplint --exclude="$SRC"/compat/linux/* \
 --exclude=$SRC/compat/openbsd/crypto/* \
 --exclude=$SRC/compat/openbsd/net80211/* \
 --exclude=$SRC/compat/openbsd/sys/* \
---exclude=$SRC/fw/api/* \
+--exclude=$SRC/fw/* \
 --exclude=$SRC/device/* \
 --exclude=$SRC/apple80211/* \
 --recursive \

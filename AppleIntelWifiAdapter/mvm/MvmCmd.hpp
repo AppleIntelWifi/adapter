@@ -11,8 +11,8 @@
 
 #include "../fw/fw-api.h"
 #include "IWLTransport.hpp"
-#include "debug.h"
-#include "nan.h"
+#include "../fw/api/debug.h"
+#include "../fw/api/nan.h"
 
 /* Please keep this array *SORTED* by hex value.
  * Access is done through binary search
