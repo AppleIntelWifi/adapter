@@ -116,6 +116,9 @@ class AppleIntelWifiAdapterV2 : public IO80211Controller {
   // 10 - SCAN_REQ
   IOReturn setSCAN_REQ(IO80211Interface* interface,
                        struct apple80211_scan_data* sd);
+  
+  IOReturn setSCAN_REQ_MULTIPLE(IO80211Interface* interface,
+                                struct apple80211_scan_multiple_data* sd);
   // 11 - SCAN_RESULT
   IOReturn getSCAN_RESULT(IO80211Interface* interface,
                           apple80211_scan_result** sr);
@@ -157,6 +160,11 @@ class AppleIntelWifiAdapterV2 : public IO80211Controller {
   // 28 - LOCALE
   IOReturn getLOCALE(IO80211Interface* interface,
                      struct apple80211_locale_data* ld);
+  // 29 - DEAUTH
+  IOReturn getDEAUTH(IO80211Interface* interface,
+                     struct apple80211_deauth_data* da);
+  IOReturn setDEAUTH(IO80211Interface* interface,
+                     struct apple80211_deauth_data* da);
   // 37 - TX_ANTENNA
   IOReturn getTX_ANTENNA(IO80211Interface* interface,
                          apple80211_antenna_data* ad);

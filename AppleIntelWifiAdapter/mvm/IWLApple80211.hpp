@@ -73,6 +73,22 @@ class IWL80211Device {
   inline void setScanData(apple80211_scan_data* scan) {
     this->scan_data = scan;
   }
+  
+  inline void resetScanData() {
+    this->scan_data = NULL;
+  }
+  
+  inline apple80211_scan_multiple_data* getScanMultipleData() {
+    return this->scan_multiple_data;
+  }
+  
+  inline void setScanMultipleData(apple80211_scan_multiple_data* datum) {
+    this->scan_multiple_data = datum;
+  }
+  
+  inline void resetScanMultipleData() {
+    this->scan_multiple_data = NULL;
+  }
 
   inline apple80211_channel getCurrentChannel() {
     if (this->current_channel.channel == 0) {
@@ -80,6 +96,24 @@ class IWL80211Device {
     }
 
     return this->current_channel;
+  }
+  
+  inline bool setCurrentChannel(uint32_t ch_idx) {
+    if (!this->channels) return false;
+    
+    if (ch_idx == 0) return false;
+    
+    for (int i = 0; i < this->n_chans; i++) {
+      apple80211_channel ch = this->channels[i];
+      if (ch.channel == ch_idx) {
+        this->current_channel.channel = ch_idx;
+        this->current_channel.flags = ch.flags;
+        this->current_channel.version = APPLE80211_VERSION;
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   inline apple80211_channel* getChannelMap() { return this->channels; }
@@ -183,6 +217,7 @@ class IWL80211Device {
   size_t n_chans;
 
   apple80211_scan_data* scan_data;
+  apple80211_scan_multiple_data* scan_multiple_data;
   apple80211_channel current_channel;
   apple80211_channel* channels;
   apple80211_channel* channels_scan;

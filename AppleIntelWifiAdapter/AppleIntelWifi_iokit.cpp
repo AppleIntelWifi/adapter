@@ -73,6 +73,9 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
     case APPLE80211_IOC_SCAN_REQ:  // 10
       IOCTL_SET(request_type, SCAN_REQ, apple80211_scan_data);
       break;
+    case APPLE80211_IOC_SCAN_REQ_MULTIPLE:
+      IOCTL_SET(request_type, SCAN_REQ_MULTIPLE, apple80211_scan_multiple_data);
+      break;
     case APPLE80211_IOC_SCAN_RESULT:  // 11
       IOCTL_GET(request_type, SCAN_RESULT, apple80211_scan_result *);
       break;
@@ -111,6 +114,9 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
       break;
     case APPLE80211_IOC_LOCALE:  // 28
       IOCTL_GET(request_type, LOCALE, apple80211_locale_data);
+      break;
+    case APPLE80211_IOC_DEAUTH:
+      IOCTL(request_type, DEAUTH, apple80211_deauth_data);
       break;
     case APPLE80211_IOC_TX_ANTENNA:  // 37
       IOCTL_GET(request_type, TX_ANTENNA, apple80211_antenna_data);
@@ -168,17 +174,15 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
 
 IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
                                           struct apple80211_ssid_data *sd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   bzero(sd, sizeof(*sd));
   sd->version = APPLE80211_VERSION;
   uint32_t ssid_len = drv->m_pDevice->ie_dev->getSSIDLen();
   const char *ssid = drv->m_pDevice->ie_dev->getSSID();
 
-  if (!ssid) {
+  if (ssid) {
     sd->ssid_len = ssid_len;
     memcpy(&sd->ssid_bytes, drv->m_pDevice->ie_dev->getSSID(),
            drv->m_pDevice->ie_dev->getSSIDLen());
@@ -229,20 +233,16 @@ IOReturn AppleIntelWifiAdapterV2::getCHANNEL(
 
 IOReturn AppleIntelWifiAdapterV2::getPROTMODE(
     IO80211Interface *interface, struct apple80211_protmode_data *pd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   return kIOReturnSuccess;
 }
 
 IOReturn AppleIntelWifiAdapterV2::setPROTMODE(
     IO80211Interface *interface, struct apple80211_protmode_data *pd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   return kIOReturnSuccess;
 }
@@ -265,10 +265,8 @@ IOReturn AppleIntelWifiAdapterV2::getTXPOWER(
 
 IOReturn AppleIntelWifiAdapterV2::getRATE(IO80211Interface *interface,
                                           struct apple80211_rate_data *rd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   rd->version = APPLE80211_VERSION;
   rd->num_radios = 1;
@@ -282,10 +280,8 @@ IOReturn AppleIntelWifiAdapterV2::getRATE(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::getBSSID(IO80211Interface *interface,
                                            struct apple80211_bssid_data *bd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN) {
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   bzero(bd, sizeof(*bd));
   bd->version = APPLE80211_VERSION;
@@ -303,11 +299,26 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0,
       reinterpret_cast<AppleIntelWifiAdapterV2 *>(target);
   IO80211Interface *iface = reinterpret_cast<IO80211Interface *>(arg0);
   IWLMvmDriver *dev = reinterpret_cast<IWLMvmDriver *>(that->drv);
-  apple80211_scan_data *sd = reinterpret_cast<apple80211_scan_data *>(arg1);
+  bool multi_ssid = false;
+  apple80211_scan_data *sd = dev->m_pDevice->ie_dev->getScanData();
+  apple80211_scan_multiple_data* sd_multi = dev->m_pDevice->ie_dev->getScanMultipleData();
+  if (sd == NULL) {
+    if (sd_multi == NULL) {
+      return kIOReturnError;
+    } else {
+      multi_ssid = true;
+    }
+  }
 
   dev->m_pDevice->ie_dev->setScanning(true);
-  for (int i = 0; i < sd->num_channels; i++) {
-    IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
+  if (multi_ssid) {
+    for (int i = 0; i < sd_multi->num_channels; i++) {
+      IWL_INFO(0, "%d: ch %d\n", i, sd_multi->channels[i].channel);
+    }
+  } else {
+    for (int i = 0; i < sd->num_channels; i++) {
+      IWL_INFO(0, "%d: ch %d\n", i, sd->channels[i].channel);
+    }
   }
 
   // IWL_INFO(0, "device: %s\n", dev->m_pDevice->cfg->name);
@@ -324,7 +335,7 @@ IOReturn AppleIntelWifiAdapterV2::scanAction(OSObject *target, void *arg0,
 #else
   if (1) {
 #endif
-    if (iwl_umac_scan(dev, sd) != 0) {
+    if (iwl_umac_scan(dev) != 0) {
       IWL_ERR(0, "umac scan failed\n");
       ret = kIOReturnError;
     }
@@ -411,6 +422,73 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
 
   return kIOReturnError;
 }
+  
+IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ_MULTIPLE(IO80211Interface *interface,
+                                                       struct apple80211_scan_multiple_data *sd) {
+  if (drv->m_pDevice->ie_dev->getScanning()) {
+    IWL_ERR(0, "Denying scan because device is already scanning\n");
+    return 0xe0820446;
+  }
+
+  /*
+  if(drv->m_pDevice->ie_dev->scan_max != 0) {
+      for(int k = 0; k < drv->m_pDevice->ie_dev->scan_max; k++) {
+          IWL_INFO(0, "Freeing old scan IE data\n");
+          //IOFree(drv->m_pDevice->ie_dev->scan_results[k].asr_ie_data,
+          //    drv->m_pDevice->ie_dev->scan_results[k].asr_ie_len);
+          memset(&drv->m_pDevice->ie_dev->scan_results[k], 0,
+  sizeof(apple80211_scan_result));
+      }
+  }
+  */
+
+  drv->m_pDevice->ie_dev->setState(APPLE80211_S_SCAN);
+  IWL_INFO(0,
+           "Apple80211. Scan requested. Type: %u\n"
+           "BSS Type: %u\n"
+           "PHY Mode: %u\n"
+           "Dwell time: %u\n"
+           "Rest time: %u\n"
+           "Num channels: %u\n",
+           sd->scan_type, sd->three, sd->phy_mode, sd->dwell_time,
+           sd->rest_time, sd->num_channels);
+  
+  if (sd->num_channels == 0) {
+    apple80211_channel *channel_map = drv->m_pDevice->ie_dev->getChannelMap();
+
+    if (!channel_map) return kIOReturnError;
+
+    if (!drv->m_pDevice->ie_dev->initScanChannelMap(
+            channel_map, drv->m_pDevice->fw.ucode_capa.n_scan_channels))
+      return kIOReturnError;
+
+  } else {
+    if (!drv->m_pDevice->ie_dev->initScanChannelMap(sd->channels,
+                                                    sd->num_channels))
+      return kIOReturnError;
+  }
+
+  drv->m_pDevice->ie_dev->resetScanIndex();
+
+  if (sd->scan_type == 3) {
+    interface->postMessage(APPLE80211_M_SCAN_DONE);
+    return kIOReturnSuccess;
+  }
+
+  if (interface) {
+    apple80211_scan_multiple_data *request = reinterpret_cast<apple80211_scan_multiple_data *>(
+        IOMalloc(sizeof(apple80211_scan_multiple_data)));
+    memcpy(request, sd, sizeof(apple80211_scan_multiple_data));
+
+    drv->m_pDevice->ie_dev->setScanMultipleData(request);
+    drv->m_pDevice->ie_dev->resetScanData();
+
+    IOReturn ret = getCommandGate()->runAction(&scanAction, interface, request);
+    return ret;
+  }
+
+  return kIOReturnError;
+}
 
 //
 // MARK: 11 - SCAN_RESULT
@@ -461,13 +539,75 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
   OSObject *obj = NULL;
 
   apple80211_scan_data *scan_data = drv->m_pDevice->ie_dev->getScanData();
-
+  apple80211_scan_multiple_data* scan_data_multi = drv->m_pDevice->ie_dev->getScanMultipleData();
+  bool multi_scan = false;
+  
   if (!scan_data) {
-    drv->m_pDevice->ie_dev->unlockScanCache();
-    return 5;
+    if (!scan_data_multi) {
+      drv->m_pDevice->ie_dev->unlockScanCache();
+      return 5;
+    } else {
+      multi_scan = true;
+    }
   }
+  
+  if (!multi_scan) {
+    if (scan_data->ssid_len != 0) {
+      for (int i = drv->m_pDevice->ie_dev->getScanIndex();
+           i < scanCache->getCount(); i++) {
+        OSObject *_can = scanCache->getObject(i);
+        if (_can == NULL) continue;
 
-  if (scan_data->ssid_len != 0) {
+        IWLCachedScan *candidate = OSDynamicCast(IWLCachedScan, _can);
+        if (candidate == NULL) continue;
+
+        if (candidate->getSSIDLen() == scan_data->ssid_len) {
+          const char *candidate_ssid = candidate->getSSID();
+          if (memcmp(candidate_ssid, scan_data->ssid, candidate->getSSIDLen()) ==
+              0) {
+            if (scan_data->num_channels != 0) {
+              for (int chan = 0; chan < scan_data->num_channels; chan++) {
+                if (scan_data->channels[chan].channel ==
+                    candidate->getChannel().channel) {
+                  IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
+                           candidate_ssid, candidate->getChannel().channel,
+                           candidate->getRSSI());
+
+                  // clang-format off
+                  IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
+                  // clang-format on
+                  *sr = candidate->getNativeType();
+                  drv->m_pDevice->ie_dev->setScanIndex(i + 1);
+                  drv->m_pDevice->ie_dev->unlockScanCache();
+                  return kIOReturnSuccess;
+                }
+              }
+            } else {
+              IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
+                       candidate_ssid, candidate->getChannel().channel,
+                       candidate->getRSSI());
+              // clang-format off
+              IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
+              // clang-format on
+              *sr = candidate->getNativeType();
+              drv->m_pDevice->ie_dev->setScanIndex(i + 1);
+              drv->m_pDevice->ie_dev->unlockScanCache();
+              return kIOReturnSuccess;
+            }
+          }
+          IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);
+        }
+      }
+      IOFree(scan_data, sizeof(apple80211_scan_data));
+      drv->m_pDevice->ie_dev->setScanData(NULL);
+      drv->m_pDevice->ie_dev->unlockScanCache();
+      return 5;
+    } else {
+      int scan_index = drv->m_pDevice->ie_dev->getScanIndex();
+      obj = scanCache->getObject(scan_index);
+      drv->m_pDevice->ie_dev->setScanIndex(scan_index + 1);
+    }
+  } else {
     for (int i = drv->m_pDevice->ie_dev->getScanIndex();
          i < scanCache->getCount(); i++) {
       OSObject *_can = scanCache->getObject(i);
@@ -475,32 +615,17 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
 
       IWLCachedScan *candidate = OSDynamicCast(IWLCachedScan, _can);
       if (candidate == NULL) continue;
-
-      if (candidate->getSSIDLen() == scan_data->ssid_len) {
-        const char *candidate_ssid = candidate->getSSID();
-        if (memcmp(candidate_ssid, scan_data->ssid, candidate->getSSIDLen()) ==
-            0) {
-          if (scan_data->num_channels != 0) {
-            for (int chan = 0; chan < scan_data->num_channels; chan++) {
-              if (scan_data->channels[chan].channel ==
-                  candidate->getChannel().channel) {
-                IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
-                         candidate_ssid, candidate->getChannel().channel,
-                         candidate->getRSSI());
-
-                // clang-format off
-                IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
-                // clang-format on
-                *sr = candidate->getNativeType();
-                drv->m_pDevice->ie_dev->setScanIndex(i + 1);
-                drv->m_pDevice->ie_dev->unlockScanCache();
-                return kIOReturnSuccess;
-              }
-            }
-          } else {
+    
+          
+      if(scan_data_multi->num_channels != 0) {
+        for (int chan = 0; chan < scan_data_multi->num_channels; chan++) {
+          if (scan_data_multi->channels[chan].channel ==
+              candidate->getChannel().channel) {
+            const char* candidate_ssid = candidate->getSSID();
             IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
                      candidate_ssid, candidate->getChannel().channel,
                      candidate->getRSSI());
+
             // clang-format off
             IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
             // clang-format on
@@ -510,16 +635,20 @@ IOReturn AppleIntelWifiAdapterV2::getSCAN_RESULT(
             return kIOReturnSuccess;
           }
         }
+      } else {
+        const char* candidate_ssid = candidate->getSSID();
+        IWL_INFO(0, "Scan result (SSID: %s, channel: %d, RSSI: %d)\n",
+                 candidate_ssid, candidate->getChannel().channel,
+                 candidate->getRSSI());
+        // clang-format off
+        IOFree((void *)candidate_ssid, candidate->getSSIDLen() + 1);  // NOLINT(readability/casting)
+        // clang-format on
+        *sr = candidate->getNativeType();
+        drv->m_pDevice->ie_dev->setScanIndex(i + 1);
+        drv->m_pDevice->ie_dev->unlockScanCache();
+        return kIOReturnSuccess;
       }
     }
-    IOFree(scan_data, sizeof(apple80211_scan_data));
-    drv->m_pDevice->ie_dev->setScanData(NULL);
-    drv->m_pDevice->ie_dev->unlockScanCache();
-    return 5;
-  } else {
-    int scan_index = drv->m_pDevice->ie_dev->getScanIndex();
-    obj = scanCache->getObject(scan_index);
-    drv->m_pDevice->ie_dev->setScanIndex(scan_index + 1);
   }
 
   if (obj == NULL) {
@@ -666,8 +795,7 @@ IOReturn AppleIntelWifiAdapterV2::getOP_MODE(
 
 IOReturn AppleIntelWifiAdapterV2::getRSSI(IO80211Interface *interface,
                                           struct apple80211_rssi_data *rd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN)
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
   // bzero(rd, sizeof(*rd));
   rd->version = APPLE80211_VERSION;
@@ -684,8 +812,7 @@ IOReturn AppleIntelWifiAdapterV2::getRSSI(IO80211Interface *interface,
 
 IOReturn AppleIntelWifiAdapterV2::getNOISE(IO80211Interface *interface,
                                            struct apple80211_noise_data *nd) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN)
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
   bzero(nd, sizeof(*nd));
 
@@ -740,7 +867,11 @@ IOReturn AppleIntelWifiAdapterV2::setPOWER(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
     IO80211Interface *interface, struct apple80211_assoc_data *ad) {
   IWL_INFO(0, "ASSOCIATE TO %s\n", ad->ad_ssid);
+  IWL_INFO(0, "BSSID: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
+           ad->ad_bssid.octet[0], ad->ad_bssid.octet[1], ad->ad_bssid.octet[2],
+           ad->ad_bssid.octet[3], ad->ad_bssid.octet[4], ad->ad_bssid.octet[5]);
 
+#ifdef notyet
   if (ad->ad_mode == 1) {
     IWL_ERR(0, "p2p-gc and ibss cannot exist\n");
   } else {
@@ -750,22 +881,35 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
       drv->m_pDevice->ie_dev->setCipherKey(&ad->ad_key);
       drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
     } else {
-      drv->m_pDevice->ie_dev->setState(APPLE80211_S_ASSOC);
+      drv->m_pDevice->ie_dev->setState(APPLE80211_S_RUN);
     }
 
+    //drv->m_pDevice->ie_dev->setCurrentChannel(<#uint32_t ch_idx#>)
+    
+    drv->m_pDevice->ie_dev->setPhyMode(APPLE80211_MODE_11G);
+    drv->m_pDevice->ie_dev->setOPMode(APPLE80211_M_STA);
     drv->m_pDevice->ie_dev->setRSN_IE(
         reinterpret_cast<uint8_t *>(&ad->ad_rsn_ie), ad->ad_rsn_ie_len);
 
     drv->m_pDevice->ie_dev->setSSID(
         ad->ad_ssid_len, reinterpret_cast<const char *>(&ad->ad_ssid));
-      interface->postMessage(APPLE80211_M_SSID_CHANGED);
+    interface->postMessage(APPLE80211_M_SSID_CHANGED);
+    
     drv->m_pDevice->ie_dev->setAPMode(ad->ad_mode);
-    drv->m_pDevice->ie_dev->setBSSID(
-        reinterpret_cast<uint8_t *>(&ad->ad_bssid.octet), ETH_ALEN);
-      interface->postMessage(APPLE80211_M_BSSID_CHANGED);
+    if(!drv->m_pDevice->ie_dev->setBSSID(
+                            reinterpret_cast<uint8_t *>(&ad->ad_bssid.octet), ETH_ALEN)) {
+      IWL_ERR(0, "Could not set BSSID\n");
+    }
+    
+    interface->postMessage(APPLE80211_M_BSSID_CHANGED);
+    
+    interface->setLinkState(IO80211LinkState::kIO80211NetworkLinkUp, 0);
   }
-
   return kIOReturnSuccess;
+#endif
+  
+  return kIOReturnError;
+
 }
 
 IOReturn AppleIntelWifiAdapterV2::setDISASSOCIATE(IO80211Interface *interface) {
@@ -825,6 +969,20 @@ IOReturn AppleIntelWifiAdapterV2::getLOCALE(IO80211Interface *interface,
   ld->locale = APPLE80211_LOCALE_FCC;
 
   return kIOReturnSuccess;
+}
+  
+//
+// MARK: 29 - DEAUTH
+//
+  
+IOReturn AppleIntelWifiAdapterV2::getDEAUTH(IO80211Interface *interface,
+                                            struct apple80211_deauth_data *da) {
+  return kIOReturnError;
+}
+  
+IOReturn AppleIntelWifiAdapterV2::setDEAUTH(IO80211Interface *interface,
+                                              struct apple80211_deauth_data *da) {
+  return kIOReturnError;
 }
 
 //
@@ -901,8 +1059,7 @@ IOReturn AppleIntelWifiAdapterV2::getCOUNTRY_CODE(
 //
 IOReturn AppleIntelWifiAdapterV2::getMCS(IO80211Interface *interface,
                                          struct apple80211_mcs_data *md) {
-  if (drv->m_pDevice->ie_dev->getState() == APPLE80211_S_INIT ||
-      drv->m_pDevice->ie_dev->getState() == APPLE80211_S_SCAN)
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
   md->version = APPLE80211_VERSION;
   md->index = APPLE80211_MCS_INDEX_AUTO;
