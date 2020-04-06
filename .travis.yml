@@ -63,6 +63,6 @@ matrix:
       script: bash ./scripts/upload.sh
       skip-cleanup: true
       on:
-        branch: ci-artifacts
+        branch: master
 
 
