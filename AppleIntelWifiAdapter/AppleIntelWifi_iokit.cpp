@@ -1070,8 +1070,13 @@ IOReturn AppleIntelWifiAdapterV2::getANTENNA_DIVERSITY(
 IOReturn AppleIntelWifiAdapterV2::getDRIVER_VERSION(
     IO80211Interface *interface, struct apple80211_version_data *hv) {
   hv->version = APPLE80211_VERSION;
-  strncpy(hv->string, fake_drv_version, sizeof(hv->string));
+#ifdef BUILDER
+  strncpy(hv->string, BUILDER, strlen(BUILDER));
+  hv->string_len = strlen(BUILDER);
+#else
+  strncpy(hv->string, fake_drv_version, strlen(fake_drv_version));
   hv->string_len = strlen(fake_drv_version);
+#endif
   return kIOReturnSuccess;
 }
 

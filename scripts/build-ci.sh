@@ -5,10 +5,13 @@ if [ ! -d "$BUILD" ]; then
 mkdir $BUILD
 fi
 
-if ! [ -x "$(command -v xcpretty)" ]; then
-  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD"
-  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Release -derivedDataPath "$BUILD"
-else
-  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug -derivedDataPath "$BUILD" | xcpretty
-  xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Release -derivedDataPath "$BUILD" | xcpretty
-fi
+GIT_COMMIT=$(git rev-parse HEAD | cut -c 1-8)
+
+BUILDER="\"Built from $GIT_COMMIT by $USER@$(hostname)\""
+
+xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug \
+	   BUILDER="$BUILDER" \
+	   -derivedDataPath "$BUILD" 
+xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Release \
+	   BUILDER="$BUILDER" \
+	   -derivedDataPath "$BUILD"
