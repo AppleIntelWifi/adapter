@@ -8,8 +8,10 @@
 
 #include "IWLMvmSmartFifo.hpp"
 
+#include "IWLApple80211.hpp"
+
 void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd,
-                     ieee80211_node* ni) {
+                     IWLCachedScan* node) {
   int i, j, watermark;
 
   cmd->watermark[SF_LONG_DELAY_ON] = htole32(SF_W_MARK_SCAN);
@@ -18,22 +20,13 @@ void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd,
    * If we are in association flow - check antenna configuration
    * capabilities of the AP station, and choose the watermark accordingly.
    */
-  if (ni) {
-#ifndef IEEE80211_NO_HT
-    if (ni->ni_flags & IEEE80211_NODE_HT) {
-#ifdef notyet
-      if (ni->ni_rxmcs[2] != 0)
-        watermark = IWM_SF_W_MARK_MIMO3;
-      else if (ni->ni_rxmcs[1] != 0)
-        watermark = IWM_SF_W_MARK_MIMO2;
-      else
-#endif
-        watermark = SF_W_MARK_SISO;
+  if (node) {
+    bool ht = node->getHTSupported();
+    if (ht) {
+      watermark = SF_W_MARK_SISO;
     } else {
-#endif
       watermark = SF_W_MARK_LEGACY;
     }
-
   } else {
     watermark = SF_W_MARK_MIMO2;
   }
@@ -46,7 +39,7 @@ void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd,
     }
   }
 
-  if (ni) {
+  if (node) {
     memcpy(cmd->full_on_timeouts, iwl_sf_full_timeout,
            sizeof(iwl_sf_full_timeout));
   } else {
@@ -57,8 +50,6 @@ void iwl_fill_sf_cmd(IWLMvmDriver* dev, iwl_sf_cfg_cmd* cmd,
 
 int iwl_sf_config(IWLMvmDriver* drv, int new_state) {
   IWLTransport* trans = drv->trans;
-  ieee80211com* ic = &trans->m_pDevice->ie_ic;
-  if (!ic) return -1;
 
   struct iwl_sf_cfg_cmd sf_cmd = {
       .state = htole32(new_state),
@@ -69,13 +60,21 @@ int iwl_sf_config(IWLMvmDriver* drv, int new_state) {
       sf_cmd.state |= htole32(SF_CFG_DUMMY_NOTIF_OFF);
   */
 
+  IWLCachedScan* bss = drv->m_pDevice->ie_dev->getBSSBeacon();
+  if (new_state == SF_FULL_ON) {
+    if (bss != NULL) {
+    } else {
+      return -1;
+    }
+  }
+
   switch (new_state) {
     case SF_UNINIT:
     case SF_INIT_OFF:
       iwl_fill_sf_cmd(drv, &sf_cmd, NULL);
       break;
     case SF_FULL_ON:
-      iwl_fill_sf_cmd(drv, &sf_cmd, ic->ic_bss);
+      iwl_fill_sf_cmd(drv, &sf_cmd, bss);
       break;
     default:
       return EINVAL;

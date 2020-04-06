@@ -9,6 +9,7 @@
 #ifndef APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_
 #define APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_
 
+#include "../IWLCachedScan.hpp"
 #include "../fw/api/sf.h"
 #include "../mvm/IWLMvmDriver.hpp"
 #include "../trans/IWLTransport.hpp"
@@ -37,6 +38,6 @@ static const uint32_t
 
 int iwl_sf_config(IWLMvmDriver* drv, int new_state);
 void iwl_fill_sf_cmd(IWLMvmDriver* drv, iwl_sf_cfg_cmd* sf_cmd,
-                     ieee80211_node* ni);
+                     IWLCachedScan* node);
 
 #endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMSMARTFIFO_HPP_

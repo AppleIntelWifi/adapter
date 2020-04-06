@@ -464,7 +464,9 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
           }
 
           if (memcmp(cachedScan->getBSSID(), &wh->i_addr3[0], 6) == 0) {
-            if (cachedScan->getChannel().channel == last_phy_info->channel) {
+            if (cachedScan->getChannel().channel ==
+                last_phy_info->channel) {  // TODO: how do we identify same BSS
+                                           // but diff channel?
               // existing entry, remove the old one and add in the new one
               update_old_scan = true;
               IWL_INFO(0, "Updating old entry\n");

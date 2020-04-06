@@ -9,6 +9,7 @@
 #ifndef APPLEINTELWIFIADAPTER_MVM_IWLAPPLE80211_HPP_
 #define APPLEINTELWIFIADAPTER_MVM_IWLAPPLE80211_HPP_
 
+#include "IWLCachedScan.hpp"
 #include "IWLMvmDriver.hpp"
 
 class IWL80211Device {
@@ -55,13 +56,15 @@ class IWL80211Device {
   inline const char* getSSID() { return this->ssid; }
 
   void setSSID(size_t ssid_len, const char* ssid);
-
+  // clang-format off
   inline void resetSSID() {
     if (this->ssid) {
-      IOFree((void*)this->ssid, this->ssid_len + 1); // NOLINT(readability/casting)
+      IOFree((void*)this->ssid,  // NOLINT(readability/casting)
+             this->ssid_len + 1);
       this->ssid = NULL;
     }
   }
+  // clang-format on
   inline size_t getSSIDLen() {
     if (this->ssid_len > 32) this->ssid_len = 32;
 
@@ -73,22 +76,18 @@ class IWL80211Device {
   inline void setScanData(apple80211_scan_data* scan) {
     this->scan_data = scan;
   }
-  
-  inline void resetScanData() {
-    this->scan_data = NULL;
-  }
-  
+
+  inline void resetScanData() { this->scan_data = NULL; }
+
   inline apple80211_scan_multiple_data* getScanMultipleData() {
     return this->scan_multiple_data;
   }
-  
+
   inline void setScanMultipleData(apple80211_scan_multiple_data* datum) {
     this->scan_multiple_data = datum;
   }
-  
-  inline void resetScanMultipleData() {
-    this->scan_multiple_data = NULL;
-  }
+
+  inline void resetScanMultipleData() { this->scan_multiple_data = NULL; }
 
   inline apple80211_channel getCurrentChannel() {
     if (this->current_channel.channel == 0) {
@@ -97,12 +96,12 @@ class IWL80211Device {
 
     return this->current_channel;
   }
-  
+
   inline bool setCurrentChannel(uint32_t ch_idx) {
     if (!this->channels) return false;
-    
+
     if (ch_idx == 0) return false;
-    
+
     for (int i = 0; i < this->n_chans; i++) {
       apple80211_channel ch = this->channels[i];
       if (ch.channel == ch_idx) {
@@ -112,7 +111,7 @@ class IWL80211Device {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -201,6 +200,16 @@ class IWL80211Device {
 
   inline void setOPMode(uint32_t op) { this->op_mode = op; }
 
+  inline IWLCachedScan* getBSSBeacon() { return this->bss_beacon; }
+
+  inline void resetBSSBeacon() { this->bss_beacon = NULL; }
+
+  inline void setBSSBeacon(IWLCachedScan* beacon) {
+    if (!beacon) return;
+
+    this->bss_beacon = beacon;
+  }
+
  private:
   uint8_t address[ETH_ALEN];
   uint32_t flags;
@@ -231,6 +240,7 @@ class IWL80211Device {
   uint32_t n_scan_chans;
   uint32_t scan_max;
   uint32_t scan_index;
+  IWLCachedScan* bss_beacon;
 
   OSOrderedSet* scanCache;
   IOLock* scanCacheLock;

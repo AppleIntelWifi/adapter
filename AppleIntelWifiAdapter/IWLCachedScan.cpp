@@ -55,9 +55,37 @@ bool IWLCachedScan::update(iwl_rx_phy_info* phy_info, int rssi, int noise) {
   this->rssi = rssi;
 
   memcpy(&this->phy_info, phy_info, sizeof(iwl_rx_phy_info));  // necessary
+
+  if (le16toh(phy_info->channel) != this->channel.channel) {
+    // it changed channels on us!
+    this->channel.channel = le16toh(phy_info->channel);
+  }
   this->absolute_time = mach_absolute_time();
 
   return true;
+}
+
+uint8_t* search_ie(uint8_t* ie, uint16_t size, uint8_t capa) {
+  size_t ie_len = size;
+  uint8_t* ie_iterator = ie;
+  while (1) {
+    uint8_t v6;
+    if (ie_len < 3 || *ie_iterator != capa) {
+      uint8_t sect_len = *(ie_iterator + 1);
+      ie_len = ie_len - 2 - sect_len;
+      if (ie_len <= 0) return NULL;
+
+      ie_iterator = (ie_iterator + sect_len + 2);
+      v6 = *(ie_iterator + 1);
+      goto LABEL_10;
+    }
+    v6 = *(ie_iterator + 1);
+    if (ie_len - 2 >= v6) {
+      return ie_iterator;
+    }
+  LABEL_10:
+    if (v6 + 2 > ie_len) return NULL;
+  }
 }
 
 bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
@@ -116,42 +144,78 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
     return false;
   }
 
+  this->rates = reinterpret_cast<uint8_t*>(kzalloc(15));
+
+  uint8_t* rate_ptr = search_ie(this->ie, this->ie_len, 0x01);
+  uint8_t* ext_rates = search_ie(this->ie, this->ie_len, 0x32);
+
+  size_t index = 0;
+
+  if (rate_ptr == NULL) return NULL;
+
+  uint8_t rate_size = *(rate_ptr + 1);
+  if (rate_size != 8) {
+    IWL_ERR(0, "rate set is NOT correct\n");
+  } else {
+    this->n_rates += 8;
+    for (int i = 0; i < 8; i++) {
+      this->rates[i] = (*(rate_ptr + 2 + i) >> 1) & 0x3F;
+    }
+
+    if (ext_rates != NULL) {
+      uint8_t n_ext_rates = *(ext_rates + 1);
+      if (n_ext_rates > 4) n_ext_rates = 4;
+
+      this->n_rates += n_ext_rates;
+
+      for (int i = 0; i < 4; i++) {
+        this->rates[i + 8] = (*(ext_rates + 2 + i) >> 1) & 0x3F;
+      }
+    }
+  }
+
   channel.version = APPLE80211_VERSION;
   channel.channel = le16toh(this->phy_info.channel);
-
-  /*
-  if(this->phy_info.phy_flags & RX_RES_PHY_FLAGS_BAND_24) {
-      channel.flags |= APPLE80211_C_FLAG_2GHZ;
-  } else {
-      channel.flags |= APPLE80211_C_FLAG_5GHZ;
-  }
-   */
 
   if (channel.channel < 15)
     channel.flags |= APPLE80211_C_FLAG_2GHZ;
   else
     channel.flags |= APPLE80211_C_FLAG_5GHZ;
 
-  switch (this->phy_info.rate_n_flags & RATE_MCS_CHAN_WIDTH_MSK) {
-    case RATE_MCS_CHAN_WIDTH_20:
-      IWL_INFO(0, "Chan width 20mhz\n");
-      channel.flags |= APPLE80211_C_FLAG_20MHZ;
-      break;
+  // 20 - 40 is valid for HT / VHT, but 80 - 160 is ONLY valid for VHT
 
-    case RATE_MCS_CHAN_WIDTH_40:
-      IWL_INFO(0, "Chan width 40mhz\n");
-      channel.flags |= APPLE80211_C_FLAG_40MHZ;
-      break;
+  uint8_t* vht_op = search_ie(this->ie, this->ie_len, 0xC0);
+  if (vht_op && channel.channel > 15) {
+    this->vht_supported = true;
 
-    case RATE_MCS_CHAN_WIDTH_80:
-      IWL_INFO(0, "Chan width 80mhz\n");
+    uint8_t vht_width = *(vht_op + 2);
+
+    if (vht_width) {
       channel.flags |= APPLE80211_C_FLAG_80MHZ;
-      break;
+    } else if (vht_width == 0x00) {
+      channel.flags |= APPLE80211_C_FLAG_40MHZ;
+    }
+  }
 
-    case RATE_MCS_CHAN_WIDTH_160:
-      IWL_INFO(0, "Chan width 160mhz\n");
-      // channel.flags |= 0x400;
-      break;
+  uint8_t* ht_op = search_ie(this->ie, this->ie_len, 0x3D);
+  if (ht_op) {
+    this->ht_supported = true;
+
+    if (!this->vht_supported) {
+      uint8_t ht_width = *(ht_op + 3);
+
+      if (1 &
+          (ht_width >>
+           2)) {  // bit position 3 signals whether or not any width is allowed
+        channel.flags |= APPLE80211_C_FLAG_40MHZ;
+      } else {
+        channel.flags |= APPLE80211_C_FLAG_20MHZ;
+      }
+    }
+  }
+
+  if (!this->vht_supported && !this->ht_supported) {
+    channel.flags |= APPLE80211_C_FLAG_20MHZ;
   }
 
   return true;
@@ -229,39 +293,12 @@ uint8_t* IWLCachedScan::getBSSID() {
       return &wh->i_addr3[0];
 }
 
+uint8_t IWLCachedScan::getNumRates() { return this->n_rates; }
+
 uint8_t* IWLCachedScan::getRates() {
   check_packet()
 
-      uint8_t* rate_ptr;
-
-  size_t index = 0;
-  if (ie[index++] == 0x00) {  // index is 1 when we enter in the frame
-    index += ie[1] + 1;  // increment by size of ssid AND skip over length byte
-  } else {
-    IWL_ERR(0, "still can't handle this\n");
-    return NULL;
-  }
-
-  if (index >= ie_len) {
-    IWL_ERR(0, "tried to access too far within IE, buffer overrun\n");
-    return NULL;
-  }
-
-  if (ie[index++] == 0x01) {
-    // good, we found it!
-    uint32_t rate_size = ie[index++];
-    if (rate_size != 8) {
-      IWL_ERR(0, "rate set is NOT correct\n");
-      return NULL;
-    }
-
-    rate_ptr = &ie[index];
-  } else {
-    IWL_ERR(0, "found ssid, but no rateset\n");
-    return NULL;
-  }
-
-  return rate_ptr;
+      return this->rates;
 }
 
 void* IWLCachedScan::getIE() {
@@ -283,9 +320,9 @@ IWLCachedScan::getNativeType() {  // be sure to free this too
 
   result->version = APPLE80211_VERSION;
 
-  uint64_t nanosecs;
-  absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
-  result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
+  // uint64_t nanosecs;
+  // absolutetime_to_nanoseconds(this->getSysTimestamp(), &nanosecs);
+  // result->asr_age = (nanosecs * (__int128)0x431BDE82D7B634DBuLL >> 64) >> 18;
   // // MAGIC compiler division..
   // I don't get this
 
@@ -307,10 +344,10 @@ IWLCachedScan::getNativeType() {  // be sure to free this too
   uint8_t* rates = this->getRates();
 
   if (rates != NULL) {
-    for (int i = 0; i < 8; i++) {
-      result->asr_rates[i] = (rates[i] >> 1) & 0x3F;  // stolen magic
+    for (int i = 0; i < this->getNumRates(); i++) {
+      result->asr_rates[i] = rates[i];
     }
-    result->asr_nrates = 8;
+    result->asr_nrates = this->getNumRates();
   }
 
   result->asr_cap = this->getCapabilities();

@@ -284,8 +284,9 @@ int iwl_fill_probe_req(IWLMvmDriver* drv, apple80211_scan_data* appleReq,
   return 0;
 }
 
-int iwl_fill_probe_req_multi(IWLMvmDriver* drv, apple80211_scan_multiple_data* appleReq,
-                       iwl_scan_probe_req_v1* preq) {
+int iwl_fill_probe_req_multi(IWLMvmDriver* drv,
+                             apple80211_scan_multiple_data* appleReq,
+                             iwl_scan_probe_req_v1* preq) {
   bool ext_chan = fw_has_api(&drv->m_pDevice->fw.ucode_capa,
                              IWL_UCODE_TLV_API_SCAN_EXT_CHAN_VER);
 
@@ -414,8 +415,7 @@ int iwl_fill_probe_req_multi(IWLMvmDriver* drv, apple80211_scan_multiple_data* a
 #define IWL_SCAN_CHANNEL_TYPE_ACTIVE (1 << 0)
 #define IWL_SCAN_CHANNEL_UMAC_NSSIDS(x) ((1 << (x)) - 1)
 
-int iwl_umac_scan_fill_channels(IWLMvmDriver* drv,
-                                int num_channels,
+int iwl_umac_scan_fill_channels(IWLMvmDriver* drv, int num_channels,
                                 iwl_scan_channel_cfg_umac* chan, int n_ssids) {
   bool scan_all = false;
 
@@ -486,13 +486,9 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
   apple80211_scan_multiple_data* multiReq;
   if (appleReq == NULL) {
     multiReq = drv->m_pDevice->ie_dev->getScanMultipleData();
-    
-    if (multiReq == NULL)
-      return -1;
-    
+    if (multiReq == NULL) return -1;
     multi_ssid = true;
   }
-  
   iwl_host_cmd hcmd = {
       .id = iwl_cmd_id(SCAN_REQ_UMAC, IWL_ALWAYS_LONG_GROUP, 0),
       .len = {
@@ -634,12 +630,14 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
       req->v7.channel.flags = channel_flags;
       if (multi_ssid) {
         req->v7.channel.count = iwl_umac_scan_fill_channels(
-          drv, multiReq->num_channels, (struct iwl_scan_channel_cfg_umac*)req->v7.data,
-          multiReq->ssid_count);
+            drv, multiReq->num_channels,
+            (struct iwl_scan_channel_cfg_umac*)req->v7.data,
+            multiReq->ssid_count);
       } else {
         req->v7.channel.count = iwl_umac_scan_fill_channels(
-          drv, appleReq->num_channels, (struct iwl_scan_channel_cfg_umac*)req->v7.data,
-          appleReq->ssid_len != 0);
+            drv, appleReq->num_channels,
+            (struct iwl_scan_channel_cfg_umac*)req->v7.data,
+            appleReq->ssid_len != 0);
       }
 
     } else {
@@ -649,12 +647,14 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
       req->v8.channel.flags = channel_flags;
       if (multi_ssid) {
         req->v8.channel.count = iwl_umac_scan_fill_channels(
-          drv, multiReq->num_channels, (struct iwl_scan_channel_cfg_umac*)req->v8.data,
-          multiReq->ssid_count);
+            drv, multiReq->num_channels,
+            (struct iwl_scan_channel_cfg_umac*)req->v8.data,
+            multiReq->ssid_count);
       } else {
         req->v8.channel.count = iwl_umac_scan_fill_channels(
-          drv, appleReq->num_channels, (struct iwl_scan_channel_cfg_umac*)req->v8.data,
-          appleReq->ssid_len != 0);
+            drv, appleReq->num_channels,
+            (struct iwl_scan_channel_cfg_umac*)req->v8.data,
+            appleReq->ssid_len != 0);
       }
 
       req->v8.general_flags2 = IWL_UMAC_SCAN_GEN_FLAGS2_ALLOW_CHNL_REORDER;
@@ -690,12 +690,14 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
     req->v1.channel.flags = channel_flags;
     if (multi_ssid) {
       req->v1.channel.count = iwl_umac_scan_fill_channels(
-        drv, multiReq->num_channels, (struct iwl_scan_channel_cfg_umac*)&req->v1.data,
-        multiReq->ssid_count);
+          drv, multiReq->num_channels,
+          (struct iwl_scan_channel_cfg_umac*)&req->v1.data,
+          multiReq->ssid_count);
     } else {
       req->v1.channel.count = iwl_umac_scan_fill_channels(
-        drv, appleReq->num_channels, (struct iwl_scan_channel_cfg_umac*)&req->v1.data,
-        appleReq->ssid_len != 0);
+          drv, appleReq->num_channels,
+          (struct iwl_scan_channel_cfg_umac*)&req->v1.data,
+          appleReq->ssid_len != 0);
     }
     // req->v1.max_out_time = htole32(120);
     // req->v1.suspend_time = htole32(120);
@@ -706,21 +708,24 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
                                          num_channels);
     // clang-format on
   }
-  
+
   if (multi_ssid) {
     IWL_INFO(0, "SSID count: %d\n", multiReq->ssid_count);
     for (int i = 0; i < multiReq->ssid_count; i++) {
       apple80211_ssid_data* ssid_dat = &multiReq->ssids[i];
-      IWL_INFO(0, "Directed scan towards: %s (len: %d)\n", ssid_dat->ssid_bytes, ssid_dat->ssid_len);
-      
+      IWL_INFO(0, "Directed scan towards: %s (len: %d)\n", ssid_dat->ssid_bytes,
+               ssid_dat->ssid_len);
+
       if (ext_chan) {
         tail_v2->direct_scan[i].id = IEEE80211_ELEMID_SSID;
         tail_v2->direct_scan[i].len = ssid_dat->ssid_len;
-        memcpy(tail_v2->direct_scan[i].ssid, ssid_dat->ssid_bytes, ssid_dat->ssid_len);
+        memcpy(tail_v2->direct_scan[i].ssid, ssid_dat->ssid_bytes,
+               ssid_dat->ssid_len);
       } else {
         tail->direct_scan[i].id = IEEE80211_ELEMID_SSID;
         tail->direct_scan[i].len = ssid_dat->ssid_len;
-        memcpy(tail->direct_scan[i].ssid, ssid_dat->ssid_bytes, ssid_dat->ssid_len);
+        memcpy(tail->direct_scan[i].ssid, ssid_dat->ssid_bytes,
+               ssid_dat->ssid_len);
       }
     }
     req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PASSIVE);
@@ -730,7 +735,8 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
       if (ext_chan) {
         tail_v2->direct_scan[0].id = IEEE80211_ELEMID_SSID;
         tail_v2->direct_scan[0].len = appleReq->ssid_len;
-        memcpy(tail_v2->direct_scan[0].ssid, appleReq->ssid, appleReq->ssid_len);
+        memcpy(tail_v2->direct_scan[0].ssid, appleReq->ssid,
+               appleReq->ssid_len);
       } else {
         tail->direct_scan[0].id = IEEE80211_ELEMID_SSID;
         tail->direct_scan[0].len = appleReq->ssid_len;
@@ -751,12 +757,12 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
   if (ext_chan) {
     if (multi_ssid) {
       err = iwl_fill_probe_req_multi(
-        drv, multiReq,
-        reinterpret_cast<iwl_scan_probe_req_v1*>(&tail_v2->preq));
+          drv, multiReq,
+          reinterpret_cast<iwl_scan_probe_req_v1*>(&tail_v2->preq));
     } else {
       err = iwl_fill_probe_req(
-        drv, appleReq,
-        reinterpret_cast<iwl_scan_probe_req_v1*>(&tail_v2->preq));
+          drv, appleReq,
+          reinterpret_cast<iwl_scan_probe_req_v1*>(&tail_v2->preq));
     }
   } else {
     if (multi_ssid) {

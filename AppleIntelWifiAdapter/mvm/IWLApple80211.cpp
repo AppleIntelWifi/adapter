@@ -18,7 +18,7 @@ bool IWL80211Device::init(IWLMvmDriver* drv) {
 
   auth_lower = APPLE80211_AUTHTYPE_OPEN;
   ssid = NULL;
-  
+
   return true;
 }
 
