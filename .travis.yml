@@ -5,14 +5,17 @@ env:
     secure: "VEhB0Ejwd7HRwJp/9M7ZM/C6ChX+lQICeLX+YJvItV5+Iv4q/T7RkP0nEpuWhzqpXlNY+hBSAf8zu/dgcBNBfCPPO+QSS5T8JTvLVes/e4yGbshhpmq6gmQzqf81/AdilXVSmA+PO66QnoXELmQghgIneVAY2iywGHXpFTJ1U0lFHsbf+dZfLzJ+UrkZnSxTXivzOdse6d+6Iop2a3Uv2BUMmbvskjFhNYjWHy8G8ukscQjfNWz12bnqXlT1u+V7Oe/XKrOTsQPVBw2hp+KfMeg2R4QvDSXdS8Tc8pi2gWyykmrDBvd66UEfGtewwdYwmv8cmw+d+ShVEkmy2efrlk78FvHhRfkMSwRF8P5ZU6KjldogtfS6LPhdp/k4UMim/j9p+kRDgRuGUKcV7TugrcrXh3J+5voNuKH9nMjfO9xlZPbDqahbEoNRviYQTszX+MARkwiSRRHdMCxur0bENVJYezAjR2MKs4joHD1/bm2XUAsSX0TYY/hTJA+hJVKpx8evQx6qwjW7NSaCMI1gCi5UgQIBnWwkM2fLV2ZBPs/AxZzqwUaFplvLk2SdXOOU51qn6ciBkZaCzvda7WnVp50Eybu7mKsTYYpqmNmj3o4cq5ubbjke88g0yHHLnwTtjo3EpVHgvJv37stIYS4fmmfSD1fx7C8s1EJiB2e15tE="
 
 matrix:
+  allow_failures:
+  - name: Deploy artifacts
+
   include:
   - os: osx
     name: Build
     osx_image: xcode10.2
     compiler: clang
     script:
-    - xcodebuild -configuration Debug
-    - xcodebuild -configuration Release
+    - ./scripts/build-ci.sh
+
   - os: osx
     name: "Analyze Coverity"
     osx_image: xcode10.2
@@ -44,3 +47,22 @@ matrix:
     script:
     - pip3 install cpplint # i hope python3 is installed lol
     - ./scripts/lint.sh
+
+  - os: osx
+    name: Deploy artifacts
+    osx_image: xcode11.3
+    compiler: clang
+    addons:
+      homebrew:
+        packages:
+        - azure-cli
+    script:
+    - ./scripts/build-ci.sh
+    deploy:
+      provider: script
+      script: bash ./scripts/upload.sh
+      skip-cleanup: true
+      on:
+        branch: master
+
+
