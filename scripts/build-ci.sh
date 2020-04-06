@@ -9,6 +9,8 @@ GIT_COMMIT=$(git rev-parse HEAD | cut -c 1-8)
 
 BUILDER="\"Built from $GIT_COMMIT by $USER@$(hostname)\""
 
+echo $BUILDER
+
 xcodebuild -project "$PROJECT" -scheme AppleIntelWifiAdapter -configuration Debug \
 	   BUILDER="$BUILDER" \
 	   -derivedDataPath "$BUILD" 

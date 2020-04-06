@@ -1209,7 +1209,7 @@
 		026E8CD42356F0ED000BFD46 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUILDER = XCode;
+				BUILDER = "\"XCode\"";
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1220,7 +1220,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"__PRIVATE_SPI__=1",
 					"CATALINA=1",
-					"BUILDER=\\\"${BUILDER}\\\"",
+					"BUILDER=\"${BUILDER}\"",
 				);
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
 				KEEP_PRIVATE_EXTERNS = NO;
@@ -1249,7 +1249,7 @@
 		026E8CD52356F0ED000BFD46 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUILDER = XCode;
+				BUILDER = "\"XCode\"";
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1260,7 +1260,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"__PRIVATE_SPI__=1",
 					"CATALINA=1",
-					"BUILDER=\\\"${BUILDER}\\\"",
+					"BUILDER=\"${BUILDER}\"",
 				);
 				INFOPLIST_FILE = AppleIntelWifiAdapter/Info.plist;
 				KEEP_PRIVATE_EXTERNS = NO;
