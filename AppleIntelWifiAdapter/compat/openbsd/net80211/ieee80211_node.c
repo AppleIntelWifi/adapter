@@ -131,40 +131,40 @@ ieee80211_print_ess(struct ieee80211_ess *ess)
 {
 	ieee80211_print_essid(ess->essid, ess->esslen);
 	if (ess->flags & IEEE80211_F_RSNON) {
-		printf(" wpa");
+		IWL_INFO(0, " wpa");
 		if (ess->rsnprotos & IEEE80211_PROTO_RSN)
-			printf(",wpa2");
+			IWL_INFO(0, ",wpa2");
 		if (ess->rsnprotos & IEEE80211_PROTO_WPA)
-			printf(",wpa1");
+			IWL_INFO(0, ",wpa1");
 
 		if (ess->rsnakms & IEEE80211_AKM_8021X ||
 		    ess->rsnakms & IEEE80211_AKM_SHA256_8021X)
-			printf(",802.1x");
-		printf(" ");
+			IWL_INFO(0, ",802.1x");
+		IWL_INFO(0, " ");
 
 		if (ess->rsnciphers & IEEE80211_CIPHER_USEGROUP)
-			printf(" usegroup");
+			IWL_INFO(0, " usegroup");
 		if (ess->rsnciphers & IEEE80211_CIPHER_WEP40)
-			printf(" wep40");
+			IWL_INFO(0, " wep40");
 		if (ess->rsnciphers & IEEE80211_CIPHER_WEP104)
-			printf(" wep104");
+			IWL_INFO(0, " wep104");
 		if (ess->rsnciphers & IEEE80211_CIPHER_TKIP)
-			printf(" tkip");
+			IWL_INFO(0, " tkip");
 		if (ess->rsnciphers & IEEE80211_CIPHER_CCMP)
-			printf(" ccmp");
+			IWL_INFO(0, " ccmp");
 	}
 	if (ess->flags & IEEE80211_F_WEPON) {
 		int i = ess->def_txkey;
 
-		printf(" wep,");
+		IWL_INFO(0, " wep,");
 		if (ess->nw_keys[i].k_cipher & IEEE80211_CIPHER_WEP40)
-			printf("wep40");
+			IWL_INFO(0, "wep40");
 		if (ess->nw_keys[i].k_cipher & IEEE80211_CIPHER_WEP104)
-			printf("wep104");
+			IWL_INFO(0, "wep104");
 	}
 	if (ess->flags == 0)
-		printf(" clear");
-	printf("\n");
+		IWL_INFO(0, " clear");
+	IWL_INFO(0, "\n");
 }
 
 void
@@ -173,7 +173,7 @@ ieee80211_print_ess_list(struct ieee80211com *ic)
 	struct ifnet		*ifp = &ic->ic_if;
 	struct ieee80211_ess	*ess;
 
-	printf("%s: known networks\n", ifp->if_xname);
+	IWL_INFO(0, "%s: known networks\n", ifp->if_xname);
 	TAILQ_FOREACH(ess, &ic->ic_ess, ess_next) {
 		ieee80211_print_ess(ess);
 	}
@@ -507,10 +507,10 @@ ieee80211_ess_is_better(struct ieee80211com *ic,
 		score_can++;
 
 	if ((ifp->if_flags & IFF_DEBUG) && (score_can <= score_cur)) {
-		printf("%s: AP %s ", ifp->if_xname,
+		IWL_INFO(0, "%s: AP %s ", ifp->if_xname,
 		    ether_sprintf(nican->ni_bssid));
 		ieee80211_print_essid(nican->ni_essid, nican->ni_esslen);
-		printf(" score %d\n", score_can);
+		IWL_INFO(0, " score %d\n", score_can);
 	}
 
 	return score_can > score_cur;
@@ -563,6 +563,7 @@ ieee80211_match_ess(struct ieee80211_ess *ess, struct ieee80211_node *ni)
 void
 ieee80211_switch_ess(struct ieee80211com *ic)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ifnet		*ifp = &ic->ic_if;
 	struct ieee80211_ess	*ess, *seless = NULL;
 	struct ieee80211_node	*ni, *selni = NULL;
@@ -613,18 +614,18 @@ ieee80211_switch_ess(struct ieee80211com *ic)
 	    (memcmp(ic->ic_des_essid, selni->ni_essid,
 	     IEEE80211_NWID_LEN) == 0))) {
 		if (ifp->if_flags & IFF_DEBUG) {
-			printf("%s: best AP %s ", ifp->if_xname,
+			IWL_INFO(0, "%s: best AP %s ", ifp->if_xname,
 			    ether_sprintf(selni->ni_bssid));
 			ieee80211_print_essid(selni->ni_essid,
 			    selni->ni_esslen);
-			printf(" score %d\n",
+			IWL_INFO(0, " score %d\n",
 			    ieee80211_ess_calculate_score(ic, selni));
-			printf("%s: switching to network ", ifp->if_xname);
+			IWL_INFO(0, "%s: switching to network ", ifp->if_xname);
 			ieee80211_print_essid(selni->ni_essid,
 			    selni->ni_esslen);
 			if (seless->esslen == 0)
-				printf(" via join any");
-			printf("\n");
+				IWL_INFO(0, " via join any");
+			IWL_INFO(0, "\n");
 
 		}
 		ieee80211_set_ess(ic, seless, selni);
@@ -696,14 +697,14 @@ ieee80211_node_attach(struct ifnet *ifp)
 	ic->ic_aid_bitmap = (u_int32_t *)_MallocZero(size);
 	if (ic->ic_aid_bitmap == NULL) {
 		/* XXX no way to recover */
-		printf("%s: no memory for AID bitmap!\n", __func__);
+		IWL_INFO(0, "%s: no memory for AID bitmap!\n", __FUNCTION__);
 		ic->ic_max_aid = 0;
 	}
 	if (ic->ic_caps & (IEEE80211_C_HOSTAP | IEEE80211_C_IBSS)) {
 		ic->ic_tim_len = howmany(ic->ic_max_aid, 8);
 		ic->ic_tim_bitmap = (u_int8_t*)_MallocZero(ic->ic_tim_len);
 		if (ic->ic_tim_bitmap == NULL) {
-			printf("%s: no memory for TIM bitmap!\n", __func__);
+			IWL_INFO(0, "%s: no memory for TIM bitmap!\n", __FUNCTION__);
 			ic->ic_tim_len = 0;
 		} else
 			ic->ic_set_tim = ieee80211_set_tim;
@@ -780,6 +781,7 @@ ieee80211_node_detach(struct ifnet *ifp)
 void
 ieee80211_reset_scan(struct ifnet *ifp)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 
 	memcpy(ic->ic_chan_scan, ic->ic_chan_active,
@@ -806,9 +808,10 @@ ieee80211_node_raise_inact(void *arg, struct ieee80211_node *ni)
  * Begin an active scan.
  */
 void
-ieee80211_begin_scan(struct ieee80211com *ic)
+ieee80211_begin_scan(struct ifnet *ifp)
 {
-    struct ifnet *ifp = &ic->ic_if;
+    IWL_INFO(0, "%s\n", __FUNCTION__);
+	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 
 	/*
 	 * In all but hostap mode scanning starts off in
@@ -826,7 +829,7 @@ ieee80211_begin_scan(struct ieee80211com *ic)
 		ic->ic_stats.is_scan_passive++;
 #endif
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: begin %s scan\n", ifp->if_xname,
+		IWL_INFO(0, "%s: begin %s scan\n", ifp->if_xname,
 			(ic->ic_flags & IEEE80211_F_ASCAN) ?
 				"active" : "passive");
 
@@ -847,16 +850,16 @@ ieee80211_begin_scan(struct ieee80211com *ic)
 	ic->ic_scan_count = 0;
 
 	/* Scan the next channel. */
-	ieee80211_next_scan(ic);
+	ieee80211_next_scan(ifp);
 }
 
 /*
  * Switch to the next channel marked for scanning.
  */
 void
-ieee80211_next_scan(struct ieee80211com *ic)
+ieee80211_next_scan(struct ifnet *ifp)
 {
-    struct ifnet *ifp = &ic->ic_if;
+	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 	struct ieee80211_channel *chan;
 
 	chan = ic->ic_bss->ni_chan;
@@ -889,12 +892,13 @@ ieee80211_next_scan(struct ieee80211com *ic)
 void
 ieee80211_create_ibss(struct ieee80211com* ic, struct ieee80211_channel *chan)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *ni;
 	struct ifnet *ifp = &ic->ic_if;
 
 	ni = ic->ic_bss;
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: creating ibss\n", ifp->if_xname);
+		IWL_INFO(0, "%s: creating ibss\n", ifp->if_xname);
 	ic->ic_flags |= IEEE80211_F_SIBSS;
 	ni->ni_chan = chan;
 	ni->ni_rates = ic->ic_sup_rates[ieee80211_chan2mode(ic, ni->ni_chan)];
@@ -1089,29 +1093,29 @@ ieee80211_match_bss(struct ieee80211com *ic, struct ieee80211_node *ni,
 	}
 
 	if (ic->ic_if.if_flags & IFF_DEBUG) {
-		printf("%s: %c %s%c", ic->ic_if.if_xname, fail ? '-' : '+',
+		IWL_INFO(0, "%s: %c %s%c", ic->ic_if.if_xname, fail ? '-' : '+',
 		    ether_sprintf(ni->ni_bssid),
 		    fail & IEEE80211_NODE_ASSOCFAIL_BSSID ? '!' : ' ');
-		printf(" %3d%c", ieee80211_chan2ieee(ic, ni->ni_chan),
+		IWL_INFO(0, " %3d%c", ieee80211_chan2ieee(ic, ni->ni_chan),
 			fail & IEEE80211_NODE_ASSOCFAIL_CHAN ? '!' : ' ');
-		printf(" %+4d", ni->ni_rssi);
-		printf(" %2dM%c", (rate & IEEE80211_RATE_VAL) / 2,
+		IWL_INFO(0, " %+4d", ni->ni_rssi);
+		IWL_INFO(0, " %2dM%c", (rate & IEEE80211_RATE_VAL) / 2,
 		    fail & IEEE80211_NODE_ASSOCFAIL_BASIC_RATE ? '!' : ' ');
-		printf(" %4s%c",
+		IWL_INFO(0, " %4s%c",
 		    (ni->ni_capinfo & IEEE80211_CAPINFO_ESS) ? "ess" :
 		    (ni->ni_capinfo & IEEE80211_CAPINFO_IBSS) ? "ibss" :
 		    "????",
 		    fail & IEEE80211_NODE_ASSOCFAIL_IBSS ? '!' : ' ');
-		printf(" %7s%c ",
+		IWL_INFO(0, " %7s%c ",
 		    (ni->ni_capinfo & IEEE80211_CAPINFO_PRIVACY) ?
 		    "privacy" : "no",
 		    fail & IEEE80211_NODE_ASSOCFAIL_PRIVACY ? '!' : ' ');
-		printf(" %3s%c ",
+		IWL_INFO(0, " %3s%c ",
 		    (ic->ic_flags & IEEE80211_F_RSNON) ?
 		    "rsn" : "no",
 		    fail & IEEE80211_NODE_ASSOCFAIL_WPA_PROTO ? '!' : ' ');
 		ieee80211_print_essid(ni->ni_essid, ni->ni_esslen);
-		printf("%s\n",
+		IWL_INFO(0, "%s\n",
 		    fail & IEEE80211_NODE_ASSOCFAIL_ESSID ? "!" : "");
 	}
 
@@ -1166,10 +1170,10 @@ ieee80211_node_switch_bss(struct ieee80211com *ic, struct ieee80211_node *ni)
 	}
 
 	if (ifp->if_flags & IFF_DEBUG) {
-		printf("%s: roaming from %s chan %d ",
+		IWL_INFO(0, "%s: roaming from %s chan %d ",
 		    ifp->if_xname, ether_sprintf(curbs->ni_macaddr),
 		    ieee80211_chan2ieee(ic, curbs->ni_chan));
-		printf("to %s chan %d\n", ether_sprintf(selbs->ni_macaddr),
+		IWL_INFO(0, "to %s chan %d\n", ether_sprintf(selbs->ni_macaddr),
 		    ieee80211_chan2ieee(ic, selbs->ni_chan));
 	}
 	ieee80211_node_newstate(curbs, IEEE80211_STA_CACHE);
@@ -1179,6 +1183,7 @@ ieee80211_node_switch_bss(struct ieee80211com *ic, struct ieee80211_node *ni)
 void
 ieee80211_node_join_bss(struct ieee80211com *ic, struct ieee80211_node *selbs)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	enum ieee80211_phymode mode;
 	struct ieee80211_node *ni;
 	uint32_t assoc_fail = 0;
@@ -1258,6 +1263,7 @@ struct ieee80211_node *
 ieee80211_node_choose_bss(struct ieee80211com *ic, int bgscan,
     struct ieee80211_node **curbs)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *ni, *nextbs, *selbs = NULL, 
 	    *selbs2 = NULL, *selbs5 = NULL;
 	uint8_t min_5ghz_rssi;
@@ -1265,6 +1271,7 @@ ieee80211_node_choose_bss(struct ieee80211com *ic, int bgscan,
 	ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
 
 	for (; ni != NULL; ni = nextbs) {
+        IWL_INFO(0, "%s nextbs\n", __FUNCTION__);
 		nextbs = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
 		if (ni->ni_fails) {
 			/*
@@ -1274,14 +1281,18 @@ ieee80211_node_choose_bss(struct ieee80211com *ic, int bgscan,
 			 */
 			if (ni->ni_fails++ > 2)
 				ieee80211_free_node(ic, ni);
+            IWL_INFO(0, "%s ni->ni_fails==TRUE\n", __FUNCTION__);
 			continue;
 		}
 
 		if (curbs && ieee80211_node_cmp(ic->ic_bss, ni) == 0)
 			*curbs = ni;
 
-		if (ieee80211_match_bss(ic, ni, bgscan) != 0)
+        int fail = ieee80211_match_bss(ic, ni, bgscan);
+        if (fail != 0) {
+            IWL_INFO(0, "%s ieee80211_match_bss==FALSE, ssid=%s, bssid=%s, %d\n", __FUNCTION__, ni->ni_essid, ether_sprintf(ni->ni_bssid), fail);
 			continue;
+        }
 
 		if (ic->ic_caps & IEEE80211_C_SCANALLBAND) {
 			if (IEEE80211_IS_CHAN_2GHZ(ni->ni_chan) &&
@@ -1322,6 +1333,7 @@ ieee80211_node_choose_bss(struct ieee80211com *ic, int bgscan,
 void
 ieee80211_end_scan(struct ifnet *ifp)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 	struct ieee80211_node *ni, *selbs = NULL, *curbs = NULL;
 	int bgscan = ((ic->ic_flags & IEEE80211_F_BGSCAN) &&
@@ -1329,7 +1341,7 @@ ieee80211_end_scan(struct ifnet *ifp)
 	    ic->ic_state == IEEE80211_S_RUN);
 
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: end %s scan\n", ifp->if_xname,
+		IWL_INFO(0, "%s: end %s scan\n", ifp->if_xname,
 		    bgscan ? "background" :
 		    ((ic->ic_flags & IEEE80211_F_ASCAN) ?
 		    "active" : "passive"));
@@ -1395,7 +1407,7 @@ ieee80211_end_scan(struct ifnet *ifp)
 		    (ic->ic_caps & IEEE80211_C_SCANALLBAND))
 			ic->ic_scan_count++;
 
-		//ieee80211_next_scan(ifp);
+		ieee80211_next_scan(ifp);
 		return;
 	}
 
@@ -1640,7 +1652,7 @@ ieee80211_setup_node(struct ieee80211com *ic,
 {
 	int i, s;
 
-	DPRINTF(("%s\n", ether_sprintf((u_int8_t *)macaddr)));
+	IWL_INFO(0, "%s %s\n", __FUNCTION__, ether_sprintf((u_int8_t *)macaddr));
 	IEEE80211_ADDR_COPY(ni->ni_macaddr, macaddr);
 	ieee80211_node_newstate(ni, IEEE80211_STA_CACHE);
 
@@ -1674,6 +1686,7 @@ ieee80211_alloc_node(struct ieee80211com *ic, const u_int8_t *macaddr)
 struct ieee80211_node *
 ieee80211_dup_bss(struct ieee80211com *ic, const u_int8_t *macaddr)
 {
+    IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 	struct ieee80211_node *ni = ieee80211_alloc_node_helper(ic);
 	if (ni != NULL) {
 		ieee80211_setup_node(ic, ni, macaddr);
@@ -1953,12 +1966,13 @@ ieee80211_ba_del(struct ieee80211_node *ni)
 void
 ieee80211_free_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	if (ni == ic->ic_bss)
 		panic("freeing bss node");
 
 	splassert(IPL_NET);
 
-	DPRINTF(("%s\n", ether_sprintf(ni->ni_macaddr)));
+	DPRINTF(("%s, %s\n", __FUNCTION__, ether_sprintf(ni->ni_macaddr)));
 #ifndef IEEE80211_STA_ONLY
 	timeout_del(&ni->ni_eapol_to);
 	timeout_del(&ni->ni_sa_query_to);
@@ -2109,7 +2123,7 @@ ieee80211_clean_nodes(struct ieee80211com *ic, int cache_timeout)
 			}
 		}
 		if (ifp->if_flags & IFF_DEBUG)
-			printf("%s: station %s purged from node cache\n",
+			IWL_INFO(0, "%s, %s: station %s purged from node cache\n", __FUNCTION__,
 			    ifp->if_xname, ether_sprintf(ni->ni_macaddr));
 #endif
 		/*
@@ -2169,7 +2183,7 @@ ieee80211_clean_nodes(struct ieee80211com *ic, int cache_timeout)
 	 */
 	if ((ifp->if_flags & IFF_DEBUG) && cache_timeout &&
 	    nnodes != ic->ic_nnodes)
-		printf("%s: number of cached nodes is %d, expected %d,"
+		IWL_INFO(0, "%s: number of cached nodes is %d, expected %d,"
 		    "possible nodes leak\n", ifp->if_xname, nnodes,
 		    ic->ic_nnodes);
 #endif
@@ -2179,6 +2193,7 @@ ieee80211_clean_nodes(struct ieee80211com *ic, int cache_timeout)
 void
 ieee80211_clean_inactive_nodes(struct ieee80211com *ic, int inact_max)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *ni, *next_ni;
 	u_int gen = ic->ic_scangen++;	/* NB: ok 'cuz single-threaded*/
 	int s;
@@ -2840,7 +2855,7 @@ ieee80211_ibss_merge(struct ieee80211com *ic, struct ieee80211_node *ni,
 	if (IEEE80211_ADDR_EQ(ni->ni_bssid, ic->ic_bss->ni_bssid)) {
 		if (!ieee80211_do_slow_print(ic, &did_print))
 			return 0;
-		printf("%s: tsft offset %s%llu\n", ic->ic_if.if_xname,
+		IWL_INFO(0, "%s: tsft offset %s%llu\n", ic->ic_if.if_xname,
 		    (sign < 0) ? "-" : "",
 		    (sign < 0)
 			? (local_tsft - beacon_tsft)
@@ -2855,11 +2870,11 @@ ieee80211_ibss_merge(struct ieee80211com *ic, struct ieee80211_node *ni,
 		return 0;
 
 	if (ieee80211_do_slow_print(ic, &did_print)) {
-		printf("%s: ieee80211_ibss_merge: bssid mismatch %s\n",
+		IWL_INFO(0, "%s: ieee80211_ibss_merge: bssid mismatch %s\n",
 		    ic->ic_if.if_xname, ether_sprintf(ni->ni_bssid));
-		printf("%s: my tsft %llu beacon tsft %llu\n",
+		IWL_INFO(0, "%s: my tsft %llu beacon tsft %llu\n",
 		    ic->ic_if.if_xname, local_tsft, beacon_tsft);
-		printf("%s: sync TSF with %s\n",
+		IWL_INFO(0, "%s: sync TSF with %s\n",
 		    ic->ic_if.if_xname, ether_sprintf(ni->ni_macaddr));
 	}
 
@@ -2870,17 +2885,17 @@ ieee80211_ibss_merge(struct ieee80211com *ic, struct ieee80211_node *ni,
 	    IEEE80211_F_DONEGO | IEEE80211_F_DODEL);
 	if (ni->ni_rates.rs_nrates == 0) {
 		if (ieee80211_do_slow_print(ic, &did_print)) {
-			printf("%s: rates mismatch, BSSID %s\n",
+			IWL_INFO(0, "%s: rates mismatch, BSSID %s\n",
 			    ic->ic_if.if_xname, ether_sprintf(ni->ni_bssid));
 		}
 		return 0;
 	}
 
 	if (ieee80211_do_slow_print(ic, &did_print)) {
-		printf("%s: sync BSSID %s -> ",
+		IWL_INFO(0, "%s: sync BSSID %s -> ",
 		    ic->ic_if.if_xname, ether_sprintf(ic->ic_bss->ni_bssid));
-		printf("%s ", ether_sprintf(ni->ni_bssid));
-		printf("(from %s)\n", ether_sprintf(ni->ni_macaddr));
+		IWL_INFO(0, "%s ", ether_sprintf(ni->ni_bssid));
+		IWL_INFO(0, "(from %s)\n", ether_sprintf(ni->ni_macaddr));
 	}
 
 	ieee80211_node_newstate(ni, IEEE80211_STA_BSS);
@@ -2919,10 +2934,10 @@ ieee80211_notify_dtim(struct ieee80211com *ic)
 			wh = mtod(m, struct ieee80211_frame *);
 			wh->i_fc[1] |= IEEE80211_FC1_MORE_DATA;
 		}
-        ifp->output_queue->enqueue(m, NULL);
-//		mq_enqueue(&ic->ic_pwrsaveq, m);
-//		if_start(ifp);
-        ifp->output_queue->service();
+//        ifp->output_queue->enqueue(m, &TX_TYPE_MGMT);
+		mq_enqueue(&ic->ic_pwrsaveq, m);
+		ifp->if_start(ifp);
+//        ifp->output_queue->start();
 	}
 	/* XXX assumes everything has been sent */
 	ic->ic_tim_mcast_pending = 0;

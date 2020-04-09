@@ -1366,7 +1366,7 @@ static void iwl_pcie_rx_handle_rb(IWLTransport *trans, struct iwl_rxq *rxq,
           trans->m_pDevice->ie_dev->resetScanIndex();
 
           // IOSleep(100);
-          trans->m_pDevice->ie_dev->setState(APPLE80211_S_INIT);
+          trans->m_pDevice->ie_dev->restoreState();
 
           trans->m_pDevice->ie_dev->unlockScanCache();
 

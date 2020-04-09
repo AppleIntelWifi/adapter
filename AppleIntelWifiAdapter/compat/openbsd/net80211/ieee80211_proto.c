@@ -75,6 +75,7 @@ const char * const ieee80211_phymode_name[] = {
 	"11b",		/* IEEE80211_MODE_11B */
 	"11g",		/* IEEE80211_MODE_11G */
 	"11n",		/* IEEE80211_MODE_11N */
+    "11ac",     /* IEEE80211_MODE_11AC */
 };
 
 void ieee80211_set_beacon_miss_threshold(struct ieee80211com *);
@@ -126,16 +127,16 @@ ieee80211_print_essid(const u_int8_t *essid, int len)
 		if (*p < ' ' || *p > 0x7e)
 			break;
 	}
-	if (i == len) {
-		printf("\"");
-		for (i = 0, p = essid; i < len; i++, p++)
-			printf("%c", *p);
-		printf("\"");
-	} else {
-		printf("0x");
-		for (i = 0, p = essid; i < len; i++, p++)
-			printf("%02x", *p);
-	}
+//	if (i == len) {
+//		IWL_INFO(0, "\"");
+//		for (i = 0, p = essid; i < len; i++, p++)
+//			IWL_INFO(0, "%c", *p);
+//		IWL_INFO(0, "\"");
+//	} else {
+//		IWL_INFO(0, "0x");
+//		for (i = 0, p = essid; i < len; i++, p++)
+//			IWL_INFO(0, "%02x", *p);
+//	}
 }
 
 #ifdef IEEE80211_DEBUG
@@ -148,54 +149,54 @@ ieee80211_dump_pkt(const u_int8_t *buf, int len, int rate, int rssi)
 	wh = (struct ieee80211_frame *)buf;
 	switch (wh->i_fc[1] & IEEE80211_FC1_DIR_MASK) {
 	case IEEE80211_FC1_DIR_NODS:
-		printf("NODS %s", ether_sprintf(wh->i_addr2));
-		printf("->%s", ether_sprintf(wh->i_addr1));
-		printf("(%s)", ether_sprintf(wh->i_addr3));
+		IWL_INFO(0, "NODS %s", ether_sprintf(wh->i_addr2));
+		IWL_INFO(0, "->%s", ether_sprintf(wh->i_addr1));
+		IWL_INFO(0, "(%s)", ether_sprintf(wh->i_addr3));
 		break;
 	case IEEE80211_FC1_DIR_TODS:
-		printf("TODS %s", ether_sprintf(wh->i_addr2));
-		printf("->%s", ether_sprintf(wh->i_addr3));
-		printf("(%s)", ether_sprintf(wh->i_addr1));
+		IWL_INFO(0, "TODS %s", ether_sprintf(wh->i_addr2));
+		IWL_INFO(0, "->%s", ether_sprintf(wh->i_addr3));
+		IWL_INFO(0, "(%s)", ether_sprintf(wh->i_addr1));
 		break;
 	case IEEE80211_FC1_DIR_FROMDS:
-		printf("FRDS %s", ether_sprintf(wh->i_addr3));
-		printf("->%s", ether_sprintf(wh->i_addr1));
-		printf("(%s)", ether_sprintf(wh->i_addr2));
+		IWL_INFO(0, "FRDS %s", ether_sprintf(wh->i_addr3));
+		IWL_INFO(0, "->%s", ether_sprintf(wh->i_addr1));
+		IWL_INFO(0, "(%s)", ether_sprintf(wh->i_addr2));
 		break;
 	case IEEE80211_FC1_DIR_DSTODS:
-		printf("DSDS %s", ether_sprintf((u_int8_t *)&wh[1]));
-		printf("->%s", ether_sprintf(wh->i_addr3));
-		printf("(%s", ether_sprintf(wh->i_addr2));
-		printf("->%s)", ether_sprintf(wh->i_addr1));
+		IWL_INFO(0, "DSDS %s", ether_sprintf((u_int8_t *)&wh[1]));
+		IWL_INFO(0, "->%s", ether_sprintf(wh->i_addr3));
+		IWL_INFO(0, "(%s", ether_sprintf(wh->i_addr2));
+		IWL_INFO(0, "->%s)", ether_sprintf(wh->i_addr1));
 		break;
 	}
 	switch (wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK) {
 	case IEEE80211_FC0_TYPE_DATA:
-		printf(" data");
+		IWL_INFO(0, " data");
 		break;
 	case IEEE80211_FC0_TYPE_MGT:
-		printf(" %s", ieee80211_mgt_subtype_name[
+		IWL_INFO(0, " %s", ieee80211_mgt_subtype_name[
 		    (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK)
 		    >> IEEE80211_FC0_SUBTYPE_SHIFT]);
 		break;
 	default:
-		printf(" type#%d", wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK);
+		IWL_INFO(0, " type#%d", wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK);
 		break;
 	}
 	if (wh->i_fc[1] & IEEE80211_FC1_WEP)
-		printf(" WEP");
+		IWL_INFO(0, " WEP");
 	if (rate >= 0)
-		printf(" %d%sM", rate / 2, (rate & 1) ? ".5" : "");
+		IWL_INFO(0, " %d%sM", rate / 2, (rate & 1) ? ".5" : "");
 	if (rssi >= 0)
-		printf(" +%d", rssi);
-	printf("\n");
+		IWL_INFO(0, " +%d", rssi);
+	IWL_INFO(0, "\n");
 	if (len > 0) {
 		for (i = 0; i < len; i++) {
 			if ((i & 1) == 0)
-				printf(" ");
-			printf("%02x", buf[i]);
+				IWL_INFO(0, " ");
+			IWL_INFO(0, "%02x", buf[i]);
 		}
-		printf("\n");
+		IWL_INFO(0, "\n");
 	}
 }
 #endif
@@ -358,6 +359,7 @@ ieee80211_set_shortslottime(struct ieee80211com *ic, int on)
 int
 ieee80211_keyrun(struct ieee80211com *ic, u_int8_t *macaddr)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *ni = ic->ic_bss;
 #ifndef IEEE80211_STA_ONLY
 	struct ieee80211_pmk *pmk;
@@ -751,7 +753,7 @@ ieee80211_auth_open_confirm(struct ieee80211com *ic,
 
 	IEEE80211_SEND_MGMT(ic, ni, IEEE80211_FC0_SUBTYPE_AUTH, seq + 1);
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: station %s %s authenticated (open)\n",
+		IWL_INFO(0, "%s: station %s %s authenticated (open)\n",
 		    ifp->if_xname,
 		    ether_sprintf((u_int8_t *)ni->ni_macaddr),
 		    ni->ni_state != IEEE80211_STA_CACHE ?
@@ -763,6 +765,7 @@ ieee80211_auth_open_confirm(struct ieee80211com *ic,
 void
 ieee80211_try_another_bss(struct ieee80211com *ic)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *curbs, *selbs;
 	struct ifnet *ifp = &ic->ic_if;
 
@@ -793,7 +796,7 @@ ieee80211_try_another_bss(struct ieee80211com *ic)
 		return;
 
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: trying AP %s on channel %d instead\n",
+		IWL_INFO(0, "%s: trying AP %s on channel %d instead\n",
 		    ifp->if_xname, ether_sprintf(selbs->ni_macaddr),
 		    ieee80211_chan2ieee(ic, selbs->ni_chan));
 
@@ -806,6 +809,7 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
     struct ieee80211_node *ni, struct ieee80211_rxinfo *rxi, u_int16_t seq,
     u_int16_t status)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ifnet *ifp = &ic->ic_if;
 	switch (ic->ic_opmode) {
 #ifndef IEEE80211_STA_ONLY
@@ -883,7 +887,7 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
 		}
 		if (status != 0) {
 			if (ifp->if_flags & IFF_DEBUG)
-				printf("%s: open authentication failed "
+				IWL_INFO(0, "%s: open authentication failed "
 				    "(status %d) for %s\n", ifp->if_xname,
 				    status,
 				    ether_sprintf((u_int8_t *)wh->i_addr3));
@@ -918,7 +922,7 @@ ieee80211_set_beacon_miss_threshold(struct ieee80211com *ic)
 		ic->ic_bmissthres = btimeout / ic->ic_bss->ni_intval;
 
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: missed beacon threshold set to %d beacons, "
+		IWL_INFO(0, "%s: missed beacon threshold set to %d beacons, "
 		    "beacon interval is %u TU\n", ifp->if_xname,
 		    ic->ic_bmissthres, ic->ic_bss->ni_intval);
 }
@@ -970,6 +974,7 @@ int
 ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
     int mgt)
 {
+    IWL_INFO(0, "%s\n nstate=%d", __FUNCTION__, nstate);
 	struct ifnet *ifp = &ic->ic_if;
 	struct ieee80211_node *ni;
 	enum ieee80211_state ostate;
@@ -980,7 +985,7 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
 
 	ostate = ic->ic_state;
 	if (ifp->if_flags & IFF_DEBUG)
-		printf("%s: %s -> %s\n", ifp->if_xname,
+		IWL_INFO(0, "%s: %s -> %s\n", ifp->if_xname,
 		    ieee80211_state_name[ostate], ieee80211_state_name[nstate]);
 	ic->ic_state = nstate;			/* state transition */
 	ni = ic->ic_bss;			/* NB: no reference held */
@@ -1092,7 +1097,7 @@ justcleanup:
 				ieee80211_create_ibss(ic, ic->ic_des_chan);
 			} else
 #endif
-				//ieee80211_begin_scan(ifp);
+				ieee80211_begin_scan(ifp);
 			break;
 		case IEEE80211_S_SCAN:
 			/* scan next */
@@ -1105,7 +1110,7 @@ justcleanup:
 			/* beacon miss */
 			if (ifp->if_flags & IFF_DEBUG) {
 				/* XXX bssid clobbered above */
-				printf("%s: no recent beacons from %s;"
+				IWL_INFO(0, "%s: no recent beacons from %s;"
 				    " rescanning\n", ifp->if_xname,
 				    ether_sprintf(ic->ic_bss->ni_bssid));
 			}
@@ -1120,7 +1125,7 @@ justcleanup:
 			ni = ieee80211_find_node(ic, ic->ic_bss->ni_macaddr);
 			if (ni != NULL)
 				ni->ni_fails++;
-			//ieee80211_begin_scan(ifp);
+			ieee80211_begin_scan(ifp);
 			break;
 		}
 		break;
@@ -1133,7 +1138,7 @@ justcleanup:
 		switch (ostate) {
 		case IEEE80211_S_INIT:
 			if (ifp->if_flags & IFF_DEBUG)
-				printf("%s: invalid transition %s -> %s\n",
+				IWL_INFO(0, "%s: invalid transition %s -> %s\n",
 				    ifp->if_xname, ieee80211_state_name[ostate],
 				    ieee80211_state_name[nstate]);
 			break;
@@ -1182,7 +1187,7 @@ justcleanup:
 		case IEEE80211_S_SCAN:
 		case IEEE80211_S_ASSOC:
 			if (ifp->if_flags & IFF_DEBUG)
-				printf("%s: invalid transition %s -> %s\n",
+				IWL_INFO(0, "%s: invalid transition %s -> %s\n",
 				    ifp->if_xname, ieee80211_state_name[ostate],
 				    ieee80211_state_name[nstate]);
 			break;
@@ -1206,7 +1211,7 @@ justcleanup:
 		case IEEE80211_S_AUTH:
 		case IEEE80211_S_RUN:
 			if (ifp->if_flags & IFF_DEBUG)
-				printf("%s: invalid transition %s -> %s\n",
+				IWL_INFO(0, "%s: invalid transition %s -> %s\n",
 				    ifp->if_xname, ieee80211_state_name[ostate],
 				    ieee80211_state_name[nstate]);
 			break;
@@ -1214,9 +1219,9 @@ justcleanup:
 		case IEEE80211_S_ASSOC:		/* infra mode */
 			if (ni->ni_txrate >= ni->ni_rates.rs_nrates)
 				panic("%s: bogus xmit rate %u setup",
-				    __func__, ni->ni_txrate);
+				    __FUNCTION__, ni->ni_txrate);
 			if (ifp->if_flags & IFF_DEBUG) {
-				printf("%s: %s with %s ssid ",
+				IWL_INFO(0, "%s: %s with %s ssid ",
 				    ifp->if_xname,
 				    ic->ic_opmode == IEEE80211_M_STA ?
 				    "associated" : "synchronized",
@@ -1225,14 +1230,14 @@ justcleanup:
 				    ni->ni_esslen);
 				rate = ni->ni_rates.rs_rates[ni->ni_txrate] &
 				    IEEE80211_RATE_VAL;
-				printf(" channel %d",
+				IWL_INFO(0, " channel %d",
 				    ieee80211_chan2ieee(ic, ni->ni_chan));
 				if (ni->ni_flags & IEEE80211_NODE_HT)
-					printf(" start MCS %u", ni->ni_txmcs);
+					IWL_INFO(0, " start MCS %u", ni->ni_txmcs);
 				else
-					printf(" start %u%sMb",
+					IWL_INFO(0, " start %u%sMb",
 					    rate / 2, (rate & 1) ? ".5" : "");
-				printf(" %s preamble %s slot time%s%s\n",
+				IWL_INFO(0, " %s preamble %s slot time%s%s\n",
 				    (ic->ic_flags & IEEE80211_F_SHPREAMBLE) ?
 					"short" : "long",
 				    (ic->ic_flags & IEEE80211_F_SHSLOT) ?
@@ -1252,8 +1257,8 @@ justcleanup:
 			}
 			ic->ic_mgt_timer = 0;
 			ieee80211_set_beacon_miss_threshold(ic);
-//			if_start(ifp);
-            ifp->output_queue->service();
+			ifp->if_start(ifp);
+//            ifp->output_queue->start();
 			break;
 		}
 		break;
@@ -1264,6 +1269,7 @@ justcleanup:
 void
 ieee80211_set_link_state(struct ieee80211com *ic, int nstate)
 {
+    IWL_INFO(0, "%s\n nstate=%d", __FUNCTION__, nstate);
 	struct ifnet *ifp = &ic->ic_if;
 
 	switch (ic->ic_opmode) {

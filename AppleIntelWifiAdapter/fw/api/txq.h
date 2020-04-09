@@ -112,10 +112,10 @@ enum iwl_mvm_tx_fifo {
 };
 
 const u8 iwl_mvm_ac_to_tx_fifo[] = {
-    IWL_MVM_TX_FIFO_VO,
-    IWL_MVM_TX_FIFO_VI,
-    IWL_MVM_TX_FIFO_BE,
-    IWL_MVM_TX_FIFO_BK,
+    IWL_MVM_TX_FIFO_VO, // VOICE
+    IWL_MVM_TX_FIFO_VI, // VIDEO
+    IWL_MVM_TX_FIFO_BE, // BEST EFFORT
+    IWL_MVM_TX_FIFO_BK, // BACKGROUND
 };
 
 enum iwl_gen2_tx_fifo {

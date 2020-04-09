@@ -99,7 +99,7 @@ void iwl_phy_ctxt_cmd_data(IWLMvmDriver *drv, struct iwl_phy_context_cmd *cmd,
   iwl_mvm_set_chan_info(
       drv, &cmd->ci, chan->channel,
       (chan->flags & APPLE80211_C_FLAG_2GHZ) ? PHY_BAND_24 : PHY_BAND_5,
-      PHY_VHT_CHANNEL_MODE40, PHY_VHT_CTRL_POS_1_BELOW);
+      PHY_VHT_CHANNEL_MODE20, PHY_VHT_CTRL_POS_1_BELOW);
 
   /* Set rx the chains */
   idle_cnt = chains_static;

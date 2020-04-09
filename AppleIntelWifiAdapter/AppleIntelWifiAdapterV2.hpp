@@ -73,6 +73,11 @@ class AppleIntelWifiAdapterV2 : public IO80211Controller {
   SInt32 monitorModeSetEnabled(IO80211Interface* interface, bool enabled,
                                UInt32 dlt) override;
 
+  int bpfOutputPacket(OSObject*, uint, mbuf_t) override;
+  int outputRaw80211Packet(IO80211Interface*, mbuf_t) override;
+
+  int outputActionFrame(IO80211Interface*, mbuf_t) override;
+
   bool createWorkLoop() override;
   IOWorkLoop* getWorkLoop() const override;
 

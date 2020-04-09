@@ -27,9 +27,10 @@ static inline int iwl_mvm_add_sta_cmd_size(IWLDevice* mvm) {
     return sizeof(struct iwl_mvm_add_sta_cmd_v7);
 }
 
+int iwl_mvm_add_sta(IWLMvmDriver* drv, int update);
+
 int iwl_mvm_add_aux_sta(IWLMvmDriver* drv);
 
-int iwl_mvm_sta_send_to_fw(IWLMvmDriver* drv, struct iwm_node* in, bool update,
-                           unsigned int flags);
+int iwl_mvm_sta_send_to_fw(IWLMvmDriver* drv, bool update, unsigned int flags);
 
 #endif  // APPLEINTELWIFIADAPTER_MVM_IWLMVMSTA_HPP_

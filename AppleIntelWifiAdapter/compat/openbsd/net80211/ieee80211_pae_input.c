@@ -77,6 +77,7 @@ void
 ieee80211_eapol_key_input(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ifnet *ifp = &ic->ic_if;
 	struct ether_header *eh;
 	struct ieee80211_eapol_key *key;
@@ -188,6 +189,7 @@ void
 ieee80211_recv_4way_msg1(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_ptk tptk;
 	struct ieee80211_pmk *pmk;
 	const u_int8_t *frm, *efrm;
@@ -268,7 +270,7 @@ ieee80211_recv_4way_msg1(struct ieee80211com *ic,
 	ni->ni_flags |= IEEE80211_NODE_RSN_NEW_PTK;
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 1, 4, "4-way",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -285,6 +287,7 @@ ieee80211_recv_4way_msg2(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni,
     const u_int8_t *rsnie)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_ptk tptk;
 
 	if (ic->ic_opmode != IEEE80211_M_HOSTAP &&
@@ -332,7 +335,7 @@ ieee80211_recv_4way_msg2(struct ieee80211com *ic,
 	}
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 2, 4, "4-way",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -351,6 +354,7 @@ int
 ieee80211_must_update_group_key(struct ieee80211_key *k, const uint8_t *gtk,
     int len)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	return (k->k_cipher == IEEE80211_CIPHER_NONE || k->k_len != len ||
 	    memcmp(k->k_key, gtk, len) != 0);
 }
@@ -362,6 +366,7 @@ void
 ieee80211_recv_4way_msg3(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_ptk tptk;
 	struct ieee80211_key *k;
 	const u_int8_t *frm, *efrm;
@@ -527,7 +532,7 @@ ieee80211_recv_4way_msg3(struct ieee80211com *ic,
 	ni->ni_replaycnt_ok = 1;
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 3, 4, "4-way",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -574,7 +579,7 @@ ieee80211_recv_4way_msg3(struct ieee80211com *ic,
 		ni->ni_flags &= ~IEEE80211_NODE_TXRXPROT;
 		ni->ni_flags |= IEEE80211_NODE_RXPROT;
 	} else if (ni->ni_rsncipher != IEEE80211_CIPHER_USEGROUP)
-		printf("%s: unexpected pairwise key update received from %s\n",
+		IWL_INFO(0, "%s: unexpected pairwise key update received from %s\n",
 		    ic->ic_if.if_xname, ether_sprintf(ni->ni_macaddr));
 
 	if (gtk != NULL) {
@@ -637,18 +642,21 @@ ieee80211_recv_4way_msg3(struct ieee80211com *ic,
 			}
 		}
 	}
-	if (info & EAPOL_KEY_INSTALL)
+    if (info & EAPOL_KEY_INSTALL) {
+        IWL_INFO(0, "%s %d info &= EAPOL_KEY_INSTALL\n", __FUNCTION__, __LINE__);
 		ni->ni_flags |= IEEE80211_NODE_TXRXPROT;
+    }
 
 	if (info & EAPOL_KEY_SECURE) {
+        IWL_INFO(0, "%s %d info &= EAPOL_KEY_SECURE\n", __FUNCTION__, __LINE__);
 		ni->ni_flags |= IEEE80211_NODE_TXRXPROT;
 #ifndef IEEE80211_STA_ONLY
 		if (ic->ic_opmode != IEEE80211_M_IBSS ||
 		    ++ni->ni_key_count == 2)
 #endif
 		{
-			DPRINTF(("marking port %s valid\n",
-			    ether_sprintf(ni->ni_macaddr)));
+			IWL_INFO(0, "marking port %s valid\n",
+			    ether_sprintf(ni->ni_macaddr));
 			ni->ni_port_valid = 1;
 			ieee80211_set_link_state(ic, LINK_STATE_UP);
 			ni->ni_assoc_fail = 0;
@@ -670,6 +678,7 @@ void
 ieee80211_recv_4way_msg4(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	if (ic->ic_opmode != IEEE80211_M_HOSTAP &&
 	    ic->ic_opmode != IEEE80211_M_IBSS)
 		return;
@@ -719,7 +728,7 @@ ieee80211_recv_4way_msg4(struct ieee80211com *ic,
 	}
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 4, 4, "4-way",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -738,6 +747,7 @@ void
 ieee80211_recv_4way_msg2or4(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const u_int8_t *frm, *efrm;
 	const u_int8_t *rsnie;
 
@@ -785,6 +795,7 @@ void
 ieee80211_recv_rsn_group_msg1(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_key *k;
 	const u_int8_t *frm, *efrm;
 	const u_int8_t *gtk, *igtk;
@@ -924,7 +935,7 @@ ieee80211_recv_rsn_group_msg1(struct ieee80211com *ic,
 	ni->ni_replaycnt = BE_READ_8(key->replaycnt);
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 1, 2, "group key",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -943,6 +954,7 @@ void
 ieee80211_recv_wpa_group_msg1(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_key *k;
 	u_int16_t info;
 	u_int8_t kid;
@@ -1029,7 +1041,7 @@ ieee80211_recv_wpa_group_msg1(struct ieee80211com *ic,
 	ni->ni_replaycnt = BE_READ_8(key->replaycnt);
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 1, 2, "group key",
 		    ether_sprintf(ni->ni_macaddr));
 
@@ -1045,6 +1057,7 @@ void
 ieee80211_recv_group_msg2(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	if (ic->ic_opmode != IEEE80211_M_HOSTAP &&
 	    ic->ic_opmode != IEEE80211_M_IBSS)
 		return;
@@ -1084,7 +1097,7 @@ ieee80211_recv_group_msg2(struct ieee80211com *ic,
 	ni->ni_rsn_retries = 0;
 
 	if (ic->ic_if.if_flags & IFF_DEBUG)
-		printf("%s: received msg %d/%d of the %s handshake from %s\n",
+		IWL_INFO(0, "%s: received msg %d/%d of the %s handshake from %s\n",
 		    ic->ic_if.if_xname, 2, 2, "group key",
 		    ether_sprintf(ni->ni_macaddr));
 }
@@ -1098,6 +1111,7 @@ void
 ieee80211_recv_eapol_key_req(struct ieee80211com *ic,
     struct ieee80211_eapol_key *key, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	u_int16_t info;
 
 	if (ic->ic_opmode != IEEE80211_M_HOSTAP &&

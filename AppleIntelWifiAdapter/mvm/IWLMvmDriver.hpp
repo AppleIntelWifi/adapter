@@ -80,6 +80,8 @@ class IWLMvmDriver : public OSObject {
   // bt coex
   int sendBTInitConf();  // iwl_mvm_send_bt_init_conf
 
+  bool enableMulticast();
+
   // utils
   int sendCmd(struct iwl_host_cmd *cmd);
 

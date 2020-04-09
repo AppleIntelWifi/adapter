@@ -8,6 +8,7 @@
 
 #include "IWLMvmMac.hpp"
 
+#include "../fw/api/time-event.h"
 #include "IWLApple80211.hpp"
 
 int iwl_legacy_config_umac_scan(IWLMvmDriver* drv) {
@@ -965,4 +966,256 @@ int iwl_disable_beacon_filter(IWLMvmDriver* drv) {
   memset(&cmd, 0, sizeof(cmd));
 
   return drv->sendCmdPdu(REPLY_BEACON_FILTERING_CMD, 0, sizeof(cmd), &cmd);
+}
+
+static uint8_t ridx2rate(uint8_t* rates, uint8_t n_rates, int ridx) {
+  int i;
+  uint8_t rval;
+
+  for (i = 0; i < n_rates; i++) {
+    rval = (rates[i] & IEEE80211_RATE_VAL);
+    if (rval == iwm_rates[ridx].rate) return rates[i];
+  }
+  return 0;
+}
+
+void iwm_ack_rates(IWLMvmDriver* drv, int* cck_rates, int* ofdm_rates) {
+  int lowest_present_ofdm = -1;
+  int lowest_present_cck = -1;
+  uint8_t cck = 0;
+  uint8_t ofdm = 0;
+  int i;
+
+  IWLNode* bss = drv->m_pDevice->ie_dev->getBSS();
+
+  if (!bss) {
+    IWL_ERR(0, "Failed to get BSS\n");
+    return;
+  }
+
+  IWLCachedScan* beacon = bss->getBeacon();
+
+  if (!beacon) {
+    IWL_ERR(0, "Failed to get beacon\n");
+    return;
+  }
+
+  if (beacon->getChannel().flags & APPLE80211_C_FLAG_2GHZ) {
+    for (int i = IWL_FIRST_CCK_RATE; i < IWL_FIRST_OFDM_RATE; i++) {
+      if ((ridx2rate(beacon->getBasicRates(), beacon->getNumBasicRates(), i) &
+           IEEE80211_RATE_BASIC) == 0)
+        continue;
+      cck |= (1 << i);
+      if (lowest_present_cck == -1 || lowest_present_cck > i)
+        lowest_present_cck = i;
+    }
+  }
+  for (int i = IWL_FIRST_OFDM_RATE; i <= IWL_LAST_NON_HT_RATE; i++) {
+    if ((ridx2rate(beacon->getBasicRates(), beacon->getNumBasicRates(), i) &
+         IEEE80211_RATE_BASIC) == 0)
+      continue;
+    ofdm |= (1 << (i - IWL_FIRST_OFDM_RATE));
+    if (lowest_present_ofdm == -1 || lowest_present_ofdm > i)
+      lowest_present_ofdm = i;
+  }
+
+  IWL_INFO(0, "CCK: %d, OFDM: %d\n", lowest_present_cck, lowest_present_ofdm);
+
+  /*
+   * Now we've got the basic rates as bitmaps in the ofdm and cck
+   * variables. This isn't sufficient though, as there might not
+   * be all the right rates in the bitmap. E.g. if the only basic
+   * rates are 5.5 Mbps and 11 Mbps, we still need to add 1 Mbps
+   * and 6 Mbps because the 802.11-2007 standard says in 9.6:
+   *
+   *    [...] a STA responding to a received frame shall transmit
+   *    its Control Response frame [...] at the highest rate in the
+   *    BSSBasicRateSet parameter that is less than or equal to the
+   *    rate of the immediately previous frame in the frame exchange
+   *    sequence ([...]) and that is of the same modulation class
+   *    ([...]) as the received frame. If no rate contained in the
+   *    BSSBasicRateSet parameter meets these conditions, then the
+   *    control frame sent in response to a received frame shall be
+   *    transmitted at the highest mandatory rate of the PHY that is
+   *    less than or equal to the rate of the received frame, and
+   *    that is of the same modulation class as the received frame.
+   *
+   * As a consequence, we need to add all mandatory rates that are
+   * lower than all of the basic rates to these bitmaps.
+   */
+
+  if (IWL_RATE_24M_INDEX < lowest_present_ofdm)
+    ofdm |= IWL_RATE_BIT_MSK(24) >> IWL_FIRST_OFDM_RATE;
+  if (IWL_RATE_12M_INDEX < lowest_present_ofdm)
+    ofdm |= IWL_RATE_BIT_MSK(12) >> IWL_FIRST_OFDM_RATE;
+  /* 6M already there or needed so always add */
+  ofdm |= IWL_RATE_BIT_MSK(6) >> IWL_FIRST_OFDM_RATE;
+
+  /*
+   * CCK is a bit more complex with DSSS vs. HR/DSSS vs. ERP.
+   * Note, however:
+   *  - if no CCK rates are basic, it must be ERP since there must
+   *    be some basic rates at all, so they're OFDM => ERP PHY
+   *    (or we're in 5 GHz, and the cck bitmap will never be used)
+   *  - if 11M is a basic rate, it must be ERP as well, so add 5.5M
+   *  - if 5.5M is basic, 1M and 2M are mandatory
+   *  - if 2M is basic, 1M is mandatory
+   *  - if 1M is basic, that's the only valid ACK rate.
+   * As a consequence, it's not as complicated as it sounds, just add
+   * any lower rates to the ACK rate bitmap.
+   */
+  if (IWL_RATE_11M_INDEX < lowest_present_cck)
+    cck |= IWL_RATE_BIT_MSK(11) >> IWL_FIRST_CCK_RATE;
+  if (IWL_RATE_5M_INDEX < lowest_present_cck)
+    cck |= IWL_RATE_BIT_MSK(5) >> IWL_FIRST_CCK_RATE;
+  if (IWL_RATE_2M_INDEX < lowest_present_cck)
+    cck |= IWL_RATE_BIT_MSK(2) >> IWL_FIRST_CCK_RATE;
+  /* 1M already there or needed so always add */
+  cck |= IWL_RATE_BIT_MSK(1) >> IWL_FIRST_CCK_RATE;
+
+  *cck_rates = cck;
+  *ofdm_rates = ofdm;
+
+  IWL_INFO(0, "available rates: %x and %x\n", cck, ofdm);
+}
+
+void iwl_mac_ctxt_cmd_common(IWLMvmDriver* drv, iwl_mac_ctx_cmd* cmd,
+                             uint32_t action, int assoc) {
+  IWLNode* node = drv->m_pDevice->ie_dev->getBSS();
+  if (!node) {
+    IWL_ERR(0, "No BSS\n");
+    return;
+  }
+
+  IWLCachedScan* scan = node->getBeacon();
+
+  if (!scan) {
+    IWL_ERR(0, "Failed to get beacon\n");
+    return;
+  }
+
+  iwl_phy_ctx* in = node->getPhyCtx();
+  if (!in) {
+    IWL_ERR(0, "Failed to get phy context\n");
+    return;
+  }
+
+  int cck_ack_rates, ofdm_ack_rates;
+  int i;
+
+  cmd->id_and_color =
+      htole32(FW_CMD_ID_AND_COLOR(node->getID(), node->getColor()));
+  cmd->action = htole32(action);
+
+  cmd->mac_type = htole32(FW_MAC_TYPE_BSS_STA);
+  cmd->tsf_id = htole32(TSF_ID_A);
+  memcpy(&cmd->bssid_addr, scan->getBSSID(), ETH_ALEN);
+  memcpy(&cmd->node_addr, drv->m_pDevice->ie_dev->getMAC(), ETH_ALEN);
+  iwm_ack_rates(drv, &cck_ack_rates, &ofdm_ack_rates);
+  cmd->cck_rates = htole32(cck_ack_rates);
+  cmd->ofdm_rates = htole32(ofdm_ack_rates);
+
+  cmd->cck_short_preamble = 0;
+  cmd->short_slot = 0x10;
+/*
+if (ic->ic_flags & IEEE80211_F_USEPROT)
+  cmd->protection_flags |= htole32(IWM_MAC_PROT_FLG_TGG_PROTECT);
+ */
+#define IWM_EXP2(x) ((1 << (x)) - 1) /* CWmin = 2^ECWmin - 1 */
+  // cmd->protection_flags |= htole32(MAC_PROT_FLG_TGG_PROTECT);
+
+  for (i = 0; i < 4; i++) {
+    int txf = iwl_mvm_ac_to_tx_fifo[i];
+
+    cmd->ac[txf].cw_min = htole16(IWM_EXP2(4));
+    cmd->ac[txf].cw_max = htole16(IWM_EXP2(10));
+    cmd->ac[txf].aifsn = 2;
+    cmd->ac[txf].fifos_mask = (1 << txf);
+    cmd->ac[txf].edca_txop = htole16(0 * 32);
+  }
+
+#undef IWM_EXP2
+
+  cmd->filter_flags = htole32(MAC_FILTER_ACCEPT_GRP);
+}
+
+int iwl_mac_ctxt_cmd(IWLMvmDriver* drv, uint32_t action, int assoc) {
+  struct iwl_mac_ctx_cmd cmd;
+
+  memset(&cmd, 0, sizeof(cmd));
+
+  iwl_mac_ctxt_cmd_common(drv, &cmd, action, assoc);
+  if (!assoc) {
+    cmd.filter_flags |= htole32(MAC_FILTER_IN_BEACON);
+  } else {
+    // foo
+  }
+
+  return drv->sendCmdPdu(MAC_CONTEXT_CMD, 0, sizeof(cmd), &cmd);
+}
+
+int iwl_binding_cmd(IWLMvmDriver* drv, uint32_t action) {
+  IWLNode* node = drv->m_pDevice->ie_dev->getBSS();
+  if (!node) return 1;
+
+  IWLCachedScan* scan = node->getBeacon();
+
+  if (!scan) return 1;
+
+  iwl_phy_ctx* in = node->getPhyCtx();
+  if (!in) return 1;
+
+  iwl_binding_cmd_v1 cmd;
+  memset(&cmd, 0, sizeof(cmd));
+
+  cmd.id_and_color = htole32(FW_CMD_ID_AND_COLOR(in->id, in->color));
+  cmd.action = htole32(action);
+  cmd.phy = htole32(FW_CMD_ID_AND_COLOR(in->id, in->color));
+
+  cmd.macs[0] = htole32(FW_CMD_ID_AND_COLOR(node->getID(), node->getColor()));
+  for (int i = 1; i < MAX_MACS_IN_BINDING; i++)
+    cmd.macs[i] = htole32(FW_CTXT_INVALID);
+
+  u32 status = 0;
+  int err =
+      drv->sendCmdPduStatus(BINDING_CONTEXT_CMD, sizeof(cmd), &cmd, &status);
+
+  if (err == 0 && status != 0) return EIO;
+
+  return err;
+}
+
+void iwl_protect_session(IWLMvmDriver* drv, uint32_t duration,
+                         uint32_t max_delay) {
+  IWLNode* node = drv->m_pDevice->ie_dev->getBSS();
+  if (!node) return;
+
+  IWLCachedScan* scan = node->getBeacon();
+
+  if (!scan) return;
+
+  iwl_phy_ctx* in = node->getPhyCtx();
+  if (!in) return;
+  struct iwl_time_event_cmd time_cmd;
+
+  memset(&time_cmd, 0, sizeof(time_cmd));
+
+  time_cmd.action = htole32(FW_CTXT_ACTION_ADD);
+  time_cmd.id_and_color =
+      htole32(FW_CMD_ID_AND_COLOR(node->getID(), node->getColor()));
+  time_cmd.id = htole32(TE_BSS_STA_AGGRESSIVE_ASSOC);
+
+  time_cmd.apply_time = htole32(0);
+
+  time_cmd.max_frags = TE_V2_FRAG_NONE;
+  time_cmd.max_delay = htole32(max_delay);
+  /* TODO: why do we need to interval = bi if it is not periodic? */
+  time_cmd.interval = htole32(1);
+  time_cmd.duration = htole32(duration);
+  time_cmd.repeat = 1;
+  time_cmd.policy =
+      htole16(TE_V2_NOTIF_HOST_EVENT_START | TE_V2_NOTIF_HOST_EVENT_END |
+              TE_V2_START_IMMEDIATELY);
+
+  drv->sendCmdPdu(TIME_EVENT_CMD, 0, sizeof(time_cmd), &time_cmd);
 }

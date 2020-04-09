@@ -124,6 +124,7 @@ void
 ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
     struct ieee80211_rxinfo *rxi, struct mbuf_list *ml)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 	struct ieee80211_frame *wh;
 	u_int16_t *orxseq, nrxseq, qos;
@@ -286,9 +287,11 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
 			/* dequeue buffered unicast frames */
 			while ((m = mq_dequeue(&ni->ni_savedq)) != NULL) {
 //				mq_enqueue(&ic->ic_pwrsaveq, m);
-                ifp->output_queue->enqueue(m, NULL);
+//                ifp->output_queue->enqueue(m, &TX_TYPE_FRAME);
 //				if_start(ifp);
-                ifp->output_queue->service();
+//                ifp->output_queue->start();
+                mq_enqueue(&ic->ic_pwrsaveq, m);
+                ifp->if_start(ifp);
 			}
 		}
 	}
@@ -426,7 +429,7 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
 		if (ic->ic_rawbpf)
 			bpf_mtap(ic->ic_rawbpf, m, BPF_DIRECTION_IN);
 #endif
-
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		if ((ni->ni_flags & IEEE80211_NODE_HT) &&
 		    hasqos && (qos & IEEE80211_QOS_AMSDU))
 			ieee80211_amsdu_decap(ic, m, ni, hdrlen, ml);
@@ -839,6 +842,7 @@ void
 ieee80211_enqueue_data(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, int mcast, struct mbuf_list *ml)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ifnet *ifp = &ic->ic_if;
 	struct ether_header *eh;
 	mbuf_t m1;
@@ -867,15 +871,18 @@ ieee80211_enqueue_data(struct ieee80211com *ic, mbuf_t m,
 		struct ieee80211_node *ni1;
 
 		if (ETHER_IS_MULTICAST(eh->ether_dhost)) {
-            mbuf_dup(m, MBUF_DONTWAIT, &m1);
-            if (m1) {
-                mbuf_adj(m1, ETHER_ALIGN);
-            }
+            IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
+//            mbuf_dup(m, MBUF_DONTWAIT, &m1);
+//            if (m1) {
+//                mbuf_adj(m1, ETHER_ALIGN);
+//            }
+            m1 = m_dup_pkt(m, ETHER_ALIGN, MBUF_DONTWAIT);
 			if (m1 == NULL)
 				ifp->if_oerrors++;
 			else
                 mbuf_setflags(m1, mbuf_flags(m1) | MBUF_MCAST);
 		} else if (!mcast) {
+            IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 			ni1 = ieee80211_find_node(ic, eh->ether_dhost);
 			if (ni1 != NULL &&
 			    ni1->ni_state == IEEE80211_STA_ASSOC) {
@@ -883,6 +890,7 @@ ieee80211_enqueue_data(struct ieee80211com *ic, mbuf_t m,
 				m = NULL;
 			}
 		}
+        IWL_INFO(0, "%s %d 啊啊啊啊\n", __FUNCTION__, __LINE__);
 		if (m1 != NULL) {
 			if (if_enqueue(ifp, m1))
 				 ifp->if_oerrors++;
@@ -903,6 +911,7 @@ ieee80211_enqueue_data(struct ieee80211com *ic, mbuf_t m,
 #endif
 			ieee80211_eapol_key_input(ic, m, ni);
 		} else {
+            IWL_INFO(0, "%s %d 啊啊啊啊 ml_enqueue\n", __FUNCTION__, __LINE__);
 			ml_enqueue(ml, m);
 		}
 	}
@@ -912,6 +921,7 @@ void
 ieee80211_decap(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, int hdrlen, struct mbuf_list *ml)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ether_header eh;
 	struct ieee80211_frame *wh;
 	struct llc *llc;
@@ -919,6 +929,7 @@ ieee80211_decap(struct ieee80211com *ic, mbuf_t m,
 
 	if (mbuf_len(m) < hdrlen + LLC_SNAPFRAMELEN &&
         mbuf_pullup(&m, hdrlen + LLC_SNAPFRAMELEN)) {
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		ic->ic_stats.is_rx_decap++;
 		return;
 	}
@@ -950,26 +961,33 @@ ieee80211_decap(struct ieee80211com *ic, mbuf_t m,
 	    llc->llc_snap.org_code[0] == 0 &&
 	    llc->llc_snap.org_code[1] == 0 &&
 	    llc->llc_snap.org_code[2] == 0) {
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		eh.ether_type = llc->llc_snap.ether_type;
 		mbuf_adj(m, hdrlen + LLC_SNAPFRAMELEN - ETHER_HDR_LEN);
 	} else {
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		eh.ether_type = htons(mbuf_pkthdr_len(m) - hdrlen);
 		mbuf_adj(m, hdrlen - ETHER_HDR_LEN);
 	}
 	memcpy(mtod(m, caddr_t), &eh, ETHER_HDR_LEN);
+    IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 	if (!ALIGNED_POINTER((mtod(m, caddr_t) + ETHER_HDR_LEN), u_int32_t)) {
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		mbuf_t m0 = m;
-        mbuf_dup(m0, M_NOWAIT, &m);
-        if (m) {
-            mbuf_adj(m, ETHER_ALIGN);
-        }
-//		m = m_dup_pkt(m0, ETHER_ALIGN, M_NOWAIT); //TODO 可能会有问题
+//        mbuf_dup(m0, M_NOWAIT, &m);
+//        if (m) {
+//            IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
+//            mbuf_adj(m, ETHER_ALIGN);
+//        }
+		m = m_dup_pkt(m0, ETHER_ALIGN, M_NOWAIT);
+        IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 		mbuf_freem(m0);
 		if (m == NULL) {
 			ic->ic_stats.is_rx_decap++;
 			return;
 		}
 	}
+    IWL_INFO(0, "%s begin ieee80211_enqueue_data\n", __FUNCTION__);
 	ieee80211_enqueue_data(ic, m, ni, mcast, ml);
 }
 
@@ -980,6 +998,7 @@ void
 ieee80211_amsdu_decap(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, int hdrlen, struct mbuf_list *ml)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	mbuf_t n;
 	struct ether_header *eh;
 	struct llc *llc;
@@ -1347,6 +1366,7 @@ void
 ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *rni, struct ieee80211_rxinfo *rxi, int isprobe)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_node *ni;
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm, *efrm;
@@ -1375,7 +1395,7 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
 	    ic->ic_opmode != IEEE80211_M_HOSTAP &&
 #endif
 	    ic->ic_state != IEEE80211_S_SCAN) {
-		panic("%s: impossible operating mode", __func__);
+		panic("%s: impossible operating mode", __FUNCTION__);
 	}
 #endif
 	/* make sure all mandatory fixed fields are present */
@@ -1531,14 +1551,14 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
 	if (ieee80211_debug > 1 &&
 	    (ni == NULL || ic->ic_state == IEEE80211_S_SCAN ||
 	    (ic->ic_flags & IEEE80211_F_BGSCAN))) {
-		printf("%s: %s%s on chan %u (bss chan %u) ",
-		    __func__, (ni == NULL ? "new " : ""),
+		IWL_INFO(0, "%s: %s%s on chan %u (bss chan %u) ",
+		    __FUNCTION__, (ni == NULL ? "new " : ""),
 		    isprobe ? "probe response" : "beacon",
 		    chan, bchan);
 		ieee80211_print_essid(ssid + 2, ssid[1]);
-		printf(" from %s\n", ether_sprintf((u_int8_t *)wh->i_addr2));
-		printf("%s: caps 0x%x bintval %u erp 0x%x\n",
-			__func__, capinfo, bintval, erp);
+		IWL_INFO(0, " from %s\n", ether_sprintf((u_int8_t *)wh->i_addr2));
+		IWL_INFO(0, "%s: caps 0x%x bintval %u erp 0x%x\n",
+			__FUNCTION__, capinfo, bintval, erp);
 	}
 #endif
 
@@ -1703,6 +1723,7 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
 		memset(ni->ni_essid, 0, sizeof(ni->ni_essid));
 		/* we know that ssid[1] <= IEEE80211_NWID_LEN */
 		memcpy(ni->ni_essid, &ssid[2], ssid[1]);
+        IWL_INFO(0, "%s ssid=%s\n", __FUNCTION__, ni->ni_essid);
 	}
 	IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
 	/* XXX validate channel # */
@@ -1849,6 +1870,7 @@ void
 ieee80211_recv_auth(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, struct ieee80211_rxinfo *rxi)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	u_int16_t algo, seq, status;
@@ -1902,6 +1924,7 @@ void
 ieee80211_recv_assoc_req(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, struct ieee80211_rxinfo *rxi, int reassoc)
 {
+    IWL_INFO(0, "%s reassoc=%d\n", __FUNCTION__, reassoc);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm, *efrm;
 	const u_int8_t *ssid, *rates, *xrates, *rsnie, *wpaie, *wmeie, *htcaps;
@@ -2237,6 +2260,7 @@ void
 ieee80211_recv_assoc_resp(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, int reassoc)
 {
+    IWL_INFO(0, "%s reassoc=%d\n", __FUNCTION__, reassoc);
 	struct ifnet *ifp = &ic->ic_if;
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm, *efrm;
@@ -2263,7 +2287,7 @@ ieee80211_recv_assoc_resp(struct ieee80211com *ic, mbuf_t m,
 	status =  LE_READ_2(frm); frm += 2;
 	if (status != IEEE80211_STATUS_SUCCESS) {
 		if (ifp->if_flags & IFF_DEBUG)
-			printf("%s: %sassociation failed (status %d)"
+			IWL_INFO(0, "%s: %sassociation failed (status %d)"
 			    " for %s\n", ifp->if_xname,
 			    reassoc ?  "re" : "",
 			    status, ether_sprintf((u_int8_t *)wh->i_addr3));
@@ -2398,6 +2422,7 @@ void
 ieee80211_recv_deauth(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	u_int16_t reason;
@@ -2432,7 +2457,7 @@ ieee80211_recv_deauth(struct ieee80211com *ic, mbuf_t m,
 			    (ni->ni_state == IEEE80211_STA_AUTH ||
 			    ni->ni_state == IEEE80211_STA_ASSOC));
 			if (ic->ic_if.if_flags & IFF_DEBUG)
-				printf("%s: station %s deauthenticated "
+				IWL_INFO(0, "%s: station %s deauthenticated "
 				    "by peer (reason %d)\n",
 				    ic->ic_if.if_xname,
 				    ether_sprintf(ni->ni_macaddr),
@@ -2455,6 +2480,7 @@ void
 ieee80211_recv_disassoc(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	u_int16_t reason;
@@ -2483,7 +2509,7 @@ ieee80211_recv_disassoc(struct ieee80211com *ic, mbuf_t m,
 	case IEEE80211_M_HOSTAP:
 		if (ni != ic->ic_bss) {
 			if (ic->ic_if.if_flags & IFF_DEBUG)
-				printf("%s: station %s disassociated "
+				IWL_INFO(0, "%s: station %s disassociated "
 				    "by peer (reason %d)\n",
 				    ic->ic_if.if_xname,
 				    ether_sprintf(ni->ni_macaddr),
@@ -2510,6 +2536,7 @@ void
 ieee80211_recv_addba_req(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	struct ieee80211_rx_ba *ba;
@@ -2676,6 +2703,7 @@ void
 ieee80211_recv_addba_resp(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	struct ieee80211_tx_ba *ba;
@@ -2788,6 +2816,7 @@ void
 ieee80211_recv_delba(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 	u_int16_t params, reason;
@@ -2862,6 +2891,7 @@ void
 ieee80211_recv_sa_query_req(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 
@@ -2899,6 +2929,7 @@ void
 ieee80211_recv_sa_query_resp(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 
@@ -2935,6 +2966,7 @@ void
 ieee80211_recv_action(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	const struct ieee80211_frame *wh;
 	const u_int8_t *frm;
 
@@ -2981,6 +3013,7 @@ void
 ieee80211_recv_mgmt(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni, struct ieee80211_rxinfo *rxi, int subtype)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	switch (subtype) {
 	case IEEE80211_FC0_SUBTYPE_BEACON:
 		ieee80211_recv_probe_resp(ic, m, ni, rxi, 0);
@@ -3035,6 +3068,7 @@ void
 ieee80211_recv_pspoll(struct ieee80211com *ic, mbuf_t m,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ifnet *ifp = &ic->ic_if;
 	struct ieee80211_frame_pspoll *psp;
 	struct ieee80211_frame *wh;
@@ -3076,10 +3110,12 @@ ieee80211_recv_pspoll(struct ieee80211com *ic, mbuf_t m,
 		wh = mtod(m, struct ieee80211_frame *);
 		wh->i_fc[1] |= IEEE80211_FC1_MORE_DATA;
 	}
-    ifp->output_queue->enqueue(m, NULL);
+//    ifp->output_queue->enqueue(m, &TX_TYPE_FRAME);
+    mq_enqueue(&ic->ic_pwrsaveq, m);
+    ifp->if_start(ifp);
 //	mq_enqueue(&ic->ic_pwrsaveq, m);
 //	if_start(ifp);
-    ifp->output_queue->service();
+//    ifp->output_queue->start();
 }
 #endif	/* IEEE80211_STA_ONLY */
 

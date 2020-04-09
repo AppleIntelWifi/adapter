@@ -144,7 +144,10 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
     return false;
   }
 
-  this->rates = reinterpret_cast<uint8_t*>(kzalloc(15));
+  this->n_basic_rates = 0;
+  this->n_ext_rates = 0;
+  this->n_rates = 0;
+  this->n_hw_rates = 0;
 
   uint8_t* rate_ptr = search_ie(this->ie, this->ie_len, 0x01);
   uint8_t* ext_rates = search_ie(this->ie, this->ie_len, 0x32);
@@ -157,9 +160,15 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
   if (rate_size != 8) {
     IWL_ERR(0, "rate set is NOT correct\n");
   } else {
-    this->n_rates += 8;
     for (int i = 0; i < 8; i++) {
-      this->rates[i] = (*(rate_ptr + 2 + i) >> 1) & 0x3F;
+      uint8_t rate = (*(rate_ptr + 2 + i));
+      if (rate > 0x80) {
+        this->basic_rates[this->n_basic_rates++] = rate;
+      } else {
+        this->rates[this->n_rates++] = rate;
+      }
+
+      this->hw_rates[this->n_hw_rates++] = ((rate & 0x3F) / 2) * 10;
     }
 
     if (ext_rates != NULL) {
@@ -169,7 +178,7 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
       this->n_rates += n_ext_rates;
 
       for (int i = 0; i < 4; i++) {
-        this->rates[i + 8] = (*(ext_rates + 2 + i) >> 1) & 0x3F;
+        this->ext_rates[i] = (*(ext_rates + 2 + i));
       }
     }
   }
@@ -225,7 +234,7 @@ void IWLCachedScan::free() {
   super::free();
 
   if (buf) {
-    mbuf_freem(buf);
+    mbuf_free(buf);
   }
   packet = NULL;
 }
@@ -295,10 +304,34 @@ uint8_t* IWLCachedScan::getBSSID() {
 
 uint8_t IWLCachedScan::getNumRates() { return this->n_rates; }
 
+uint8_t IWLCachedScan::getNumExtRates() { return this->n_ext_rates; }
+
+uint8_t IWLCachedScan::getNumBasicRates() { return this->n_basic_rates; }
+
+uint8_t IWLCachedScan::getNumHWRates() { return this->n_hw_rates; }
+
 uint8_t* IWLCachedScan::getRates() {
   check_packet()
 
       return this->rates;
+}
+
+uint8_t* IWLCachedScan::getExtRates() {
+  check_packet()
+
+      return this->ext_rates;
+}
+
+uint8_t* IWLCachedScan::getBasicRates() {
+  check_packet()
+
+      return this->basic_rates;
+}
+
+uint8_t* IWLCachedScan::getHWRates() {
+  check_packet()
+
+      return this->hw_rates;
 }
 
 void* IWLCachedScan::getIE() {
@@ -344,8 +377,18 @@ IWLCachedScan::getNativeType() {  // be sure to free this too
   uint8_t* rates = this->getRates();
 
   if (rates != NULL) {
-    for (int i = 0; i < this->getNumRates(); i++) {
-      result->asr_rates[i] = rates[i];
+    for (int i = 0; i < 4; i++) {
+      result->asr_rates[i] = (this->rates[i] >> 1) & 0x3F;
+    }
+
+    for (int i = 0; i < 4; i++) {
+      result->asr_rates[i + 4] = (this->basic_rates[i] >> 1) & 0x3F;
+    }
+
+    if (this->n_rates != 8 && this->n_rates == 12) {
+      for (int i = 0; i < 4; i++) {
+        result->asr_rates[i + 8] = (this->ext_rates[i] >> 1) & 0x3F;
+      }
     }
     result->asr_nrates = this->getNumRates();
   }

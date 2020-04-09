@@ -62,6 +62,7 @@ int
 ieee80211_send_eapol_key(struct ieee80211com *ic, mbuf_t m,
                          struct ieee80211_node *ni, const struct ieee80211_ptk *ptk)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ifnet *ifp = &ic->ic_if;
     struct ether_header *eh;
     struct ieee80211_eapol_key *key;
@@ -125,12 +126,17 @@ ieee80211_send_eapol_key(struct ieee80211com *ic, mbuf_t m,
         timeout_add_msec(&ni->ni_eapol_to, 100);
 #endif
     
-    ifp->output_queue->enqueue(m, NULL);
+//    ifp->output_queue->enqueue(m, &TX_TYPE_MGMT);
+    IWL_INFO(0, "%s 啊啊啊啊 enqueue!!\n", __FUNCTION__);
+    if (!ifp->if_snd->enqueue(m)) {
+        IWL_INFO(0, "%s 啊啊啊啊 enqueue fail!!\n", __FUNCTION__);
+        return -1;
+    }
 //    IFQ_ENQUEUE(&ifp->if_snd, m, error);
 //    if (error)
 //        return (error);
-//    if_start(ifp);
-    ifp->output_queue->service();
+    ifp->if_start(ifp);
+//    ifp->output_queue->start();
     return 0;
 }
 
@@ -145,8 +151,8 @@ ieee80211_eapol_timeout(void *arg)
     struct ieee80211com *ic = ni->ni_ic;
     int s;
     
-    DPRINTF(("no answer from station %s in state %d\n",
-             ether_sprintf(ni->ni_macaddr), ni->ni_rsn_state));
+    IWL_INFO(0, "no answer from station %s in state %d\n",
+             ether_sprintf(ni->ni_macaddr), ni->ni_rsn_state);
     
     s = splnet();
     
@@ -231,6 +237,7 @@ ieee80211_add_igtk_kde(u_int8_t *frm, const struct ieee80211_key *k)
 mbuf_t
 ieee80211_get_eapol_key(int flags, int type, u_int pktlen)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     mbuf_t m;
     
     /* reserve space for 802.11 encapsulation and EAPOL-Key header */
@@ -261,6 +268,7 @@ ieee80211_get_eapol_key(int flags, int type, u_int pktlen)
 int
 ieee80211_send_4way_msg1(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     mbuf_t m;
     u_int16_t info, keylen;
@@ -275,8 +283,10 @@ ieee80211_send_4way_msg1(struct ieee80211com *ic, struct ieee80211_node *ni)
     }
     m = ieee80211_get_eapol_key(MBUF_DONTWAIT, MT_DATA,
                                 (ni->ni_rsnprotos == IEEE80211_PROTO_RSN) ? 2 + 20 : 0);
-    if (m == NULL)
+    if (m == NULL) {
+        IWL_INFO(0, "%s\n ieee80211_get_eapol_key==NULL", __FUNCTION__);
         return ENOMEM;
+    }
     key = mtod(m, struct ieee80211_eapol_key *);
     memset(key, 0, sizeof(*key));
     
@@ -300,7 +310,7 @@ ieee80211_send_4way_msg1(struct ieee80211com *ic, struct ieee80211_node *ni)
     mbuf_setlen(m, l);
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s\n",
                ic->ic_if.if_xname, 1, 4, "4-way",
                ether_sprintf(ni->ni_macaddr));
     
@@ -318,6 +328,7 @@ int
 ieee80211_send_4way_msg2(struct ieee80211com *ic, struct ieee80211_node *ni,
                          const u_int8_t *replaycnt, const struct ieee80211_ptk *tptk)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     mbuf_t m;
     u_int16_t info;
@@ -357,9 +368,9 @@ ieee80211_send_4way_msg2(struct ieee80211com *ic, struct ieee80211_node *ni,
     mbuf_setlen(m, l);
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s, type=%s\n",
                ic->ic_if.if_xname, 2, 4, "4-way",
-               ether_sprintf(ni->ni_macaddr));
+              ether_sprintf(ni->ni_macaddr), ni->ni_rsnprotos == IEEE80211_PROTO_WPA ? "WPA" : "RSN");
     
     return ieee80211_send_eapol_key(ic, m, ni, tptk);
 }
@@ -371,6 +382,7 @@ ieee80211_send_4way_msg2(struct ieee80211com *ic, struct ieee80211_node *ni,
 int
 ieee80211_send_4way_msg3(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     struct ieee80211_key *k = NULL;
     mbuf_t m;
@@ -437,7 +449,7 @@ ieee80211_send_4way_msg3(struct ieee80211com *ic, struct ieee80211_node *ni)
     mbuf_setlen(m, l);
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s\n",
                ic->ic_if.if_xname, 3, 4, "4-way",
                ether_sprintf(ni->ni_macaddr));
     
@@ -451,6 +463,7 @@ ieee80211_send_4way_msg3(struct ieee80211com *ic, struct ieee80211_node *ni)
 int
 ieee80211_send_4way_msg4(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     mbuf_t m;
     u_int16_t info;
@@ -483,7 +496,7 @@ ieee80211_send_4way_msg4(struct ieee80211com *ic, struct ieee80211_node *ni)
     mbuf_setlen(m, sizeof(*key));
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s\n",
                ic->ic_if.if_xname, 4, 4, "4-way",
                ether_sprintf(ni->ni_macaddr));
     
@@ -497,6 +510,7 @@ ieee80211_send_4way_msg4(struct ieee80211com *ic, struct ieee80211_node *ni)
 int
 ieee80211_send_group_msg1(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s Send Group Key Handshake Message 1 to the supplicant.\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     const struct ieee80211_key *k;
     mbuf_t m;
@@ -564,7 +578,7 @@ ieee80211_send_group_msg1(struct ieee80211com *ic, struct ieee80211_node *ni)
     mbuf_setlen(m, l);
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s\n",
                ic->ic_if.if_xname, 1, 2, "group key",
                ether_sprintf(ni->ni_macaddr));
     
@@ -579,6 +593,7 @@ int
 ieee80211_send_group_msg2(struct ieee80211com *ic, struct ieee80211_node *ni,
                           const struct ieee80211_key *k)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     u_int16_t info;
     mbuf_t m;
@@ -608,7 +623,7 @@ ieee80211_send_group_msg2(struct ieee80211com *ic, struct ieee80211_node *ni,
     mbuf_setlen(m, sizeof(*key));
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending msg %d/%d of the %s handshake to %s\n",
+        IWL_INFO(0, "%s: sending msg %d/%d of the %s handshake to %s\n",
                ic->ic_if.if_xname, 2, 2, "group key",
                ether_sprintf(ni->ni_macaddr));
     
@@ -624,6 +639,7 @@ int
 ieee80211_send_eapol_key_req(struct ieee80211com *ic,
                              struct ieee80211_node *ni, u_int16_t info, u_int64_t tsc)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211_eapol_key *key;
     mbuf_t m;
     
@@ -649,7 +665,7 @@ ieee80211_send_eapol_key_req(struct ieee80211com *ic,
     mbuf_setlen(m, sizeof(*key));
     
     if (ic->ic_if.if_flags & IFF_DEBUG)
-        printf("%s: sending EAPOL-Key request to %s\n",
+        IWL_INFO(0, "%s: sending EAPOL-Key request to %s\n",
                ic->ic_if.if_xname, ether_sprintf(ni->ni_macaddr));
     
     return ieee80211_send_eapol_key(ic, m, ni, &ni->ni_ptk);

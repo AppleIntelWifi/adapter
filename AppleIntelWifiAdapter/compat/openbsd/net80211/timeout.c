@@ -10,18 +10,10 @@
 #define timeout_cpp
 
 #include <sys/timeout.h>
+#include <IOKit/IOCommandGate.h>
 
-static IOWorkLoop *_fWorkloop = NULL;
-
-void initTimeout(IOWorkLoop *workloop)
-{
-    _fWorkloop = workloop;
-}
-
-void releaseTimeout()
-{
-    _fWorkloop = NULL;
-}
+extern IOWorkLoop *_fWorkloop;
+extern IOCommandGate *_fCommandGate;
 
 int splnet()
 {
@@ -50,17 +42,7 @@ int timeout_add_msec(CTimeout **to, int msecs)
     if (*to == NULL) {
         *to = new CTimeout();
     }
-    if (((CTimeout*)*to)->tm) {
-        _fWorkloop->removeEventSource(((CTimeout*)*to)->tm);
-        OSSafeReleaseNULL(((CTimeout*)*to)->tm);
-    }
-    ((CTimeout*)*to)->tm = IOTimerEventSource::timerEventSource(((CTimeout*)*to), OSMemberFunctionCast(IOTimerEventSource::Action, ((CTimeout*)*to), &CTimeout::timeoutOccurred));
-    if (((CTimeout*)*to)->tm == 0)
-        return 0;
-    _fWorkloop->addEventSource(((CTimeout*)*to)->tm);
-    ((CTimeout*)*to)->tm->enable();
-    ((CTimeout*)*to)->tm->setTimeoutMS(msecs);
-    return 1;
+    return _fCommandGate->runAction(&CTimeout::timeout_add_msec, *to, _fWorkloop, &msecs) == kIOReturnSuccess ? 1 : 0;
 }
 
 int timeout_add_sec(CTimeout **to, int secs)
@@ -76,19 +58,11 @@ int timeout_add_usec(CTimeout **to, int usecs)
 int timeout_del(CTimeout **to)
 {
     IOLog("timeout_del\n");
-    if (!((CTimeout*)*to)) {
+    if (((CTimeout*)*to) == NULL) {
         IOLog("timeout_del timeout NULL\n");
         return 0;
     }
-    if (((CTimeout*)*to)->tm) {
-        ((CTimeout*)*to)->tm->cancelTimeout();
-        if (_fWorkloop) {
-            _fWorkloop->removeEventSource(((CTimeout*)*to)->tm);
-        }
-        OSSafeReleaseNULL(((CTimeout*)*to)->tm);
-    }
-    OSSafeReleaseNULL(*to);
-    return 1;
+    return _fCommandGate->runAction(&CTimeout::timeout_del, *to) == kIOReturnSuccess ? 1 : 0;
 }
 
 int timeout_pending(CTimeout **to)

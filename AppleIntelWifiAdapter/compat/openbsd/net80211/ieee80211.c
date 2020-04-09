@@ -58,11 +58,13 @@
 #include <net80211/ieee80211_priv.h>
 
 #ifdef IEEE80211_DEBUG
-int	ieee80211_debug = 0;
+int	ieee80211_debug = 2;
 #endif
 
+int TX_TYPE_MGMT = 1;
+int TX_TYPE_FRAME = 2;
+
 ///compat for undefined symbols
-/*
 int _stop(struct kmod_info*, void*) {
     IOLog("_stop(struct kmod_info*, void*) has been invoked\n");
     return 0;
@@ -71,7 +73,6 @@ int _start(struct kmod_info*, void*) {
     IOLog("_start(struct kmod_info*, void*) has been invoked\n");
     return 0;
 };
- */
 ///
 
 int ieee80211_cache_size = IEEE80211_CACHE_SIZE;
@@ -101,7 +102,7 @@ ieee80211_begin_bgscan(struct ifnet *ifp)
         
         ic->ic_flags |= IEEE80211_F_BGSCAN;
         if (ifp->if_flags & IFF_DEBUG)
-            printf("%s: begin background scan\n", ifp->if_xname);
+            IWL_INFO(0, "%s: begin background scan\n", ifp->if_xname);
         
         /* Driver calls ieee80211_end_scan() when done. */
     }
@@ -118,6 +119,7 @@ ieee80211_bgscan_timeout(void *arg)
 void
 ieee80211_channel_init(struct ifnet *ifp)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
     struct ieee80211com *ic = (struct ieee80211com *)ifp;
     struct ieee80211_channel *c;
     int i;
@@ -136,7 +138,7 @@ ieee80211_channel_init(struct ifnet *ifp)
              * Verify driver passed us valid data.
              */
             if (i != ieee80211_chan2ieee(ic, c)) {
-                printf("%s: bad channel ignored; "
+                IWL_INFO(0, "%s: bad channel ignored; "
                        "freq %u flags %x number %u\n",
                        ifp->if_xname, c->ic_freq, c->ic_flags,
                        i);
@@ -153,12 +155,10 @@ ieee80211_channel_init(struct ifnet *ifp)
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11B;
             if (IEEE80211_IS_CHAN_PUREG(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11G;
-            /*
             if (IEEE80211_IS_CHAN_N(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11N;
             if (IEEE80211_IS_CHAN_AC(c))
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11AC;
-             */
         }
     }
     /* validate ic->ic_curmode */
@@ -271,39 +271,23 @@ ieee80211_chan2ieee(struct ieee80211com *ic, const struct ieee80211_channel *c)
 u_int
 ieee80211_ieee2mhz(u_int chan, u_int flags)
 {
-    if (flags & IEEE80211_CHAN_2GHZ) {	/* 2GHz band */
+    if (flags & IEEE80211_CHAN_2GHZ) {    /* 2GHz band */
         if (chan == 14)
             return 2484;
         if (chan < 14)
-            return 2407 + chan * 5;
+            return 2407 + chan*5;
         else
-            return 2512 + ((chan-15) * 20);
+            return 2512 + ((chan-15)*20);
     } else if (flags & IEEE80211_CHAN_5GHZ) {/* 5GHz band */
-        if (chan >= 182 && chan <= 196)
-            return 4000 + chan * 5;
-        else
-            return 5000 + chan * 5;
-    } else if (flags & IEEE80211_CHAN_6GHZ) {
-        /* see 802.11ax D4.1 27.3.22.2 */
-        if (chan <= 253)
-            return 5940 + chan * 5;
-        else
-            goto defaultValue;
-    } else if (flags & IEEE80211_CHAN_60GHZ) {
-        if (chan < 7)
-            return 56160 + chan * 2160;
-        else
-            goto defaultValue;
-    } else {
-    defaultValue:
-        /* either, guess */
+        return 5000 + (chan*5);
+    } else {                /* either, guess */
         if (chan == 14)
             return 2484;
-        if (chan < 14)			/* 0-13 */
-            return 2407 + chan * 5;
-        if (chan < 27)			/* 15-26 */
-            return 2512 + ((chan - 15) * 20);
-        return 5000 + (chan * 5);
+        if (chan < 14)            /* 0-13 */
+            return 2407 + chan*5;
+        if (chan < 27)            /* 15-26 */
+            return 2512 + ((chan-15)*20);
+        return 5000 + (chan*5);
     }
 }
 
@@ -331,6 +315,7 @@ ieee80211_configure_ampdu_tx(struct ieee80211com *ic, int enable)
 void
 ieee80211_media_init(struct ifnet *ifp)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 #define    ADD(_ic, _s, _o) \
     ifmedia_add(&(_ic)->ic_media, \
         IFM_MAKEWORD(IFM_IEEE80211, (_s), (_o), 0), 0, NULL)
@@ -1002,7 +987,7 @@ ieee80211_setmode(struct ieee80211com *ic, enum ieee80211_phymode mode)
      * channel list before committing to the new mode.
      */
     if (mode >= nitems(chanflags))
-        panic("%s: unexpected mode %u", __func__, mode);
+        panic("%s: unexpected mode %u", __FUNCTION__, mode);
     modeflags = chanflags[mode];
     for (i = 0; i <= IEEE80211_CHAN_MAX; i++) {
         c = &ic->ic_channels[i];
@@ -1179,7 +1164,7 @@ ieee80211_mcs2media(struct ieee80211com *ic, int mcs,
         case IEEE80211_MODE_11B:
         case IEEE80211_MODE_11G:
             /* these modes use rates, not MCS */
-            panic("%s: unexpected mode %d", __func__, mode);
+            panic("%s: unexpected mode %d", __FUNCTION__, mode);
             break;
         case IEEE80211_MODE_11N:
             if (mcs >= 0 && mcs < IEEE80211_HT_NUM_MCS)
@@ -1283,7 +1268,7 @@ ieee80211_rate2media(struct ieee80211com *ic, int rate,
         case IEEE80211_MODE_11N:
         case IEEE80211_MODE_11AC:
             /* 11n/11ac uses MCS, not rates. */
-            panic("%s: unexpected mode %d", __func__, mode);
+            panic("%s: unexpected mode %d", __FUNCTION__, mode);
             break;
     }
     for (i = 0; i < nitems(rates); i++)
@@ -1356,7 +1341,7 @@ ieee80211_rate2plcp(u_int8_t rate, enum ieee80211_phymode mode)
             case 108:	return 0x0c;
         }
     } else
-        panic("%s: unexpected mode %u", __func__, mode);
+        panic("%s: unexpected mode %u", __FUNCTION__, mode);
     
     DPRINTF(("unsupported rate %u\n", rate));
     
@@ -1389,7 +1374,7 @@ ieee80211_plcp2rate(u_int8_t plcp, enum ieee80211_phymode mode)
             case 0x0c:	return 108;
         }
     } else
-        panic("%s: unexpected mode %u", __func__, mode);
+        panic("%s: unexpected mode %u", __FUNCTION__, mode);
     
     DPRINTF(("unsupported plcp %u\n", plcp));
     

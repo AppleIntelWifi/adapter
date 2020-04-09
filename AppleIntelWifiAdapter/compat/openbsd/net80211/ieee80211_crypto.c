@@ -214,7 +214,7 @@ ieee80211_encrypt(struct ieee80211com *ic, mbuf_t m0,
     struct ieee80211_key *k)
 {
 	if ((k->k_flags & IEEE80211_KEY_SWCRYPTO) == 0)
-		panic("%s: key unset for sw crypto: %d", __func__, k->k_id);
+		panic("%s: key unset for sw crypto: %d", __FUNCTION__, k->k_id);
 
 	switch (k->k_cipher) {
 	case IEEE80211_CIPHER_WEP40:
@@ -241,6 +241,7 @@ mbuf_t
 ieee80211_decrypt(struct ieee80211com *ic, mbuf_t m0,
     struct ieee80211_node *ni)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211_frame *wh;
 	struct ieee80211_key *k;
 	u_int8_t *ivp, *mmie;
@@ -292,23 +293,28 @@ ieee80211_decrypt(struct ieee80211com *ic, mbuf_t m0,
 		mbuf_free(m0);
 		return NULL;
 	}
-
+    IWL_INFO(0, "%s %d\n", __FUNCTION__, __LINE__);
 	switch (k->k_cipher) {
 	case IEEE80211_CIPHER_WEP40:
 	case IEEE80211_CIPHER_WEP104:
+        IWL_INFO(0, "%s %d ieee80211_wep_decrypt\n", __FUNCTION__, __LINE__);
 		m0 = ieee80211_wep_decrypt(ic, m0, k);
 		break;
 	case IEEE80211_CIPHER_TKIP:
+        IWL_INFO(0, "%s %d ieee80211_tkip_decrypt\n", __FUNCTION__, __LINE__);
 		m0 = ieee80211_tkip_decrypt(ic, m0, k);
 		break;
 	case IEEE80211_CIPHER_CCMP:
+        IWL_INFO(0, "%s %d ieee80211_ccmp_decrypt\n", __FUNCTION__, __LINE__);
 		m0 = ieee80211_ccmp_decrypt(ic, m0, k);
 		break;
 	case IEEE80211_CIPHER_BIP:
+        IWL_INFO(0, "%s %d ieee80211_bip_decap\n", __FUNCTION__, __LINE__);
 		m0 = ieee80211_bip_decap(ic, m0, k);
 		break;
 	default:
 		/* key not defined */
+        IWL_INFO(0, "%s %d key not defined\n", __FUNCTION__, __LINE__);
 		mbuf_freem(m0);
 		m0 = NULL;
 	}
@@ -463,6 +469,7 @@ typedef union _ANY_CTX {
 void
 ieee80211_eapol_key_mic(struct ieee80211_eapol_key *key, const u_int8_t *kck)
 {
+    IWL_INFO(0, "%s\n", __FUNCTION__);
 	u_int8_t digest[SHA1_DIGEST_LENGTH];
 	ANY_CTX ctx;	/* XXX off stack? */
 	u_int len;

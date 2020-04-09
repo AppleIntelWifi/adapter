@@ -507,6 +507,11 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
   } else {
     IWL_ERR(0, "ignoring packet since we're not in scan\n");
   }
+
+  mbuf_t inputToMac;
+  mbuf_dup(page, MBUF_WAITOK, &inputToMac);
+
+  trans->m_pDevice->controller->inputPacket(inputToMac);
 }
 
 static const struct {

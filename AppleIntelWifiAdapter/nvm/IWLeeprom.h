@@ -46,8 +46,7 @@ struct iwl_nvm_data {
 
   bool lar_enabled;
   bool vht160_supported;
-  // TODO
-  // ieee80211_supported_band bands[NUM_NL80211_BANDS];
+  // struct ieee80211_supported_band bands[NUM_NL80211_BANDS];
   struct ieee80211_channel channels[];
 };
 

@@ -58,9 +58,9 @@ static	int ieee80211_adaptrate = 4;	/* rate-adaptation max msgs/sec */
 #define RSSADAPT_DO_PRINT() \
 	((ieee80211_rssadapt_debug > 0) && \
 	 ppsratecheck(&lastrateadapt, &currssadaptps, ieee80211_adaptrate))
-#define	RSSADAPT_PRINTF(X) \
+#define	RSSADAPT_PRINTF(X...) \
 	if (RSSADAPT_DO_PRINT()) \
-		printf X
+		__iwl_info X
 
 int ieee80211_rssadapt_debug = 0;
 
@@ -122,7 +122,7 @@ ieee80211_rssadapt_choose(struct ieee80211_rssadapt *ra,
 out:
 #ifdef IEEE80211_DEBUG
 	if (ieee80211_rssadapt_debug && dvname != NULL) {
-		printf("%s: dst %s threshold[%d, %d.%d] %d < %d\n",
+		IWL_INFO(0, "%s: dst %s threshold[%d, %d.%d] %d < %d\n",
 		    dvname, ether_sprintf((u_int8_t *)wh->i_addr1), len,
 		    (rs->rs_rates[rateidx] & IEEE80211_RATE_VAL) / 2,
 		    (rs->rs_rates[rateidx] & IEEE80211_RATE_VAL) * 5 % 10,
@@ -257,17 +257,17 @@ ieee80211_rssadapt_raise_rate(struct ieee80211com *ic,
 
 #ifdef IEEE80211_DEBUG
 	if (RSSADAPT_DO_PRINT()) {
-		printf("%s: dst %s thresholds\n", ic->ic_if.if_xname,
+		IWL_INFO(0, "%s: dst %s thresholds\n", ic->ic_if.if_xname,
 		    ether_sprintf((u_int8_t *)ni->ni_macaddr));
 		for (i = 0; i < IEEE80211_RSSADAPT_BKTS; i++) {
-			printf("%d-byte", IEEE80211_RSSADAPT_BKT0 <<
+			IWL_INFO(0, "%d-byte", IEEE80211_RSSADAPT_BKT0 <<
 			    (IEEE80211_RSSADAPT_BKTPOWER * i));
 			for (j = 0; j < rs->rs_nrates; j++) {
 				rate = (rs->rs_rates[j] & IEEE80211_RATE_VAL);
-				printf(", T[%d.%d] = %d", rate / 2,
+				IWL_INFO(0, ", T[%d.%d] = %d", rate / 2,
 				    rate * 5 % 10, ra->ra_rate_thresh[i][j]);
 			}
-			printf("\n");
+			IWL_INFO(0, "\n");
 		}
 	}
 #endif /* IEEE80211_DEBUG */

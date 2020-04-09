@@ -8,6 +8,8 @@
 
 #include "IWLApple80211.hpp"
 
+#include "IO80211Interface.h"
+
 bool IWL80211Device::init(IWLMvmDriver* drv) {
   fDrv = drv;
 
@@ -69,13 +71,15 @@ void IWL80211Device::setChannel(size_t ch_idx, apple80211_channel* channel) {
   memcpy(&this->channels[ch_idx], channel, sizeof(apple80211_channel));
 }
 
-void IWL80211Device::setSSID(size_t ssid_len, const char* ssid) {
+void IWL80211Device::setSSID(size_t ssid_len, const char* _ssid) {
   if (ssid_len > 32) ssid_len = 32;
 
   this->ssid = reinterpret_cast<const char*>(kzalloc(ssid_len + 1));
   if (this->ssid == NULL) return;
 
-  memcpy((void*)this->ssid, ssid, ssid_len);  // NOLINT(readability/casting)
+  this->ssid_len = ssid_len;
+
+  memcpy((void*)this->ssid, _ssid, ssid_len);  // NOLINT(readability/casting)
 }
 
 bool IWL80211Device::initScanChannelMap(size_t map_size) {
