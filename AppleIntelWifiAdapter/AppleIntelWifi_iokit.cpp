@@ -10,10 +10,6 @@
 #include "IWLApple80211.hpp"
 #include "IWLCachedScan.hpp"
 #include "IWLMvmMac.hpp"
-#include "IWLMvmPhy.hpp"
-#include "IWLMvmSmartFifo.hpp"
-#include "IWLMvmSta.hpp"
-#include "IWLNode.hpp"
 #include "apple80211/ioctl_dbg.h"
 
 const char *fake_hw_version = "Hardware 1.0";
@@ -87,7 +83,7 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
       IOCTL_GET(request_type, CARD_CAPABILITIES, apple80211_capability_data);
       break;
     case APPLE80211_IOC_STATE:  // 13
-      IOCTL(request_type, STATE, apple80211_state_data);
+      IOCTL_GET(request_type, STATE, apple80211_state_data);
       break;
     case APPLE80211_IOC_PHY_MODE:  // 14
       IOCTL_GET(request_type, PHY_MODE, apple80211_phymode_data);
@@ -178,10 +174,8 @@ SInt32 AppleIntelWifiAdapterV2::apple80211Request(unsigned int request_type,
 
 IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
                                           struct apple80211_ssid_data *sd) {
-  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA) {
-    IWL_ERR(0, "Not authed\n");
+  if (drv->m_pDevice->ie_dev->getOPMode() != APPLE80211_M_STA)
     return APPLE80211_REASON_NOT_AUTHED;
-  }
 
   bzero(sd, sizeof(*sd));
   sd->version = APPLE80211_VERSION;
@@ -189,13 +183,12 @@ IOReturn AppleIntelWifiAdapterV2::getSSID(IO80211Interface *interface,
   const char *ssid = drv->m_pDevice->ie_dev->getSSID();
 
   if (ssid) {
-    sd->ssid_len = ssid_len + 1;
-    memcpy(&sd->ssid_bytes, ssid, ssid_len);
+    sd->ssid_len = ssid_len;
+    memcpy(&sd->ssid_bytes, drv->m_pDevice->ie_dev->getSSID(),
+           drv->m_pDevice->ie_dev->getSSIDLen());
   } else {
     sd->ssid_len = 0;
   }
-
-  IWL_INFO(0, "Got SSID: %s with len %d\n", sd->ssid_bytes, sd->ssid_len);
   // strncpy((char*)sd->ssid_bytes, fake_ssid, sizeof(sd->ssid_bytes));
   // sd->ssid_len = (uint32_t)strlen(fake_ssid);
 
@@ -383,7 +376,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ(IO80211Interface *interface,
       }
   }
   */
-  drv->m_pDevice->ie_dev->saveState();
+
   drv->m_pDevice->ie_dev->setState(APPLE80211_S_SCAN);
   IWL_INFO(0,
            "Apple80211. Scan requested. Type: %u\n"
@@ -449,7 +442,7 @@ IOReturn AppleIntelWifiAdapterV2::setSCAN_REQ_MULTIPLE(
       }
   }
   */
-  drv->m_pDevice->ie_dev->saveState();
+
   drv->m_pDevice->ie_dev->setState(APPLE80211_S_SCAN);
   IWL_INFO(0,
            "Apple80211. Scan requested. Type: %u\n"
@@ -716,9 +709,6 @@ IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(
   // cd->capabilities[5] |= 4;
   cd->capabilities[2] |= 0xC0;
   cd->capabilities[6] |= 0x84;
-
-  cd->capabilities[2] = 3;
-
   /* Airport-related flags
   cd->capabilities[3] |= 8;
   cd->capabilities[6] |= 1;
@@ -729,14 +719,15 @@ IOReturn AppleIntelWifiAdapterV2::getCARD_CAPABILITIES(
    Needs further documentation,
    as setting all of these flags enables AirDrop + IO80211VirtualInterface
 
-   cd->capabilities[2] |= 0x13;
-   cd->capabilities[2] |= 0x20;
-   cd->capabilities[2] |= 0x28;
-   cd->capabilities[2] |= 4;
-   cd->capabilities[5] |= 8;
-   cd->capabilities[3] |= 2;
-   cd->capabilities[4] |= 1;
-   cd->capabilities[6] |= 8;
+  cd->capabilities[2] = 3;
+  cd->capabilities[2] |= 0x13;
+  cd->capabilities[2] |= 0x20;
+  cd->capabilities[2] |= 0x28;
+  cd->capabilities[2] |= 4;
+  cd->capabilities[5] |= 8;
+  cd->capabilities[3] |= 2;
+  cd->capabilities[4] |= 1;
+  cd->capabilities[6] |= 8;
 
   cd->capabilities[3] |= 0x23;
   cd->capabilities[2] |= 0x80;
@@ -783,8 +774,9 @@ IOReturn AppleIntelWifiAdapterV2::setSTATE(IO80211Interface *interface,
 IOReturn AppleIntelWifiAdapterV2::getPHY_MODE(
     IO80211Interface *interface, struct apple80211_phymode_data *pd) {
   pd->version = APPLE80211_VERSION;
-  pd->phy_mode =
-      APPLE80211_MODE_11A | APPLE80211_MODE_11B | APPLE80211_MODE_11G;
+  pd->phy_mode = APPLE80211_MODE_11A | APPLE80211_MODE_11B |
+                 APPLE80211_MODE_11G | APPLE80211_MODE_11N |
+                 APPLE80211_MODE_11AC;
 
   pd->active_phy_mode = drv->m_pDevice->ie_dev->getPhyMode();
   return kIOReturnSuccess;
@@ -883,6 +875,7 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
            ad->ad_bssid.octet[1], ad->ad_bssid.octet[2], ad->ad_bssid.octet[3],
            ad->ad_bssid.octet[4], ad->ad_bssid.octet[5]);
 
+#ifdef notyet
   if (ad->ad_mode == 1) {
     IWL_ERR(0, "p2p-gc and ibss cannot exist\n");
   } else {
@@ -901,14 +894,15 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
     if (ad->ad_key.key_len != 0) {
       drv->m_pDevice->ie_dev->setCipherKey(&ad->ad_key);
     }
-    drv->m_pDevice->ie_dev->setState(APPLE80211_S_ASSOC);
+    drv->m_pDevice->ie_dev->setState(APPLE80211_S_AUTH);
 
     drv->m_pDevice->ie_dev->setOPMode(APPLE80211_M_STA);
     drv->m_pDevice->ie_dev->setRSN_IE(
         reinterpret_cast<uint8_t *>(&ad->ad_rsn_ie), ad->ad_rsn_ie_len);
 
     drv->m_pDevice->ie_dev->setSSID(
-        ad->ad_ssid_len, reinterpret_cast<const char *>(&ad->ad_ssid[0]));
+        ad->ad_ssid_len, reinterpret_cast<const char *>(&ad->ad_ssid));
+    interface->postMessage(APPLE80211_M_SSID_CHANGED);
 
     drv->m_pDevice->ie_dev->setAPMode(ad->ad_mode);
 
@@ -951,65 +945,10 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
         // clang-format on
       }
 
-      IWLNode *bss = new IWLNode();
-
-      if (!bss->init(best_obj)) {
-        this->setDISASSOCIATE(interface);
-        drv->m_pDevice->ie_dev->unlockScanCache();
-        return kIOReturnError;
-      }
-
-      drv->m_pDevice->ie_dev->unlockScanCache();
-
-      drv->m_pDevice->ie_dev->setBSS(bss);
+      best_obj->retain();  // force it to stay around no matter what
+      drv->m_pDevice->ie_dev->setBSSBeacon(best_obj);
 
       drv->m_pDevice->ie_dev->setBSSID(best_obj->getBSSID(), ETH_ALEN);
-
-      iwl_sf_config(drv, SF_FULL_ON);
-
-      if (!drv->enableMulticast()) {
-        IWL_ERR(0, "Failed to enable multicast\n");
-        return kIOReturnError;
-      }
-
-      apple80211_channel bss_chan = best_obj->getChannel();
-
-      int err = iwl_phy_ctxt_changed(drv, &drv->m_pDevice->phy_ctx[0],
-                                     &bss_chan, 1, 1);
-      if (err) {
-        IWL_ERR(0, "Failed to update phy context\n");
-        return kIOReturnError;
-      }
-
-      bss->setPhyCtx(&drv->m_pDevice->phy_ctx[0]);
-
-      err = iwl_mac_ctxt_cmd(drv, FW_CTXT_ACTION_ADD, 0);
-      if (err) {
-        IWL_ERR(0, "Failed to add MAC context\n");
-        return kIOReturnError;
-      }
-
-      err = iwl_binding_cmd(drv, FW_CTXT_ACTION_ADD);
-      if (err) {
-        IWL_ERR(0, "Failed to bind\n");
-        return kIOReturnError;
-      }
-
-      err = iwl_mvm_sta_send_to_fw(drv, false, 0);
-      if (err) {
-        IWL_ERR(0, "Failed to send STA to fw\n");
-        return kIOReturnError;
-      }
-
-      err = iwl_mac_ctxt_cmd(drv, FW_CTXT_ACTION_MODIFY, 0);
-      if (err) {
-        IWL_ERR(0, "Failed to update MAC context\n");
-        return kIOReturnError;
-      }
-
-      iwl_protect_session(drv, 500, 500 /* XXX magic number */);
-
-      interface->setLinkState(IO80211LinkState::kIO80211NetworkLinkUp, 0);
 
     } else {
       return kIOReturnError;
@@ -1017,17 +956,21 @@ IOReturn AppleIntelWifiAdapterV2::setASSOCIATE(
   }
 
   return kIOReturnSuccess;
+#endif
+  return kIOReturnError;
 }
 
 IOReturn AppleIntelWifiAdapterV2::setDISASSOCIATE(IO80211Interface *interface) {
   drv->m_pDevice->ie_dev->setState(APPLE80211_S_INIT);
 
-  drv->m_pDevice->ie_dev->resetBSS();
-  drv->m_pDevice->ie_dev->resetBSSID();
-  interface->postMessage(APPLE80211_M_BSSID_CHANGED);
-  drv->m_pDevice->ie_dev->resetSSID();
-  interface->postMessage(APPLE80211_M_SSID_CHANGED);
+  IWLCachedScan *bss_beacon = drv->m_pDevice->ie_dev->getBSSBeacon();
+  if (bss_beacon != NULL) {
+    bss_beacon->release();
+    bss_beacon = NULL;
+  }
 
+  drv->m_pDevice->ie_dev->resetBSSID();
+  drv->m_pDevice->ie_dev->resetSSID();
   drv->m_pDevice->ie_dev->resetCipherKey();
   drv->m_pDevice->ie_dev->resetRSN_IE();
   drv->m_pDevice->ie_dev->setAPMode(0);

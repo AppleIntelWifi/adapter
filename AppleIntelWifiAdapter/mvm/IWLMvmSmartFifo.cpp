@@ -60,15 +60,10 @@ int iwl_sf_config(IWLMvmDriver* drv, int new_state) {
       sf_cmd.state |= htole32(SF_CFG_DUMMY_NOTIF_OFF);
   */
 
-  IWLNode* bss = drv->m_pDevice->ie_dev->getBSS();
-  IWLCachedScan* beacon;
+  IWLCachedScan* bss = drv->m_pDevice->ie_dev->getBSSBeacon();
   if (new_state == SF_FULL_ON) {
-    if (bss == NULL) {
-      return -1;
-    }
-
-    beacon = bss->getBeacon();
-    if (beacon == NULL) {
+    if (bss != NULL) {
+    } else {
       return -1;
     }
   }
@@ -79,7 +74,7 @@ int iwl_sf_config(IWLMvmDriver* drv, int new_state) {
       iwl_fill_sf_cmd(drv, &sf_cmd, NULL);
       break;
     case SF_FULL_ON:
-      iwl_fill_sf_cmd(drv, &sf_cmd, beacon);
+      iwl_fill_sf_cmd(drv, &sf_cmd, bss);
       break;
     default:
       return EINVAL;

@@ -275,6 +275,8 @@ bool AppleIntelWifiAdapterV2::startGated(IOService *provider) {
   netif->registerService();
   registerService();
 
+  netif->setEnabledBySystem(true);
+
   drv->trans->m_pDevice->interface = netif;
   return true;
 }
@@ -337,7 +339,7 @@ IOReturn AppleIntelWifiAdapterV2::enable(IONetworkInterface *netif) {
   IOMediumType mediumType = kIOMediumIEEE80211Auto;
   IONetworkMedium *medium =
       IONetworkMedium::getMediumWithType(mediumDict, mediumType);
-  setLinkStatus(kIONetworkLinkActive | kIONetworkLinkValid, medium);
+  setLinkStatus(kIONetworkLinkValid, medium);
   if (this->drv) {
     if (!this->drv->enableDevice()) {
       IWL_CRIT(0, "Enabling device failed\n");
@@ -414,7 +416,6 @@ IOReturn AppleIntelWifiAdapterV2::setMulticastList(IOEthernetAddress *addr,
 
 SInt32 AppleIntelWifiAdapterV2::monitorModeSetEnabled(
     IO80211Interface *interface, bool enabled, UInt32 dlt) {
-  IWL_INFO(0, "Enable monitor mode\n");
   return kIOReturnSuccess;
 }
 
@@ -429,10 +430,8 @@ IOOutputQueue *AppleIntelWifiAdapterV2::createOutputQueue()
 */
 
 UInt32 AppleIntelWifiAdapterV2::outputPacket(mbuf_t m, void *param) {
-  IWL_INFO(0, "OSX asked us to output a packet\n");
-
   freePacket(m);
-  return 1;
+  return kIOReturnOutputDropped;
 }
 
 IOReturn AppleIntelWifiAdapterV2::getMaxPacketSize(UInt32 *maxSize) const {
@@ -451,28 +450,4 @@ bool AppleIntelWifiAdapterV2::addMediumType(UInt32 type, UInt32 speed,
     medium->release();
   }
   return ret;
-}
-
-int AppleIntelWifiAdapterV2::bpfOutputPacket(OSObject *a2, UInt unk,
-                                             mbuf_t packet) {
-  IWL_INFO(0, "OSX asked us to output a RAW BPF packet\n");
-
-  freePacket(packet);
-  return 1;
-}
-
-int AppleIntelWifiAdapterV2::outputRaw80211Packet(IO80211Interface *interface,
-                                                  mbuf_t packet) {
-  IWL_INFO(0, "OSX asked us to output a raw 80211 packet\n");
-
-  freePacket(packet);
-  return 1;
-}
-
-int AppleIntelWifiAdapterV2::outputActionFrame(IO80211Interface *interface,
-                                               mbuf_t packet) {
-  IWL_INFO(0, "OSX asked us to output a raw action frame\n");
-
-  freePacket(packet);
-  return 1;
 }

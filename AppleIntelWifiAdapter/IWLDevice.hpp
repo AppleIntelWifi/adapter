@@ -17,7 +17,6 @@
 #include "IWLDeviceList.h"
 #include "IWLFH.h"
 #include "IWLeeprom.h"
-#include "apple80211/IO80211Controller.h"
 #include "fw/FWImg.h"
 #include "fw/NotificationWait.hpp"
 #include "fw/api/cmdhdr.h"

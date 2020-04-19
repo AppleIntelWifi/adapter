@@ -11,7 +11,6 @@
 
 #include "IWLCachedScan.hpp"
 #include "IWLMvmDriver.hpp"
-#include "IWLNode.hpp"
 
 class IWL80211Device {
  public:
@@ -36,10 +35,6 @@ class IWL80211Device {
 
   inline uint32_t getState() { return this->state; }
   void setState(uint32_t new_state) { this->state = new_state; }
-
-  void saveState() { this->prev_state = this->state; }
-
-  void restoreState() { this->state = this->prev_state; }
 
   inline uint32_t getFlags() { return this->flags; }
 
@@ -71,7 +66,7 @@ class IWL80211Device {
   }
   // clang-format on
   inline size_t getSSIDLen() {
-    if (this->ssid_len > 32) this->ssid_len = 31;
+    if (this->ssid_len > 32) this->ssid_len = 32;
 
     return this->ssid_len;
   }
@@ -205,24 +200,15 @@ class IWL80211Device {
 
   inline void setOPMode(uint32_t op) { this->op_mode = op; }
 
-  inline IWLNode* getBSS() { return this->bss; }
+  inline IWLCachedScan* getBSSBeacon() { return this->bss_beacon; }
 
-  inline void resetBSS() {
-    if (this->bss) this->bss->release();
+  inline void resetBSSBeacon() { this->bss_beacon = NULL; }
 
-    this->bss = NULL;
+  inline void setBSSBeacon(IWLCachedScan* beacon) {
+    if (!beacon) return;
+
+    this->bss_beacon = beacon;
   }
-
-  inline void setBSS(IWLNode* _bss) {
-    if (!_bss) return;
-
-    _bss->retain();
-    this->bss = _bss;
-  }
-
-  inline IO80211Interface* getInterface() { return iface; }
-
-  void inputFrame(mbuf_t m);
 
  private:
   uint8_t address[ETH_ALEN];
@@ -236,7 +222,6 @@ class IWL80211Device {
 
   uint8_t bssid[ETH_ALEN];
 
-  uint32_t prev_state;
   uint32_t state;
   size_t n_chans;
 
@@ -255,8 +240,7 @@ class IWL80211Device {
   uint32_t n_scan_chans;
   uint32_t scan_max;
   uint32_t scan_index;
-
-  IWLNode* bss;
+  IWLCachedScan* bss_beacon;
 
   OSOrderedSet* scanCache;
   IOLock* scanCacheLock;

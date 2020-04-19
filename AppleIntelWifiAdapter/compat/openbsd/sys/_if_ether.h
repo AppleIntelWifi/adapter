@@ -13,11 +13,11 @@
 #include <net/if_var.h>
 #include <sys/queue.h>
 #include <sys/_if_media.h>
-#include <net/if_dl.h>
 
-#include <IOKit/network/IOPacketQueue.h>
 #include <IOKit/network/IOEthernetInterface.h>
 #include <IOKit/network/IOOutputQueue.h>
+#include "IO80211Controller.h"
+#include "IO80211Interface.h"
 
 #define    ETHER_IS_MULTICAST(addr) (*(addr) & 0x01) /* is address mcast/bcast? */
 #define    ETHER_IS_BROADCAST(addr) \
@@ -114,9 +114,8 @@ struct ether_multi {
 };
 
 struct ifnet {                /* and the entries */
-    IOEthernetInterface *iface;
+    IO80211Interface *iface;
     IOOutputQueue* output_queue;
-    IOEthernetController* controller;
     void *if_softc;
 //    struct    refcnt if_refcnt;
     int if_hdrlen;
@@ -138,7 +137,6 @@ struct ifnet {                /* and the entries */
     caddr_t if_mcast6;        /* used by IPv6 multicast code */
     caddr_t    if_pf_kif;        /* pf interface abstraction */
     
-    IONetworkStats *netStat;
     ///extra
     uint32_t if_ierrors;
     uint32_t if_oerrors;
@@ -182,7 +180,7 @@ struct ifnet {                /* and the entries */
     int    (*if_wol)(struct ifnet *, int);    /* WoL routine **/
 
     /* queues */
-    IOPacketQueue *if_snd;        /* transmit queue */
+    struct    ifqueue if_snd;        /* transmit queue */
     struct    ifqueue **if_ifqs;    /* [I] pointer to an array of sndqs */
     void    (*if_qstart)(struct ifqueue *);
     unsigned int if_nifqs;        /* [I] number of output queues */
@@ -218,17 +216,5 @@ static inline u_int8_t etherbroadcastaddr[ETHER_ADDR_LEN] =
 static inline u_int8_t etheranyaddr[ETHER_ADDR_LEN] =
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 #define senderr(e) { error = (e); goto bad;}
-
-static inline int
-if_setlladdr(struct ifnet *ifp, const uint8_t *lladdr)
-{
-//    if (ifp->if_sadl == NULL)
-//        return (EINVAL);
-
-    memcpy(((struct arpcom *)ifp)->ac_enaddr, lladdr, ETHER_ADDR_LEN);
-//    memcpy(LLADDR(ifp->if_sadl), lladdr, ETHER_ADDR_LEN);
-
-    return (0);
-}
 
 #endif /* _if_ether_h */

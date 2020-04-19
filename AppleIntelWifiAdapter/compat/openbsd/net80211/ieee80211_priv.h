@@ -23,8 +23,8 @@
 extern int ieee80211_debug;
 #define DPRINTF(X) do {				\
 	if (ieee80211_debug) {			\
-		IWL_INFO(0, "%s: ", __FUNCTION__);	\
-		__iwl_info X;			\
+		printf("%s: ", __func__);	\
+		printf X;			\
 	}					\
 } while(0)
 #else

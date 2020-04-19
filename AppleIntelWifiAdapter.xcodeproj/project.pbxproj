@@ -167,8 +167,6 @@
 		686F711223F4BE60008A0E88 /* IWLConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = 02577D7A23EE7A9F003FF602 /* IWLConstants.h */; };
 		686F711323F4BE60008A0E88 /* IWLDebug.h in Headers */ = {isa = PBXBuildFile; fileRef = 02DCDEE723C329C400997FA0 /* IWLDebug.h */; };
 		686F711423F4BE60008A0E88 /* IWLeeprom.h in Headers */ = {isa = PBXBuildFile; fileRef = 0257B9A623E5AC2F005013A0 /* IWLeeprom.h */; };
-		687DCF53243CEE8300D978E3 /* IWLNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 687DCF51243CEE8300D978E3 /* IWLNode.cpp */; };
-		687DCF54243CEE8300D978E3 /* IWLNode.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 687DCF52243CEE8300D978E3 /* IWLNode.hpp */; };
 		6892C2F524342AE800ACAD84 /* IWLCachedScan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6892C2F324342AE800ACAD84 /* IWLCachedScan.cpp */; };
 		6892C2F624342AE800ACAD84 /* IWLCachedScan.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6892C2F424342AE800ACAD84 /* IWLCachedScan.hpp */; };
 		68E385C023F4BBA5000DADA4 /* CTimeout.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 02E38D0B23E2E7B600264FA9 /* CTimeout.hpp */; };
@@ -400,8 +398,6 @@
 		686AD3E8241C24A6008080E6 /* ioctl_dbg.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ioctl_dbg.h; sourceTree = "<group>"; };
 		686EA48324377F3A00C88E9B /* OVERVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = OVERVIEW.md; sourceTree = "<group>"; };
 		686EA48424378F9700C88E9B /* IWLDebug.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = IWLDebug.c; sourceTree = "<group>"; };
-		687DCF51243CEE8300D978E3 /* IWLNode.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLNode.cpp; sourceTree = "<group>"; };
-		687DCF52243CEE8300D978E3 /* IWLNode.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLNode.hpp; sourceTree = "<group>"; };
 		6892C2F324342AE800ACAD84 /* IWLCachedScan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLCachedScan.cpp; sourceTree = "<group>"; };
 		6892C2F424342AE800ACAD84 /* IWLCachedScan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IWLCachedScan.hpp; sourceTree = "<group>"; };
 		F85B1D4A23FF6850008105E4 /* IWLMac80211.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IWLMac80211.cpp; sourceTree = "<group>"; };
@@ -518,7 +514,6 @@
 		026E8CCB2356F0ED000BFD46 /* AppleIntelWifiAdapter */ = {
 			isa = PBXGroup;
 			children = (
-				687283F0243ECE72008B984C /* ieee80211 */,
 				026E8CD62356F2AD000BFD46 /* apple80211 */,
 				026E8CCE2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.cpp */,
 				026E8CCC2356F0ED000BFD46 /* AppleIntelWifiAdapterV2.hpp */,
@@ -547,8 +542,6 @@
 				6853B6A3241B244A006B4D69 /* AppleIntelWifi_iokit.cpp */,
 				6892C2F324342AE800ACAD84 /* IWLCachedScan.cpp */,
 				6892C2F424342AE800ACAD84 /* IWLCachedScan.hpp */,
-				687DCF51243CEE8300D978E3 /* IWLNode.cpp */,
-				687DCF52243CEE8300D978E3 /* IWLNode.hpp */,
 			);
 			path = AppleIntelWifiAdapter;
 			sourceTree = "<group>";
@@ -599,37 +592,37 @@
 			isa = PBXGroup;
 			children = (
 				02E38D0923E26CB500264FA9 /* _string.c */,
-				02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */,
-				02C2286023DBFA860016AD53 /* ieee80211_amrr.c */,
-				02C2285223DBFA860016AD53 /* ieee80211_amrr.h */,
-				02C2285B23DBFA860016AD53 /* ieee80211_crypto_bip.c */,
-				02C2285D23DBFA860016AD53 /* ieee80211_crypto_ccmp.c */,
-				02C2285C23DBFA860016AD53 /* ieee80211_crypto_tkip.c */,
-				02C2286623DBFA860016AD53 /* ieee80211_crypto_wep.c */,
-				02C2286823DBFA860016AD53 /* ieee80211_crypto.c */,
-				02C2285A23DBFA860016AD53 /* ieee80211_crypto.h */,
-				02C2285623DBFA860016AD53 /* ieee80211_input.c */,
-				02C2285323DBFA860016AD53 /* ieee80211_ioctl.c */,
-				02C2286523DBFA860016AD53 /* ieee80211_ioctl.h */,
-				02C2285923DBFA860016AD53 /* ieee80211_mira.c */,
-				02C2286923DBFA860016AD53 /* ieee80211_mira.h */,
-				02C2286B23DBFA860016AD53 /* ieee80211_node.c */,
-				02C2285723DBFA860016AD53 /* ieee80211_node.h */,
-				02C2286723DBFA860016AD53 /* ieee80211_output.c */,
-				02C2285E23DBFA860016AD53 /* ieee80211_pae_input.c */,
-				02C2286C23DBFA860016AD53 /* ieee80211_pae_output.c */,
-				02C2286423DBFA860016AD53 /* ieee80211_priv.h */,
 				02C2285123DBFA860016AD53 /* ieee80211_proto.c */,
-				02C2286123DBFA860016AD53 /* ieee80211_proto.h */,
-				02C2285F23DBFA860016AD53 /* ieee80211_radiotap.h */,
-				02C2286A23DBFA860016AD53 /* ieee80211_regdomain.c */,
-				02C2285823DBFA860016AD53 /* ieee80211_regdomain.h */,
-				02C2285523DBFA860016AD53 /* ieee80211_rssadapt.c */,
-				02C2286223DBFA860016AD53 /* ieee80211_rssadapt.h */,
-				02C2286D23DBFA860016AD53 /* ieee80211_var.h */,
+				02C2285223DBFA860016AD53 /* ieee80211_amrr.h */,
+				02C2285323DBFA860016AD53 /* ieee80211_ioctl.c */,
 				02C2285423DBFA860016AD53 /* ieee80211.c */,
+				02C2285523DBFA860016AD53 /* ieee80211_rssadapt.c */,
+				02C2285623DBFA860016AD53 /* ieee80211_input.c */,
+				02C2285723DBFA860016AD53 /* ieee80211_node.h */,
+				02C2285823DBFA860016AD53 /* ieee80211_regdomain.h */,
+				02C2285923DBFA860016AD53 /* ieee80211_mira.c */,
+				02C2285A23DBFA860016AD53 /* ieee80211_crypto.h */,
+				02C2285B23DBFA860016AD53 /* ieee80211_crypto_bip.c */,
+				02C2285C23DBFA860016AD53 /* ieee80211_crypto_tkip.c */,
+				02C2285D23DBFA860016AD53 /* ieee80211_crypto_ccmp.c */,
+				02C2285E23DBFA860016AD53 /* ieee80211_pae_input.c */,
+				02C2285F23DBFA860016AD53 /* ieee80211_radiotap.h */,
+				02C2286023DBFA860016AD53 /* ieee80211_amrr.c */,
+				02C2286123DBFA860016AD53 /* ieee80211_proto.h */,
+				02C2286223DBFA860016AD53 /* ieee80211_rssadapt.h */,
 				02C2286323DBFA860016AD53 /* ieee80211.h */,
+				02C2286423DBFA860016AD53 /* ieee80211_priv.h */,
+				02C2286523DBFA860016AD53 /* ieee80211_ioctl.h */,
+				02C2286623DBFA860016AD53 /* ieee80211_crypto_wep.c */,
+				02C2286723DBFA860016AD53 /* ieee80211_output.c */,
+				02C2286823DBFA860016AD53 /* ieee80211_crypto.c */,
+				02C2286923DBFA860016AD53 /* ieee80211_mira.h */,
+				02C2286A23DBFA860016AD53 /* ieee80211_regdomain.c */,
+				02C2286B23DBFA860016AD53 /* ieee80211_node.c */,
+				02C2286C23DBFA860016AD53 /* ieee80211_pae_output.c */,
+				02C2286D23DBFA860016AD53 /* ieee80211_var.h */,
 				02E38D0C23E2E89A00264FA9 /* timeout.c */,
+				02E38D0E23E2EC5800264FA9 /* CTimeout.cpp */,
 			);
 			path = net80211;
 			sourceTree = "<group>";
@@ -771,13 +764,6 @@
 			path = trans;
 			sourceTree = "<group>";
 		};
-		687283F0243ECE72008B984C /* ieee80211 */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = ieee80211;
-			sourceTree = "<group>";
-		};
 		68FC255123F5C040004958FC /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -863,7 +849,6 @@
 				02C2287523DBFA870016AD53 /* ieee80211_regdomain.h in Headers */,
 				0257B9AE23E6DD2A005013A0 /* IWLNvmParser.hpp in Headers */,
 				02CEFD7623D7DE8E00B620E6 /* castsb.h in Headers */,
-				687DCF54243CEE8300D978E3 /* IWLNode.hpp in Headers */,
 				02CEFD7B23D7DE8E00B620E6 /* cryptodev.h in Headers */,
 				6892C2F624342AE800ACAD84 /* IWLCachedScan.hpp in Headers */,
 				685C1032241C32B9003C0910 /* IWLDeviceList.h in Headers */,
@@ -1067,7 +1052,6 @@
 				686162A623FDE74E0023A4D2 /* IWLMvmScan.cpp in Sources */,
 				0257B9A523E5A7E3005013A0 /* MvmTransOps.cpp in Sources */,
 				686162AA23FDE7670023A4D2 /* IWLMvmSta.cpp in Sources */,
-				687DCF53243CEE8300D978E3 /* IWLNode.cpp in Sources */,
 				0252C5DC23EC00CA001975DB /* IWLTransportRx.cpp in Sources */,
 				6892C2F524342AE800ACAD84 /* IWLCachedScan.cpp in Sources */,
 				02C2287123DBFA870016AD53 /* ieee80211.c in Sources */,

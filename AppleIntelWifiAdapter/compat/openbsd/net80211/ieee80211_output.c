@@ -110,7 +110,6 @@ int
 ieee80211_output(struct ifnet *ifp, mbuf_t m, struct sockaddr *dst,
     struct rtentry *rt)
 {
-    IWL_INFO(0, "%s 啊啊啊啊\n", __FUNCTION__);
 	struct ieee80211_frame *wh;
 	struct m_tag *mtag;
 	int error = 0;
@@ -226,7 +225,7 @@ ieee80211_mgmt_output(struct ifnet *ifp, struct ieee80211_node *ni,
 #endif
 		    (type & IEEE80211_FC0_SUBTYPE_MASK) !=
 		    IEEE80211_FC0_SUBTYPE_PROBE_RESP)
-			IWL_INFO(0, "%s: sending %s to %s on channel %u mode %s\n",
+			printf("%s: sending %s to %s on channel %u mode %s\n",
 			    ifp->if_xname,
 			    ieee80211_mgt_subtype_name[
 			    (type & IEEE80211_FC0_SUBTYPE_MASK)
@@ -241,12 +240,11 @@ ieee80211_mgmt_output(struct ifnet *ifp, struct ieee80211_node *ni,
 	    ieee80211_pwrsave(ic, m, ni) != 0)
 		return 0;
 #endif
-//    ifp->output_queue->enqueue(m, &TX_TYPE_MGMT);
-	mq_enqueue(&ic->ic_mgtq, m);
+    ifp->output_queue->enqueue(m, NULL);
+//	mq_enqueue(&ic->ic_mgtq, m);
 	ifp->if_timer = 1;
-    ifp->if_start(ifp);
-    IWL_INFO(0, "%s Enqueue MGMT data\n", __FUNCTION__);
-//    ifp->output_queue->service();
+//	if_start(ifp);
+    ifp->output_queue->service();
 	return 0;
 }
 
@@ -478,16 +476,11 @@ ieee80211_tx_compressed_bar(struct ieee80211com *ic, struct ieee80211_node *ni,
 		return;
 
 	ieee80211_ref_node(ni);
-//	if (ifp->output_queue->enqueue(m, &TX_TYPE_MGMT))
+	if (ifp->output_queue->enqueue(m, NULL))
 //		if_start(ifp);
-    //TODO always return 0;
-//    ifp->output_queue->enqueue(m, &TX_TYPE_MGMT);
-//    ifp->output_queue->start();
-    if (mq_enqueue(&ic->ic_mgtq, m)) {
-        ifp->if_start(ifp);
-    } else {
+        ifp->output_queue->service();
+	else
 		ieee80211_release_node(ic, ni);
-    }
 }
 
 /*
@@ -502,7 +495,6 @@ ieee80211_tx_compressed_bar(struct ieee80211com *ic, struct ieee80211_node *ni,
 mbuf_t
 ieee80211_encap(struct ifnet *ifp, mbuf_t m, struct ieee80211_node **pni)
 {
-    IWL_INFO(0, "%s\n", __FUNCTION__);
 	struct ieee80211com *ic = (struct ieee80211com *)ifp;
 	struct ether_header eh;
 	struct ieee80211_frame *wh;
@@ -539,7 +531,7 @@ ieee80211_encap(struct ifnet *ifp, mbuf_t m, struct ieee80211_node **pni)
 		if (ni == NULL)
 			ni = ieee80211_ref_node(ic->ic_bss);
 		if (ni == NULL) {
-			IWL_INFO(0, "%s: no node for dst %s, "
+			printf("%s: no node for dst %s, "
 			    "discard raw tx frame\n", ifp->if_xname,
 			    ether_sprintf(addr));
 			ic->ic_stats.is_tx_nonode++;
@@ -1827,7 +1819,7 @@ ieee80211_send_mgmt(struct ieee80211com *ic, struct ieee80211_node *ni,
 		if ((ifp->if_flags & IFF_DEBUG) &&
 		    (ic->ic_opmode == IEEE80211_M_HOSTAP ||
 		    ic->ic_opmode == IEEE80211_M_IBSS))
-			IWL_INFO(0, "%s: station %s deauthenticate (reason %d)\n",
+			printf("%s: station %s deauthenticate (reason %d)\n",
 			    ifp->if_xname, ether_sprintf(ni->ni_macaddr),
 			    arg1);
 #endif
@@ -1854,7 +1846,7 @@ ieee80211_send_mgmt(struct ieee80211com *ic, struct ieee80211_node *ni,
 		if ((ifp->if_flags & IFF_DEBUG) &&
 		    (ic->ic_opmode == IEEE80211_M_HOSTAP ||
 		    ic->ic_opmode == IEEE80211_M_IBSS))
-			IWL_INFO(0, "%s: station %s disassociate (reason %d)\n",
+			printf("%s: station %s disassociate (reason %d)\n",
 			    ifp->if_xname, ether_sprintf(ni->ni_macaddr),
 			    arg1);
 #endif

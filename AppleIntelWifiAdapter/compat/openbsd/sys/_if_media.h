@@ -71,8 +71,6 @@
 #include <sys/queue.h>
 
 #include <IOKit/IOLib.h>
-#include "types.h"
-#include "../../../IWLDebug.h"
 
 #define _KERNEL
 
@@ -1034,7 +1032,7 @@ ifmedia_match(struct ifmedia *ifm, uint64_t target, uint64_t mask)
         if ((next->ifm_media & mask) == (target & mask)) {
             if (match) {
 #if defined(IFMEDIA_DEBUG) || defined(DIAGNOSTIC)
-                IWL_INFO(0, "ifmedia_match: multiple match for "
+                printf("ifmedia_match: multiple match for "
                        "0x%llx/0x%llx, selected instance %lld\n",
                        target, mask, IFM_INST(match->ifm_media));
 #endif
@@ -1069,7 +1067,7 @@ static inline void ifmedia_set(struct ifmedia *ifm, uint64_t target)
      * In either case, it makes sense to select no media.
      */
     if (match == NULL) {
-        IWL_INFO(0, "ifmedia_set: no match for 0x%llx/0x%llx\n",
+        printf("ifmedia_set: no match for 0x%llx/0x%llx\n",
                target, ~ifm->ifm_mask);
         target = (target & IFM_NMASK) | IFM_NONE;
         match = ifmedia_match(ifm, target, ifm->ifm_mask);

@@ -11,16 +11,13 @@
 
 #include <IOKit/IOTimerEventSource.h>
 #include <libkern/c++/OSObject.h>
-    
+
+
 class CTimeout : public OSObject {
     OSDeclareDefaultStructors(CTimeout)
     
 public:
-    static void timeoutOccurred(OSObject* owner, IOTimerEventSource* timer);
-    
-    static IOReturn timeout_add_msec(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
-    
-    static IOReturn timeout_del(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
+    void timeoutOccurred(OSObject* owner, IOTimerEventSource* timer);
     
 public:
     IOTimerEventSource* tm;

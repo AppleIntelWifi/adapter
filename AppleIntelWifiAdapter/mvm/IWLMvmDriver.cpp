@@ -858,29 +858,3 @@ int IWLMvmDriver::sendPowerStatus() {
   IWL_INFO(0, "Sending power command with flags (0x%0x)\n", cmd.flags);
   return sendCmdPdu(POWER_TABLE_CMD, 0, sizeof(cmd), &cmd);
 }
-
-bool IWLMvmDriver::enableMulticast() {
-  /* Allow multicast from our SSID, and OUR SSID only */
-  struct iwl_mcast_filter_cmd *filter_cmd;
-  filter_cmd =
-      reinterpret_cast<iwl_mcast_filter_cmd *>(kzalloc(sizeof(*filter_cmd)));
-
-  if (!filter_cmd) return false;
-
-  IWLNode *bss = this->m_pDevice->ie_dev->getBSS();
-
-  if (!bss) return false;
-
-  IWLCachedScan *beacon = bss->getBeacon();
-
-  if (!beacon) return false;
-
-  filter_cmd->filter_own = 1;
-  filter_cmd->port_id = 0;
-  filter_cmd->count = 0;
-  filter_cmd->pass_all = 1;
-  memcpy(&filter_cmd->bssid, beacon->getBSSID(), ETH_ALEN);
-
-  return (sendCmdPdu(MCAST_FILTER_CMD, 0, sizeof(*filter_cmd), filter_cmd) ==
-          0);
-}

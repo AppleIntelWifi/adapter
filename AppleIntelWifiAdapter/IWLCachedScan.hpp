@@ -43,13 +43,7 @@ class IWLCachedScan : public OSObject {
                         // len getter
 
   uint8_t* getRates();
-  uint8_t* getBasicRates();
-  uint8_t* getExtRates();
-  uint8_t* getHWRates();
   uint8_t getNumRates();
-  uint8_t getNumExtRates();
-  uint8_t getNumBasicRates();
-  uint8_t getNumHWRates();
 
   inline bool getVHTSupported() { return this->vht_supported; }
 
@@ -65,21 +59,13 @@ class IWLCachedScan : public OSObject {
   mbuf_t getMbuf();
 
  private:
-  uint16_t beacon_interval;
   uint8_t* ie;
   int16_t ie_len;
   bool vht_supported;
   bool ht_supported;
 
-  uint8_t basic_rates[8];
-  uint8_t rates[8];
-  uint8_t ext_rates[8];
-
-  uint8_t hw_rates[15];
-  uint8_t n_hw_rates;
-  uint8_t n_basic_rates;
+  uint8_t* rates;
   uint8_t n_rates;
-  uint8_t n_ext_rates;
 
   uint32_t rssi;
   uint32_t noise;
