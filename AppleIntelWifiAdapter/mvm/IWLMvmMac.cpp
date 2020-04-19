@@ -728,7 +728,12 @@ int iwl_umac_scan(IWLMvmDriver* drv) {
                ssid_dat->ssid_len);
       }
     }
-    req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PASSIVE);
+
+    if (multiReq->ssid_count != 0) {
+      req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PRE_CONNECT);
+    } else {
+      req->general_flags |= cpu_to_le16(IWL_UMAC_SCAN_GEN_FLAGS_PASSIVE);
+    }
   } else {
     if (appleReq->ssid_len != 0) {
       IWL_INFO(0, "Directed scan towards: %s\n", appleReq->ssid);

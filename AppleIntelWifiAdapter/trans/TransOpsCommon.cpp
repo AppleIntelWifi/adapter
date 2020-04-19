@@ -490,8 +490,8 @@ void IWLTransOps::rxMpdu(iwl_rx_cmd_buffer* rxcb) {
           IWLCachedScan* scan = new IWLCachedScan();
           if (!scan->init(page, rxcb->_offset, whOffset, last_phy_info, rssi,
                           -101)) {
-            scan->free();
             IWL_ERR(0, "failed to init new cached scan object\n");
+            scan->free();
             trans->m_pDevice->ie_dev->unlockScanCache();
             return;
           }

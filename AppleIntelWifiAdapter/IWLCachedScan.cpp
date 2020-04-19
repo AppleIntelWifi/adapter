@@ -92,19 +92,26 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
                          iwl_rx_phy_info* phy_info, int rssi, int noise) {
   if (!super::init()) return false;
 
-  errno_t err = mbuf_dup(mbuf, MBUF_DONTWAIT, &buf);
+  errno_t err = mbuf_dup(mbuf, MBUF_DONTWAIT, &this->buf);
 
   if (err != 0) {
     IWL_ERR(0, "mbuf dup complained\n");
     return false;
   }
 
-  if (!buf) return false;
+  if (!this->buf) {
+    IWL_ERR(0, "mbuf SHOULD'VE EXISTED\n");
+    return false;
+  }
 
   packet = reinterpret_cast<iwl_rx_packet*>(
-      (u8*)mbuf_data((mbuf_t)buf) + (offset));  // NOLINT(readability/casting)
+      (u8*)mbuf_data((mbuf_t)this->buf) +
+      (offset));  // NOLINT(readability/casting)
 
-  if (!packet) return false;
+  if (!packet) {
+    IWL_ERR(0, "got a null pointer for the packet, dropping\n");
+    return false;
+  }
 
   wh = reinterpret_cast<ieee80211_frame*>(packet->data + whOffset);
   iwl_rx_mpdu_res_start* rx_res =
@@ -112,9 +119,15 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
 
   this->ie_len = rx_res->byte_count - 36;
 
-  if (this->ie_len <= 0) return false;
+  if (this->ie_len <= 0) {
+    IWL_ERR(0, "Expected ie_len to be greater then 0\n");
+    return false;
+  }
 
-  if (le16toh(rx_res->byte_count) <= 36) return false;
+  if (le16toh(rx_res->byte_count) <= 36) {
+    IWL_ERR(0, "Byte count should never be this low\n");
+    return false;
+  }
 
   this->ie = (reinterpret_cast<uint8_t*>(wh) + 36);
 
@@ -151,7 +164,10 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
 
   size_t index = 0;
 
-  if (rate_ptr == NULL) return NULL;
+  if (rate_ptr == NULL) {
+    IWL_ERR(0, "Rate set should've existed, but it doesn't\n");
+    return NULL;
+  }
 
   uint8_t rate_size = *(rate_ptr + 1);
   if (rate_size != 8) {
@@ -222,12 +238,12 @@ bool IWLCachedScan::init(mbuf_t mbuf, int offset, int whOffset,
 }
 
 void IWLCachedScan::free() {
-  super::free();
-
   if (buf) {
-    mbuf_freem(buf);
+    mbuf_free(buf);
   }
   packet = NULL;
+
+  super::free();
 }
 
 apple80211_channel IWLCachedScan::getChannel() { return channel; }
