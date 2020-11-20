@@ -1,4 +1,7 @@
 # adapter
+# Please note: this project is now unsupported. Please go to [itlwm](https://github.com/OpenIntelWireless/itlwm) if you would like a supported kext.
+
+
 [![Build Status](https://travis-ci.com/AppleIntelWifi/adapter.svg?branch=master)](https://travis-ci.com/AppleIntelWifi/adapter)
 [![Coverity Status](https://scan.coverity.com/projects/20762/badge.svg)](https://scan.coverity.com/projects/appleintelwifi)
 ## Purpose
